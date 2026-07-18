@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-app-bg: var(--bg-app);
+  --color-app-text: var(--text-primary);
+  --color-app-text-sec: var(--text-secondary);
+  --color-app-text-muted: var(--text-muted);
+  --color-app-border: var(--border-color);
+  --color-app-header-bg: var(--bg-header);
+  --color-app-aside-bg: var(--bg-aside);
+  --color-app-input: var(--input-bg);
+  --color-app-input-border: var(--input-border);
+  --color-app-btn-sec: var(--btn-secondary-bg);
+  --color-app-btn-sec-text: var(--btn-secondary-text);
+  --color-app-btn-sec-border: var(--btn-secondary-border);
+}
+
+@utility glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@utility card-gradient {
+  background: linear-gradient(135deg, var(--card-gradient-start) 0%, var(--card-gradient-end) 100%);
+}
+
+@utility status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+@layer base {
+  :root {
+    --bg-app: #fcfcfc; /* Elegant, clean, professional warm off-white */
+    --bg-header: rgba(244, 244, 245, 0.85); /* zinc-100/85 */
+    --bg-aside: rgba(250, 250, 250, 0.45); /* zinc-50 */
+    --text-primary: #181c24; /* deep, crisp charcoal */
+    --text-secondary: #52525b; /* zinc-600 */
+    --text-muted: #8e8e93; /* zinc-405 */
+    --border-color: #e4e4e7; /* zinc-200 */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(228, 228, 231, 0.82);
+    --card-gradient-start: #f4f4f5;
+    --card-gradient-end: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #e4e4e7;
+    --btn-secondary-bg: #f4f4f5;
+    --btn-secondary-text: #18181b;
+    --btn-secondary-border: #e4e4e7;
+  }
+
+  .dark {
+    --bg-app: #09090b; /* Deep high-fidelity dark slate */
+    --bg-header: rgba(9, 9, 11, 0.55);
+    --bg-aside: rgba(9, 9, 11, 0.2);
+    --text-primary: #f4f4f5; /* elegant light-zinc */
+    --text-secondary: #a1a1aa; /* zinc-400 */
+    --text-muted: #52525b; /* zinc-600 */
+    --border-color: rgba(39, 39, 42, 1); /* zinc-800 */
+    --glass-bg: rgba(24, 24, 27, 0.4);
+    --glass-border: rgba(39, 39, 42, 1);
+    --card-gradient-start: #18181b;
+    --card-gradient-end: #09090b;
+    --input-bg: rgba(24, 24, 27, 0.6);
+    --input-border: rgba(39, 39, 42, 1);
+    --btn-secondary-bg: #18181b;
+    --btn-secondary-text: #d4d4d8;
+    --btn-secondary-border: rgba(39, 39, 42, 1);
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+}
