@@ -19,6 +19,7 @@ import {
   Send, 
   Sparkles, 
   Code, 
+  Video,
   FileText,
   BadgeAlert,
   Headphones
@@ -48,7 +49,6 @@ interface Lecture {
   id: string;
   title: string;
   duration: string;
-  videoSimType: "intro" | "setup" | "deepdive" | "advanced";
   freePreview?: boolean;
   videoUrl?: string;
   audioUrl?: string;
@@ -64,6 +64,22 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
   // Persistence state for course purchases
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
+
+  // A stable per-device student identifier (previously this was a hardcoded
+  // fake value shown to every visitor). It's generated once and persisted so
+  // it's at least real and consistent, though it's not tied to a real account
+  // since this app has no customer authentication system.
+  const [studentId] = useState<string>(() => {
+    try {
+      const existing = localStorage.getItem("vision79-student-id");
+      if (existing) return existing;
+      const generated = `v79-${crypto.randomUUID().slice(0, 8)}`;
+      localStorage.setItem("vision79-student-id", generated);
+      return generated;
+    } catch {
+      return "v79-guest";
+    }
+  });
   
   // Completed lectures state
   const [completedLectures, setCompletedLectures] = useState<Record<string, boolean>>(() => {
@@ -113,7 +129,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
     return diffDays <= 30;
   };
 
-  const originalPrice = course.price !== undefined && course.price !== null ? Number(course.price) : 94.99;
+  const originalPrice = course.price !== undefined && course.price !== null ? Number(course.price) : 0;
   const hasPromo = isPromoActive(course) && originalPrice > 0;
   const displayPrice = hasPromo ? originalPrice * 0.5 : originalPrice;
   const isPaid = displayPrice > 0 || course.pricingType === "premium";
@@ -228,20 +244,24 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
   const [questions, setQuestions] = useState<Array<{ id: number; author: string; text: string; date: string; replies: Array<{ author: string; text: string; date: string; isInstructor?: boolean }> }>>([]);
   const [newQuestionTxt, setNewQuestionTxt] = useState("");
 
-  // Payment checkout states
-  const [creditCardNum, setCreditCardNum] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvc, setCardCvc] = useState("");
-  const [cardName, setCardName] = useState("");
+  // Enrollment state (no payment processor connected - see handleCheckoutSubmit)
   const [isPaying, setIsPaying] = useState(false);
-  const [paySuccess, setPaySuccess] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
-  // Video media player simulated states
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [videoProgress, setVideoProgress] = useState(0);
+  // Native <video>/<audio> element playback state (real media only - there is
+  // no simulated/fake playback path; lectures without an uploaded video or
+  // audio file simply show an honest "not available yet" placeholder).
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-  const [canvasModeText, setCanvasModeText] = useState("Hover play to stream secure masterclass canvas context...");
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+
+  // Apply the chosen playback speed to whichever real media element is
+  // currently mounted, so the speed control in the footer actually does
+  // something instead of just changing its own highlighted state.
+  useEffect(() => {
+    if (videoElRef.current) videoElRef.current.playbackRate = playbackSpeed;
+    if (audioElRef.current) audioElRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed, activeLecture]);
 
   const chapters: Chapter[] = useMemo(() => {
     if (course.curriculum) {
@@ -254,31 +274,12 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
         console.error("Failed to parse course curriculum JSON:", e);
       }
     }
-    return [
-      {
-        title: "Block 1: Production Core Architecture Swaps & Setup",
-        lectures: [
-          { id: "1-1", title: "1. Core Framework Setup and Configuration Files", duration: "12:15", videoSimType: "intro", freePreview: true },
-          { id: "1-2", title: "2. Structuring TypeScript Enums and Types Safely", duration: "18:40", videoSimType: "setup" },
-          { id: "1-3", title: "3. Hot-Swapping Sandbox Server Port Inbound Channels", duration: "22:05", videoSimType: "setup" }
-        ]
-      },
-      {
-        title: "Block 2: High Concurrency State Engines & DB Mappings",
-        lectures: [
-          { id: "2-1", title: "4. SQLite schemas modeling & Dynamic Alter Migrations", duration: "32:10", videoSimType: "deepdive" },
-          { id: "2-2", title: "5. Lazy-initializing SDK clients and handling failures", duration: "25:30", videoSimType: "deepdive" },
-          { id: "2-3", title: "6. Handling CORS & OAuth flows inside Sandboxed iFrames", duration: "29:15", videoSimType: "deepdive" }
-        ]
-      },
-      {
-        title: "Block 3: Production Builds & Ingress Traffic Optimization",
-        lectures: [
-          { id: "3-1", title: "7. Compiling TypeScript output bundles via fast esbuild", duration: "44:00", videoSimType: "advanced" },
-          { id: "3-2", title: "8. Deploying standalone Cloud Container ports safely", duration: "38:50", videoSimType: "advanced" }
-        ]
-      }
-    ];
+    // No real curriculum has been authored for this course yet. Previously
+    // this returned a hardcoded fake demo curriculum ("Block 1: Production
+    // Core Architecture Swaps & Setup" etc.) with made-up lecture titles and
+    // durations - that data didn't correspond to anything real, so it has
+    // been removed. Callers should render an empty/curriculum-pending state.
+    return [];
   }, [course.curriculum]);
 
   // Set default initial active lecture
@@ -288,49 +289,12 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
     }
   }, [course.id, chapters]);
 
-  // Video simulation animation logic
-  useEffect(() => {
-    let interval: any;
-    if (isPlaying && activeLecture) {
-      interval = setInterval(() => {
-        setVideoProgress((v) => {
-          if (v >= 100) {
-            setIsPlaying(false);
-            if (activeLecture) {
-              handleToggleLectureComplete(activeLecture.id, true);
-            }
-            return 0;
-          }
-          return v + (1.5 * playbackSpeed);
-        });
-
-        // Dynamic code simulator lines
-        const lines = [
-          "import { GoogleGenAI } from '@google/genai';",
-          "const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });",
-          "async function queryModel() { ... }",
-          "const db = new sqliteModule.Database('./db.sqlite');",
-          "app.listen(3000, '0.0.0.0', () => { console.log('Serving secure port') })",
-          "ALTER TABLE saas_apps ADD COLUMN rating REAL DEFAULT 4.7;",
-          "console.log('[SQLite Migrations] SUCCESSFUL!')",
-          "localStorage.setItem('premium-access', JSON.stringify(enrolled));",
-          "Refactoring categories to courses for Vision79 layout sync..."
-        ];
-        const randomLine = lines[Math.floor(Math.random() * lines.length)];
-        setCanvasModeText(`[STAMP: ${Math.floor(videoProgress)}%] -> ${randomLine}`);
-      }, 800);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying, activeLecture, playbackSpeed, videoProgress]);
-
   const handleSelectLecture = (lec: Lecture) => {
     if (!isEnrolled && !lec.freePreview) {
       alert("This chapter is premium locked. Complete enrollment payment details on the right to access.");
       return;
     }
     setActiveLecture(lec);
-    setVideoProgress(0);
-    setIsPlaying(true);
   };
 
   const handleToggleChapter = (index: number) => {
@@ -340,29 +304,22 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
     }));
   };
 
-  // Submit payment handler
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Enrollment handler. No payment processor is connected in this app, so
+  // this does not collect or simulate charging a card - it honestly records
+  // enrollment for this device only.
+  const handleCheckoutSubmit = () => {
     setPayError(null);
-
-    if (creditCardNum.length < 14 || cardExpiry.length < 4 || cardCvc.length < 3 || !cardName) {
-      setPayError("Validation Alert: Please verify your 16-digit card number, expiry, and secure CVC.");
-      return;
-    }
-
     setIsPaying(true);
-
-    // Simulate standard safe transaction delay
-    setTimeout(() => {
+    setIsEnrolled(true);
+    try {
+      localStorage.setItem(`vision79-enrolled-${course.id}`, "true");
+    } catch (e) {
+      console.warn("Blocked writing to localStorage:", e);
+      setPayError("Couldn't save your enrollment on this device. Check your browser's storage settings and try again.");
+      setIsEnrolled(false);
+    } finally {
       setIsPaying(false);
-      setPaySuccess(true);
-      setIsEnrolled(true);
-      try {
-        localStorage.setItem(`vision79-enrolled-${course.id}`, "true");
-      } catch (e) {
-        console.warn("Blocked writing to localStorage:", e);
-      }
-    }, 2200);
+    }
   };
 
   const saveNote = (txt: string) => {
@@ -474,14 +431,16 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-zinc-950/95 z-20 space-y-4">
                       <Lock className="w-12 h-12 text-indigo-400 animate-pulse" />
                       <p className="text-sm font-semibold tracking-wide text-zinc-100 uppercase font-mono">Subscribe to unlock this Lecture 🔒</p>
-                      <p className="text-xs text-zinc-400 max-w-md">Unlock full lifetime access to all {course.lessonsCount || 24} curriculum sections today.</p>
+                      <p className="text-xs text-zinc-400 max-w-md">Unlock full lifetime access to all {course.lessonsCount || chapters.reduce((sum, c) => sum + c.lectures.length, 0)} curriculum sections today.</p>
                     </div>
                   ) : (
                     <video 
+                      ref={videoElRef}
                       src={activeLecture.videoUrl} 
                       controls 
                       className="w-full h-full object-contain" 
                       onClick={(e) => e.stopPropagation()}
+                      onLoadedMetadata={() => { if (videoElRef.current) videoElRef.current.playbackRate = playbackSpeed; }}
                     />
                   )}
                 </div>
@@ -491,7 +450,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-zinc-950/95 z-20 space-y-4">
                       <Lock className="w-12 h-12 text-indigo-400 animate-pulse" />
                       <p className="text-sm font-semibold tracking-wide text-zinc-100 uppercase font-mono">Subscribe to unlock this Lecture 🔒</p>
-                      <p className="text-xs text-zinc-400 max-w-md">Unlock full lifetime access to all {course.lessonsCount || 24} curriculum sections today.</p>
+                      <p className="text-xs text-zinc-400 max-w-md">Unlock full lifetime access to all {course.lessonsCount || chapters.reduce((sum, c) => sum + c.lectures.length, 0)} curriculum sections today.</p>
                     </div>
                   ) : (
                     <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 p-6 rounded-2xl space-y-4 shadow-xl">
@@ -505,126 +464,43 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                         </div>
                       </div>
                       <audio 
+                        ref={audioElRef}
                         src={activeLecture.audioUrl} 
                         controls 
                         className="w-full" 
                         onClick={(e) => e.stopPropagation()}
+                        onLoadedMetadata={() => { if (audioElRef.current) audioElRef.current.playbackRate = playbackSpeed; }}
                       />
                     </div>
                   )}
                 </div>
               ) : (
-                <>
-                  {/* Abstract futuristic grid backing */}
-                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
-                  
-                  <AnimatePresence mode="wait">
-                    {isPlaying ? (
-                      <motion.div 
-                        key="playing-state"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="space-y-4 w-full h-full flex flex-col justify-between pt-4 p-6"
-                      >
-                        <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs font-mono bg-zinc-900/50 backdrop-blur border border-white/5 py-1 px-3.5 rounded-full select-none w-max mx-auto">
-                          <Code className="w-3.5 h-3.5 text-indigo-400" />
-                          Live Stream Simulation (ACTIVE)
-                        </div>
-
-                        <div className="flex-1 flex items-center justify-center flex-col px-4">
-                          {/* Code Stream visualization waves */}
-                          <div className="w-full max-w-lg p-4 rounded-xl border border-indigo-500/20 bg-indigo-950/20 text-left font-mono text-[11px] leading-relaxed text-indigo-300 overflow-hidden shadow-lg">
-                            <div className="flex items-center justify-between border-b border-indigo-500/10 pb-1.5 mb-2 text-[9px] text-indigo-400/80">
-                              <span>$ node --experimental-typescript server.ts</span>
-                              <span>Line: {Math.floor(videoProgress * 1.5)}</span>
-                            </div>
-                            <p className="font-semibold text-emerald-400 h-10 select-all font-mono break-all leading-normal">
-                              {canvasModeText}
-                            </p>
-                          </div>
-
-                          {/* Animated graphic viz */}
-                          <div className="flex gap-1.5 h-6 items-end mt-4">
-                            {[1, 2, 3, 4, 5, 4, 3, 2, 5, 1, 3, 4, 2, 1, 5, 4, 3, 2, 4].map((h, i) => (
-                              <motion.div
-                                key={i}
-                                animate={{ height: isPlaying ? [10, h * 4, 10] : 10 }}
-                                transition={{ repeat: window.Infinity, duration: 0.8, delay: i * 0.05 }}
-                                className="w-1 bg-indigo-500 rounded"
-                              />
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="h-2 w-full bg-zinc-950 border border-zinc-900/50 rounded-full overflow-hidden mb-6 relative">
-                          <div 
-                            className="h-full bg-indigo-500 rounded-full transition-all duration-300"
-                            style={{ width: `${videoProgress}%` }}
-                          />
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div 
-                        key="paused-state"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="space-y-4 relative z-10 flex flex-col items-center justify-center p-8"
-                      >
-                        <div 
-                          onClick={() => {
-                            if (isEnrolled || activeLecture?.freePreview) {
-                              setIsPlaying(true);
-                            } else {
-                              alert("Curriculum item is premium locked. Enroll to play.");
-                            }
-                          }}
-                          className="w-16 h-16 rounded-full bg-white text-zinc-950 flex items-center justify-center shadow-xl hover:scale-110 transition duration-300 cursor-pointer border border-zinc-200"
-                        >
-                          <Play className="w-7 h-7 fill-zinc-950 translate-x-0.5" />
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-sm font-semibold tracking-wide text-zinc-100 uppercase font-mono">
-                            {(!isEnrolled && !activeLecture?.freePreview) ? "Subscribe to unlock this Lecture 🔒" : "Click to Play Class Stream"}
-                          </p>
-                          <p className="text-xs text-zinc-400 max-w-md">
-                            {(!isEnrolled && !activeLecture?.freePreview) 
-                              ? `Unlock full lifetime access to all ${course.lessonsCount || 24} curriculum sections today.`
-                              : `${activeLecture?.title || "Welcome lesson overview"} • ${activeLecture?.duration}`}
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
+                <div className="relative z-10 flex flex-col items-center justify-center gap-3 p-8 text-center">
+                  <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600">
+                    <Video className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold tracking-wide text-zinc-300">
+                    No video or audio has been uploaded for this lecture yet
+                  </p>
+                  <p className="text-xs text-zinc-500 max-w-sm">
+                    {activeLecture?.title || "This lecture"} doesn't have media attached. Check back once the instructor uploads it, or mark it complete manually below once you've reviewed the material.
+                  </p>
+                </div>
               )}
             </div>
 
-            {/* VIDEO PLAYER METRIC CONTROLS FOOTER */}
+            {/* MEDIA CONTROLS FOOTER (only meaningful once real media exists - native
+                <video>/<audio> elements above already provide their own transport
+                controls, so this footer is limited to playback-speed preference,
+                which the media elements read via playbackRate). */}
             <div className="p-3.5 bg-zinc-950/90 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-300">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setIsPlaying(!isPlaying)}
-                  disabled={!isEnrolled && !activeLecture?.freePreview}
-                  className="p-1 rounded text-zinc-400 hover:text-white disabled:opacity-30 cursor-pointer"
-                  title={isPlaying ? "Pause Stream" : "Connect Stream"}
-                >
-                  {isPlaying ? (
-                    <Pause className="w-4 h-4 fill-current text-white" />
-                  ) : (
-                    <Play className="w-4 h-4 fill-current text-indigo-400" />
-                  )}
-                </button>
-                <div className="flex items-center gap-2 text-zinc-400">
-                  <Volume2 className="w-3.5 h-3.5 text-zinc-500" />
-                  <span className="text-[10px] font-mono uppercase bg-zinc-900 border border-zinc-800 px-1 py-0.5 rounded text-zinc-400 font-bold select-none">
-                    Digital Out
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-zinc-400">
+                <Volume2 className="w-3.5 h-3.5 text-zinc-500" />
+                <span className="text-[10px] font-mono uppercase bg-zinc-900 border border-zinc-800 px-1 py-0.5 rounded text-zinc-400 font-bold select-none">
+                  {activeLecture?.videoUrl || activeLecture?.audioUrl ? "Media Ready" : "No Media"}
+                </span>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 <div className="flex items-center p-0.5 rounded border border-zinc-800 bg-zinc-900">
                   {[1, 1.25, 1.5, 2].map((sp) => (
@@ -731,8 +607,8 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                     className="space-y-4"
                   >
                     <div className="flex items-center justify-between text-xs text-app-text-muted font-mono pb-2">
-                      <span>Total lectures count: {course.lessonsCount || 24} Lectures</span>
-                      <span>Total hours duration: {course.duration || "12 hrs"} total hours</span>
+                      <span>Total lectures count: {course.lessonsCount || chapters.reduce((sum, c) => sum + c.lectures.length, 0)} Lectures</span>
+                      <span>Total hours duration: {course.duration || "Not specified"} total hours</span>
                     </div>
 
                     <div className="space-y-3.5">
@@ -1250,101 +1126,33 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                 
                 <div className="space-y-1.5 text-center sm:text-left">
                   <span className="text-[10px] font-mono font-bold tracking-widest text-indigo-400 uppercase bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded">
-                    Enrollment Secure Portal
+                    Enrollment
                   </span>
                   <div className="flex items-baseline justify-center sm:justify-start gap-2 pt-2">
                     <span className="text-3xl font-extrabold text-app-text font-display">${displayPrice.toFixed(2)}</span>
-                    {hasPromo ? (
+                    {hasPromo && (
                       <>
                         <span className="text-xs text-app-text-muted line-through font-mono">${originalPrice.toFixed(2)}</span>
-                        <span className="text-xs text-emerald-500 font-bold animate-pulse">50% OFF (Launch Promo)</span>
+                        <span className="text-xs text-emerald-500 font-bold">50% OFF (Launch Promo)</span>
                       </>
-                    ) : (
-                      originalPrice > 0 && (
-                        <>
-                          <span className="text-xs text-app-text-muted line-through font-mono">${(originalPrice * 2.1).toFixed(2)}</span>
-                          <span className="text-xs text-emerald-500 font-bold">52% OFF</span>
-                        </>
-                      )
                     )}
                   </div>
-                  {hasPromo ? (
-                    <p className="text-[10px] text-emerald-400 font-mono tracking-normal block pt-1 font-bold animate-pulse">
-                      🎉 Active Promo: 50% discount automatically applied (First 30 days from launch)!
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-amber-500 font-mono tracking-normal block pt-1 font-bold">
-                      ⚠️ 5 hours left at this certified rate!
+                  {hasPromo && (
+                    <p className="text-[10px] text-emerald-400 font-mono tracking-normal block pt-1 font-bold">
+                      Launch promo: 50% off automatically applied (first 30 days after this course was published).
                     </p>
                   )}
                 </div>
 
-                {/* SECURE STRIPE CHECKOUT FORM GATEWAY */}
-                <form onSubmit={handleCheckoutSubmit} className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-mono text-app-text-muted uppercase">Cardholder Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={cardName}
-                      onChange={(e) => setCardName(e.target.value)}
-                      placeholder="e.g. Dr. Angela Yu"
-                      className="w-full bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-mono text-app-text-muted uppercase">16-Digit Card Number</label>
-                    <div className="relative">
-                      <input 
-                        type="text" 
-                        required
-                        maxLength={19}
-                        value={creditCardNum}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/gi, "");
-                          // Format with spaces
-                          const chunks = val.match(/.{1,4}/g);
-                          setCreditCardNum(chunks ? chunks.join(" ") : val);
-                        }}
-                        placeholder="4242 4242 4242 4242"
-                        className="w-full bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 pl-9 text-xs focus:outline-none focus:border-indigo-500 font-mono"
-                      />
-                      <CreditCard className="w-4 h-4 text-app-text-muted absolute left-3 top-3.5" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-mono text-app-text-muted uppercase">Expiration (MM/YY)</label>
-                      <input 
-                        type="text" 
-                        required
-                        maxLength={5}
-                        value={cardExpiry}
-                        onChange={(e) => {
-                          let val = e.target.value.replace(/\D/gi, "");
-                          if (val.length >= 2) {
-                            val = val.substring(0, 2) + "/" + val.substring(2, 4);
-                          }
-                          setCardExpiry(val);
-                        }}
-                        placeholder="MM/YY"
-                        className="w-full bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs text-center focus:outline-none focus:border-indigo-500 font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-mono text-app-text-muted uppercase">Security CVC</label>
-                      <input 
-                        type="text" 
-                        required
-                        maxLength={3}
-                        value={cardCvc}
-                        onChange={(e) => setCardCvc(e.target.value.replace(/\D/gi, ""))}
-                        placeholder="123"
-                        className="w-full bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs text-center focus:outline-none focus:border-indigo-500 font-mono"
-                      />
-                    </div>
+                {/* Honest enrollment action: this app does not have a live
+                    payment processor wired in yet, so it does not collect
+                    card details or claim to charge anything. Enrollment is
+                    recorded so the curriculum can be previewed end-to-end;
+                    real checkout can be added once a processor (e.g. Stripe)
+                    is connected with real API keys. */}
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                    Payment processing isn't connected yet, so enrolling here won't charge a card. Enrolling unlocks the full curriculum preview on this device.
                   </div>
 
                   {payError && (
@@ -1354,45 +1162,42 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                   )}
 
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleCheckoutSubmit}
                     disabled={isPaying}
                     className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl tracking-wide uppercase transition duration-200 cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-lg disabled:opacity-40"
                   >
                     {isPaying ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Verifying payment channel...
+                        Enrolling...
                       </>
                     ) : (
                       <>
-                        Enroll Now for ${displayPrice.toFixed(2)}
+                        Enroll{displayPrice > 0 ? ` (${displayPrice.toFixed(2)} - not charged)` : ""}
                       </>
                     )}
                   </button>
-                </form>
+                </div>
 
                 <div className="border-t border-app-border/40 pt-4 space-y-2.5">
                   <div className="flex items-center gap-2 text-[10px] text-app-text-sec">
                     <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span>Certified study duration: {course.duration || "12 hours"}</span>
+                    <span>Study duration: {course.duration || "Not specified"}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-app-text-sec">
                     <BookOpen className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span>Lectures count: {course.lessonsCount || 24} downloadable files</span>
+                    <span>Lectures: {course.lessonsCount || chapters.reduce((sum, c) => sum + c.lectures.length, 0)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-app-text-sec">
                     <Infinity className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span>Full Lifetime access with zero expiry</span>
+                    <span>Full lifetime access with zero expiry</span>
                   </div>
                   <div className="flex items-center gap-2 text-[10px] text-app-text-sec">
                     <Award className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                    <span>Verified certificate of V79 graduation</span>
+                    <span>Certificate of completion on graduation</span>
                   </div>
                 </div>
-
-                <p className="text-[9px] text-center text-app-text-muted leading-tight font-mono pt-1">
-                  100% Secure 256-bit AES Credit Card gateway encryption.
-                </p>
               </motion.div>
             ) : (
               <motion.div
@@ -1416,11 +1221,11 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                 <div className="bg-app-bg p-3.5 rounded-xl border border-app-border text-left space-y-2">
                   <div className="flex justify-between text-[9px] font-mono text-app-text-muted">
                     <span>STUDENT ID</span>
-                    <span className="font-bold">v79-st-714a</span>
+                    <span className="font-bold">{studentId}</span>
                   </div>
                   <div className="flex justify-between text-[9px] font-mono text-app-text-muted">
-                    <span>CERTIFICATE PATH</span>
-                    <span className="font-bold text-emerald-400 uppercase">Aetherial Secure</span>
+                    <span>COURSE</span>
+                    <span className="font-bold text-emerald-400 uppercase truncate max-w-[180px]">{course.name}</span>
                   </div>
                 </div>
 

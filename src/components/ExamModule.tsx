@@ -39,100 +39,6 @@ interface StudentAttempt {
 }
 
 // Fallback presets matching CourseCertification.tsx for initial load of seeded courses
-const PRESET_EXAMS: Record<number, ExamQuestion[]> = {
-  1: [
-    {
-      question: "Which port is the ONLY externally accessible port in the Vision79 container hosting layer?",
-      options: ["Port 80", "Port 3000", "Port 5173", "Port 8080"],
-      correctAnswer: 1
-    },
-    {
-      question: "When initializing database or API client SDKs requiring secret environment variables, what is the safest pattern to prevent server startup crashes?",
-      options: [
-        "Initialize the client globally at top-level module load time",
-        "Export a global constant initialized with non-null assertion",
-        "Use lazy initialization (instantiate on-demand) with proper guards and clean error reporting",
-        "Store the raw API key inside public client-side components with the VITE_ prefix"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "For full-stack apps running under standard node launch commands, which command compiles TypeScript outputs into a single bundled CJS server format?",
-      options: [
-        "vite dev --port 3000",
-        "esbuild server.ts --bundle --platform=node --format=cjs --packages=external --outfile=dist/server.cjs",
-        "tsc --noEmit --watch",
-        "node dist/server.cjs"
-      ],
-      correctAnswer: 1
-    }
-  ],
-  2: [
-    {
-      question: "What is the primary benefit of React Server Components (RSCs)?",
-      options: [
-        "They enable rapid client-side mutations with standard useState hooks",
-        "They execute code inside secure web-worker threads in the client browser",
-        "They fetch data and render directly on the server, serving static HTML payloads to decrease client JavaScript size",
-        "They replace standard SQL databases entirely"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "Which protocol is utilized under the hood when executing Next.js 15 Server Actions?",
-      options: [
-        "A standard HTTP POST request directed to an encrypted server endpoint",
-        "A real-time TCP WebSocket channel",
-        "A client-side indexedDB transaction",
-        "An automated compile-time build step"
-      ],
-      correctAnswer: 0
-    },
-    {
-      question: "Why should sensitive environment keys NEVER be prefixed with 'VITE_' or 'NEXT_PUBLIC_'?",
-      options: [
-        "Because it makes the build fail with fatal syntax errors",
-        "Because it bundles the secret keys into client-side code, exposing them to the public browser inspector",
-        "Because it prevents Node from running database queries",
-        "Because it limits network throughput"
-      ],
-      correctAnswer: 1
-    }
-  ],
-  3: [
-    {
-      question: "How does Rust guarantee thread-safe memory handling without utilizing a garbage collector?",
-      options: [
-        "Through dynamic shared reference counting on virtual machines",
-        "Using ownership, strict borrow checker rules, and compile-time lifetimes",
-        "By serializing all operations into a single-threaded runtime lock",
-        "By restricting integer ranges dynamically"
-      ],
-      correctAnswer: 1
-    },
-    {
-      question: "Which async engine is standard for designing highly concurrent systems-level services in Rust?",
-      options: [
-        "The native OS thread scheduler",
-        "Green threading virtual layers",
-        "The Tokio async event loop",
-        "The standard browser event-loop"
-      ],
-      correctAnswer: 2
-    },
-    {
-      question: "What is the primary architectural advantage of using Zero-Copy deserialization?",
-      options: [
-        "It speeds up file downloads over low latency networks",
-        "It references raw byte slices directly from input buffers without allocating new memory strings",
-        "It deletes unused database tables automatically",
-        "It compresses CSS stylesheets"
-      ],
-      correctAnswer: 1
-    }
-  ]
-};
-
 export function ExamModule({ course, onSave, isSubmitting }: ExamModuleProps) {
   const [activeSubTab, setActiveSubTab] = useState<"editor" | "progress">("editor");
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
@@ -154,12 +60,11 @@ export function ExamModule({ course, onSave, isSubmitting }: ExamModuleProps) {
       }
     }
 
-    // Fallback template matching course id, or a starter template
-    const fallback = PRESET_EXAMS[course.id];
-    if (fallback) {
-      setQuestions(JSON.parse(JSON.stringify(fallback)));
-    } else {
-      setQuestions([
+    // No exam authored yet - show a single generic starter question so the
+    // admin has something to edit rather than an empty form. (Previously
+    // this substituted unrelated hardcoded trivia questions keyed by the
+    // old fake seeded course IDs - that fallback has been removed.)
+    setQuestions([
         {
           question: "Sample Question: What is the primary purpose of server-side state hydration?",
           options: [
@@ -171,7 +76,6 @@ export function ExamModule({ course, onSave, isSubmitting }: ExamModuleProps) {
           correctAnswer: 1
         }
       ]);
-    }
   }, [course.id, course.exam]);
 
   // Load student attempts

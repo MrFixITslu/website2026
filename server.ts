@@ -103,54 +103,126 @@ const cleanEnvValue = (val: any): string => {
   return clean.trim();
 };
 
-const ADMIN_PASSWORD = (() => {
-  const fromEnv = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  if (fromEnv) return fromEnv;
-  const generated = crypto.randomBytes(12).toString("base64url");
-  console.warn("=".repeat(70));
-  console.warn("[Authentication] No ADMIN_PASSWORD env var set.");
-  console.warn(`[Authentication] Generated one-time admin password: ${generated}`);
-  console.warn("[Authentication] Set ADMIN_PASSWORD in your environment to persist a fixed password across restarts.");
-  console.warn("=".repeat(70));
-  return generated;
-})();
+// ---------------------------------------------------------------------------
+// Persistent admin credential store
+// ---------------------------------------------------------------------------
+// The admin password is hashed (scrypt, random per-credential salt) and
+// persisted to disk so a forced password reset survives restarts, and so a
+// freshly generated one-time password can require the operator to set a
+// permanent replacement before any other admin action is allowed.
+const ADMIN_AUTH_PATH = path.join(process.cwd(), "data", ".admin_auth.json");
 
-// In-memory session store: token -> expiry timestamp (ms).
+interface AdminAuthRecord {
+  salt: string;
+  hash: string;
+  mustChangePassword: boolean;
+  updatedAt: string;
+}
+
+function hashAdminPassword(password: string, salt?: string): { salt: string; hash: string } {
+  const useSalt = salt || crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, useSalt, 64).toString("hex");
+  return { salt: useSalt, hash };
+}
+
+function verifyAdminPassword(password: string, record: AdminAuthRecord): boolean {
+  const { hash } = hashAdminPassword(password, record.salt);
+  const a = Buffer.from(hash, "hex");
+  const b = Buffer.from(record.hash, "hex");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function saveAdminAuth(record: AdminAuthRecord) {
+  fs.mkdirSync(path.dirname(ADMIN_AUTH_PATH), { recursive: true });
+  fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify(record, null, 2), { mode: 0o600 });
+}
+
+function loadOrCreateAdminAuth(): AdminAuthRecord {
+  try {
+    if (fs.existsSync(ADMIN_AUTH_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
+      if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
+        return parsed as AdminAuthRecord;
+      }
+    }
+  } catch (e) {
+    console.error("[Authentication] Failed to read persisted admin credential, regenerating:", e);
+  }
+
+  // No valid persisted credential: this is either first boot or an explicit
+  // reset (the credential file was removed / never existed). Issue a fresh
+  // one-time password and require it to be changed on next successful login.
+  const initialPassword = cleanEnvValue(process.env.ADMIN_PASSWORD) || crypto.randomBytes(12).toString("base64url");
+  const { salt, hash } = hashAdminPassword(initialPassword);
+  const record: AdminAuthRecord = { salt, hash, mustChangePassword: true, updatedAt: new Date().toISOString() };
+  saveAdminAuth(record);
+  console.warn("=".repeat(70));
+  console.warn("[Authentication] Admin credential (re)initialized.");
+  console.warn(`[Authentication] One-time admin password: ${initialPassword}`);
+  console.warn("[Authentication] This password MUST be changed immediately after login - the next");
+  console.warn("[Authentication] successful login will be required to set a new permanent password");
+  console.warn("[Authentication] before any other admin action is permitted.");
+  console.warn("=".repeat(70));
+  return record;
+}
+
+let adminAuth: AdminAuthRecord = loadOrCreateAdminAuth();
+
+// In-memory session store: token -> { expiry timestamp (ms), mustChangePassword }.
 // Tokens are cryptographically random and single-instance scoped, which is
 // appropriate for this app's single-container deployment model.
 const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-const adminSessions = new Map<string, number>();
+interface AdminSession {
+  expiry: number;
+  mustChangePassword: boolean;
+}
+const adminSessions = new Map<string, AdminSession>();
 
-function issueAdminSession(): string {
+function issueAdminSession(mustChangePassword: boolean): string {
   const token = crypto.randomBytes(32).toString("hex");
-  adminSessions.set(token, Date.now() + ADMIN_SESSION_TTL_MS);
+  adminSessions.set(token, { expiry: Date.now() + ADMIN_SESSION_TTL_MS, mustChangePassword });
   return token;
 }
 
-function isValidAdminSession(token: string | undefined | null): boolean {
-  if (!token) return false;
-  const expiry = adminSessions.get(token);
-  if (!expiry) return false;
-  if (Date.now() > expiry) {
+function getAdminSession(token: string | undefined | null): AdminSession | null {
+  if (!token) return null;
+  const session = adminSessions.get(token);
+  if (!session) return null;
+  if (Date.now() > session.expiry) {
     adminSessions.delete(token);
-    return false;
+    return null;
   }
-  return true;
+  return session;
+}
+
+function isValidAdminSession(token: string | undefined | null): boolean {
+  return getAdminSession(token) !== null;
+}
+
+function invalidateAllAdminSessions() {
+  adminSessions.clear();
 }
 
 // Periodically clear expired sessions so the map doesn't grow unbounded.
 setInterval(() => {
   const now = Date.now();
-  for (const [token, expiry] of adminSessions.entries()) {
-    if (now > expiry) adminSessions.delete(token);
+  for (const [token, session] of adminSessions.entries()) {
+    if (now > session.expiry) adminSessions.delete(token);
   }
 }, 60 * 60 * 1000).unref();
 
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!isValidAdminSession(token)) {
+  const session = getAdminSession(token);
+  if (!session) {
     return res.status(401).json({ error: "Unauthorized access: a valid administrator session is required." });
+  }
+  if (session.mustChangePassword) {
+    return res.status(403).json({
+      error: "You must set a new password before continuing.",
+      code: "PASSWORD_CHANGE_REQUIRED"
+    });
   }
   next();
 }
@@ -255,118 +327,11 @@ function decryptPII(payload: string): string {
   }
 }
 
-const DEFAULT_CURRICULUM_JSON = JSON.stringify([
-  {
-    title: "Block 1: Production Core Architecture Swaps & Setup",
-    lectures: [
-      { id: "1-1", title: "1. Core Framework Setup and Configuration Files", duration: "12:15", videoSimType: "intro", freePreview: true },
-      { id: "1-2", title: "2. Structuring TypeScript Enums and Types Safely", duration: "18:40", videoSimType: "setup" },
-      { id: "1-3", title: "3. Hot-Swapping Sandbox Server Port Inbound Channels", duration: "22:05", videoSimType: "setup" }
-    ]
-  },
-  {
-    title: "Block 2: High Concurrency State Engines & DB Mappings",
-    lectures: [
-      { id: "2-1", title: "4. SQLite schemas modeling & Dynamic Alter Migrations", duration: "32:10", videoSimType: "deepdive" },
-      { id: "2-2", title: "5. Lazy-initializing SDK clients and handling failures", duration: "25:30", videoSimType: "deepdive" },
-      { id: "2-3", title: "6. Handling CORS & OAuth flows inside Sandboxed iFrames", duration: "29:15", videoSimType: "deepdive" }
-    ]
-  },
-  {
-    title: "Block 3: Production Builds & Ingress Traffic Optimization",
-    lectures: [
-      { id: "3-1", title: "7. Compiling TypeScript output bundles via fast esbuild", duration: "44:00", videoSimType: "advanced" },
-      { id: "3-2", title: "8. Deploying standalone Cloud Container ports safely", duration: "38:50", videoSimType: "advanced" }
-    ]
-  }
-]);
-
-const SEED_APPS: any[] = [
-  {
-    name: "Full-Stack TypeScript Masterclass",
-    subtitle: "Master React 19, Node.js, and Modern Database Architecture from Scratch",
-    description: "Dive deep into modern software engineering with this complete guide. Learn design architectural modeling, state managers, and deployment under 3G latency conditions.",
-    category: "courses",
-    pricingType: "premium",
-    logoUrl: "lucide:GraduationCap",
-    accessUrl: "/course/1",
-    launchCount: 42,
-    price: 94.99,
-    instructor: "Vision79 Lead Architect",
-    rating: 4.9,
-    duration: "24.5 total hours",
-    lessonsCount: 142,
-    curriculum: DEFAULT_CURRICULUM_JSON
-  },
-  {
-    name: "Next.js 15 Intensive Bootcamp",
-    subtitle: "Server Actions, RSCs, Middleware and Security Best Practices",
-    description: "The complete guide to production-grade Next.js development. Understand hydration pipelines, nested layouts, and caching schemas.",
-    category: "courses",
-    pricingType: "premium",
-    logoUrl: "lucide:BookOpen",
-    accessUrl: "/course/2",
-    launchCount: 28,
-    price: 84.99,
-    instructor: "Vision79 Lead Instructor",
-    rating: 4.8,
-    duration: "18 total hours",
-    lessonsCount: 96,
-    curriculum: DEFAULT_CURRICULUM_JSON
-  },
-  {
-    name: "Rust Systems Design Blueprint",
-    subtitle: "Memory management, async runtimes, and high-performance services",
-    description: "An ultimate guide to real-time low-level backend design. Build high concurrency message queues and handle zero-copy deserialization.",
-    category: "courses",
-    pricingType: "premium",
-    logoUrl: "lucide:ShieldCheck",
-    accessUrl: "/course/3",
-    launchCount: 15,
-    price: 119.99,
-    instructor: "Vision79 Systems Trainer",
-    rating: 4.7,
-    duration: "32 total hours",
-    lessonsCount: 180,
-    curriculum: DEFAULT_CURRICULUM_JSON
-  },
-  {
-    name: "React for Beginners & Designers",
-    subtitle: "No-jargon interactive course to build sleek frontends",
-    description: "Learn Tailwind CSS grids, JSX basics, reusable hooks, and standard interactive controls step-by-step with real visual projects.",
-    category: "courses",
-    pricingType: "free",
-    logoUrl: "lucide:Flame",
-    accessUrl: "/course/4",
-    launchCount: 96,
-    price: 0,
-    instructor: "Sarah Drasner (V79 Guest)",
-    rating: 4.6,
-    duration: "4.5 total hours",
-    lessonsCount: 25,
-    curriculum: DEFAULT_CURRICULUM_JSON
-  },
-  {
-    name: "DevOps Orchestration Engine",
-    subtitle: "Automate cloud builds, ingress proxies, and health monitoring pipelines",
-    description: "An ultimate workspace setup enabling smooth automation across local and sandbox servers with strict security levels.",
-    category: "web",
-    pricingType: "free_trial",
-    logoUrl: "lucide:Layers",
-    accessUrl: "https://github.com",
-    launchCount: 120
-  },
-  {
-    name: "Aetherial Combat Tactics",
-    subtitle: "Sleek indie high-refinement tactical shooter interface",
-    description: "Explore microcombat arenas, layout alignments, and custom sprite canvases loaded with instant controls.",
-    category: "games",
-    pricingType: "free",
-    logoUrl: "lucide:Gamepad2",
-    accessUrl: "https://itch.io",
-    launchCount: 85
-  }
-];
+// No fabricated demo courses/apps are seeded. A production deployment
+// should start with a genuinely empty catalog and have real apps/courses
+// added through the admin panel - fake instructor names, fake ratings,
+// and fake launch counts were previously seeded here and have been removed.
+const SEED_APPS: any[] = [];
 
 let sqliteModule: any = null;
 
@@ -387,12 +352,6 @@ const SEED_ADS: any[] = [
     subtitle: "Secure, enterprise-grade IT operations for Caribbean SMEs. Explore AST SLAs, daily cloud backup verification, on-site diagnostics, and interactive price builders.",
     imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&auto=format&fit=crop",
     linkUrl: "/services-pricing"
-  },
-  {
-    title: "Summer SaaS & Masterclass Courses Super Sale!",
-    subtitle: "Get up to 60% off on all masterclass courses this week. Study high concurrency engines, hot-swapping sandbox protocols, and compile outputs.",
-    imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop",
-    linkUrl: "https://udemy.com"
   }
 ];
 
@@ -470,41 +429,15 @@ if (!fs.existsSync(JSON_LEADS_FILE) && fs.existsSync(ROOT_LEADS_FILE)) {
   }
 }
 
-const SEED_FEEDBACK: any[] = [
-  {
-    id: 1,
-    appId: 1,
-    appName: "Full-Stack TypeScript Masterclass",
-    rating: 5,
-    comment: "This course is phenomenal! The section on Next.js Server Actions was extremely helpful and hands-on. Can we get more React 19 content added?",
-    userName: "Alex Johnson",
-    onboarded: 1,
-    onboardedComment: "Thanks Alex! We have added 3 new lessons specifically covering React 19 UseActionState and UseFormStatus hooks.",
-    feedbackType: "idea",
-    createdAt: new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString(),
-    onboardedAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString()
-  },
-  {
-    id: 2,
-    appId: 2,
-    appName: "Next.js 15 Intensive Bootcamp",
-    rating: 4,
-    comment: "Great material! One request: could you add a cheat sheet for the caching strategies in Next.js 15?",
-    userName: "Maria S.",
-    onboarded: 0,
-    onboardedComment: "",
-    feedbackType: "idea",
-    createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
-    onboardedAt: ""
-  }
-];
+// No fabricated testimonials are seeded. Previously this contained fake
+// reviews ("Alex Johnson", "Maria S.") with fake dates and fake admin
+// replies attached to courses that were themselves fake demo data - real
+// feedback should only ever come from real visitors via the feedback form.
+const SEED_FEEDBACK: any[] = [];
 
-const SEED_INSTRUCTORS = [
-  { id: 1, name: "Vision79 Lead Architect" },
-  { id: 2, name: "Vision79 Lead Instructor" },
-  { id: 3, name: "Vision79 Systems Trainer" },
-  { id: 4, name: "Sarah Drasner (V79 Guest)" }
-];
+// No fabricated instructor names are seeded - real instructors should be
+// added through the admin panel.
+const SEED_INSTRUCTORS: any[] = [];
 
 class JsonDatabase {
   readInstructors(): any[] {
@@ -1874,16 +1807,16 @@ async function startServer() {
       const { password } = req.body || {};
       const submitted = cleanEnvValue(password);
 
-      const submittedBuf = Buffer.from(submitted);
-      const expectedBuf = Buffer.from(ADMIN_PASSWORD);
-      const matches =
-        submittedBuf.length === expectedBuf.length &&
-        crypto.timingSafeEqual(submittedBuf, expectedBuf);
+      const matches = submitted.length > 0 && verifyAdminPassword(submitted, adminAuth);
 
       if (matches) {
-        const token = issueAdminSession();
-        console.log("[Authentication] Success. New session token issued.");
-        return res.json({ success: true, token });
+        const token = issueAdminSession(adminAuth.mustChangePassword);
+        console.log(
+          adminAuth.mustChangePassword
+            ? "[Authentication] Success with a password pending mandatory change. Limited session issued."
+            : "[Authentication] Success. New session token issued."
+        );
+        return res.json({ success: true, token, mustChangePassword: adminAuth.mustChangePassword });
       }
 
       console.warn(`[Authentication] Rejecting unauthorized login attempt from ${ip}.`);
@@ -1900,6 +1833,51 @@ async function startServer() {
     const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
     if (token) adminSessions.delete(token);
     res.json({ success: true });
+  });
+
+  // POST administrator password change. Reachable with a "must change" limited
+  // session (that's the whole point - the operator can't do anything else
+  // until they've set a new password) as well as with a normal full session,
+  // so admins can rotate their password voluntarily at any time.
+  app.post("/api/admin/change-password", (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const session = getAdminSession(token);
+      if (!session) {
+        return res.status(401).json({ error: "Unauthorized access: a valid administrator session is required." });
+      }
+
+      const { currentPassword, newPassword } = req.body || {};
+      const current = cleanEnvValue(currentPassword);
+      const next = cleanEnvValue(newPassword);
+
+      if (!verifyAdminPassword(current, adminAuth)) {
+        return res.status(401).json({ error: "Current password is incorrect." });
+      }
+      if (next.length < 12) {
+        return res.status(400).json({ error: "New password must be at least 12 characters long." });
+      }
+      if (verifyAdminPassword(next, adminAuth)) {
+        return res.status(400).json({ error: "New password must be different from the current password." });
+      }
+
+      const { salt, hash } = hashAdminPassword(next);
+      adminAuth = { salt, hash, mustChangePassword: false, updatedAt: new Date().toISOString() };
+      saveAdminAuth(adminAuth);
+
+      // Rotate every session, including this one, and issue a fresh full
+      // session token so a stolen/expired one-time-password session token
+      // can't linger around after the password it was tied to is retired.
+      invalidateAllAdminSessions();
+      const newToken = issueAdminSession(false);
+
+      console.log("[Authentication] Admin password changed successfully. All prior sessions revoked.");
+      return res.json({ success: true, token: newToken });
+    } catch (err: any) {
+      console.error("[Authentication] Critical exception during password change:", err);
+      return res.status(500).json({ error: "Server authentication engine error." });
+    }
   });
 
   // GET administrator launch trends (last 7 days of total launch counts)

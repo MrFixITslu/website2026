@@ -342,6 +342,57 @@ export default function AdminApp() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
+  // Forced password change state - set when the server reports the current
+  // admin credential is a one-time password (fresh install or admin reset)
+  // that must be replaced before any other admin action is available.
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [changePwCurrent, setChangePwCurrent] = useState("");
+  const [changePwNew, setChangePwNew] = useState("");
+  const [changePwConfirm, setChangePwConfirm] = useState("");
+  const [changePwError, setChangePwError] = useState<string | null>(null);
+  const [changePwSubmitting, setChangePwSubmitting] = useState(false);
+
+  const handleChangePassword = async (e: any) => {
+    e.preventDefault();
+    setChangePwError(null);
+
+    if (changePwNew.length < 12) {
+      setChangePwError("New password must be at least 12 characters long.");
+      return;
+    }
+    if (changePwNew !== changePwConfirm) {
+      setChangePwError("New password and confirmation do not match.");
+      return;
+    }
+
+    setChangePwSubmitting(true);
+    try {
+      const token = adminToken || safeSessionStorage.getItem("admin-token");
+      const res = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ currentPassword: changePwCurrent, newPassword: changePwNew })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to change password.");
+      }
+      setAdminToken(data.token);
+      safeSessionStorage.setItem("admin-token", data.token);
+      setMustChangePassword(false);
+      setChangePwCurrent("");
+      setChangePwNew("");
+      setChangePwConfirm("");
+    } catch (err: any) {
+      setChangePwError(err.message || "Failed to change password.");
+    } finally {
+      setChangePwSubmitting(false);
+    }
+  };
+
   // Admin Form variables
   const [formName, setFormName] = useState("");
   const [formSubtitle, setFormSubtitle] = useState("");
@@ -908,6 +959,11 @@ export default function AdminApp() {
     safeSessionStorage.removeItem("admin-token");
     setLoginPassword("");
     setLoginError(null);
+    setMustChangePassword(false);
+    setChangePwCurrent("");
+    setChangePwNew("");
+    setChangePwConfirm("");
+    setChangePwError(null);
   };
 
   const handleAdminLogin = async (e: any) => {
@@ -930,6 +986,7 @@ export default function AdminApp() {
       const data = await res.json();
       setAdminToken(data.token);
       safeSessionStorage.setItem("admin-token", data.token);
+      setMustChangePassword(!!data.mustChangePassword);
       setLoginPassword("");
     } catch (err: any) {
       console.error(err);
@@ -973,6 +1030,13 @@ export default function AdminApp() {
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         }
       });
+      if (res.status === 403) {
+        const errData = await res.json().catch(() => ({} as any));
+        if (errData.code === "PASSWORD_CHANGE_REQUIRED") {
+          setMustChangePassword(true);
+          return;
+        }
+      }
       if (!res.ok) {
         throw new Error("Failed to fetch launch count growth trend data");
       }
@@ -1165,7 +1229,88 @@ export default function AdminApp() {
         <main className="flex-1 flex flex-col overflow-y-auto min-w-0">
           <div className="p-6 sm:p-10 flex-1">
             <AnimatePresence mode="wait">
-              {!adminToken ? (
+              {adminToken && mustChangePassword ? (
+                // ==================== FORCED PASSWORD RESET GATE ====================
+                <motion.div
+                  key="admin-force-pw"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="max-w-md mx-auto my-8 sm:my-16"
+                >
+                  <div className="glass p-8 rounded-2xl border border-amber-500/30 bg-app-aside-bg/40 space-y-6 shadow-xl">
+                    <div className="text-center space-y-2">
+                      <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
+                        <Lock className="w-5 h-5 animate-pulse" />
+                      </div>
+                      <h2 className="text-xl font-bold tracking-tight text-app-text font-display">Set a New Password</h2>
+                      <p className="text-xs text-app-text-sec">
+                        You logged in with a temporary one-time password. Set a new permanent password before continuing - no other admin action is available until this is done.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleChangePassword} className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">One-Time Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={changePwCurrent}
+                          onChange={(e) => setChangePwCurrent(e.target.value)}
+                          placeholder="The password you just logged in with"
+                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">New Password (min. 12 characters)</label>
+                        <input
+                          type="password"
+                          required
+                          value={changePwNew}
+                          onChange={(e) => setChangePwNew(e.target.value)}
+                          placeholder="••••••••••••••"
+                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">Confirm New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={changePwConfirm}
+                          onChange={(e) => setChangePwConfirm(e.target.value)}
+                          placeholder="••••••••••••••"
+                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80"
+                        />
+                      </div>
+
+                      {changePwError && (
+                        <div className="p-3 rounded-lg text-xs font-mono border bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">
+                          {changePwError}
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={changePwSubmitting}
+                        className="w-full py-2.5 text-xs rounded-lg bg-app-text text-app-bg font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                      >
+                        {changePwSubmitting ? "Saving..." : "Set New Password"}
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full py-2 text-[11px] text-app-text-muted hover:text-app-text-sec transition cursor-pointer"
+                      >
+                        Cancel and log out
+                      </button>
+                    </form>
+                  </div>
+                </motion.div>
+              ) : !adminToken ? (
                 // ==================== ADMIN SECURITY GATEWAY ====================
                 <motion.div
                   key="admin-gate"

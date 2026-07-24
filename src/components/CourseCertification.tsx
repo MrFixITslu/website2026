@@ -20,7 +20,6 @@ interface Lecture {
   id: string;
   title: string;
   duration: string;
-  videoSimType: "intro" | "setup" | "deepdive" | "advanced";
   freePreview?: boolean;
 }
 
