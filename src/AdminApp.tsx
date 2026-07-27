@@ -30,6 +30,7 @@ import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
 import { AppLogo, PRESET_ICONS } from "./components/AppLogo";
 import { ExamModule } from "./components/ExamModule";
+import CourseBuilderPanel from "./components/CourseBuilder/CourseBuilderPanel";
 import {
   ResponsiveContainer,
   LineChart,
@@ -470,6 +471,10 @@ export default function AdminApp() {
 
   // Curriculum Management states
   const [selectedCurriculumCourse, setSelectedCurriculumCourse] = useState<SaaSApp | null>(null);
+  // Replaces the old curriculumChapters/exam modal below - opens the full
+  // V79 Academy Course Builder (ported from the standalone app) as an
+  // in-admin, full-screen workspace.
+  const [showCourseBuilder, setShowCourseBuilder] = useState(false);
   const [curriculumChapters, setCurriculumChapters] = useState<any[]>([]);
   const [modalTab, setModalTab] = useState<'curriculum' | 'exam'>('curriculum');
 
@@ -2222,12 +2227,12 @@ export default function AdminApp() {
                                   <div className="flex items-center justify-end space-x-1.5">
                                     {app.category === "courses" && (
                                       <button
-                                        onClick={() => handleManageCurriculum(app)}
-                                        title="Manage Course Materials"
+                                        onClick={() => setShowCourseBuilder(true)}
+                                        title="Open Course Builder"
                                         className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 border border-indigo-500/10 hover:border-indigo-500/30 rounded transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
                                       >
                                         <BookOpen className="w-3.5 h-3.5" />
-                                        <span className="text-[9px] font-mono font-bold tracking-wider uppercase hidden md:inline">Materials 📚</span>
+                                        <span className="text-[9px] font-mono font-bold tracking-wider uppercase hidden md:inline">Course Builder 📚</span>
                                       </button>
                                     )}
                                     <button
@@ -2259,46 +2264,31 @@ export default function AdminApp() {
 
                   </div>
 
-                  {/* COMPREHENSIVE CURRICULUM & MATERIALS MANAGER */}
-                  <section id="curriculum-manager-section" className="glass rounded-2xl p-6 bg-indigo-500/5 border border-indigo-500/10 space-y-4">
+                  {/* V79 ACADEMY COURSE BUILDER ENTRY POINT */}
+                  <section id="course-builder-section" className="glass rounded-2xl p-6 bg-indigo-500/5 border border-indigo-500/10 space-y-4">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <BookOpen className="w-5 h-5 text-indigo-400" />
-                          <h3 className="text-base font-bold font-display text-app-text tracking-tight">Vision79 Comprehensive Curriculum & Materials Manager</h3>
+                          <h3 className="text-base font-bold font-display text-app-text tracking-tight">V79 Academy Course Builder</h3>
                         </div>
-                        <p className="text-xs text-app-text-sec">Create, edit, and organize multi-chapter structures, video simulations, lesson modules, and certification exams for your custom Vision79 courses.</p>
+                        <p className="text-xs text-app-text-sec">Author full multi-module courses - lessons, quizzes, media assets, an AI course architect, and one-click publish to the live marketplace - right from this admin page.</p>
                       </div>
 
-                      {/* Course Selector Dropdown - opens the Curriculum & Materials editor modal */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs font-mono text-app-text-muted select-none">Open Editor For:</span>
-                        <select
-                          value=""
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val !== "") {
-                              const courseApp = apps.find(a => a.id === Number(val));
-                              if (courseApp) {
-                                handleManageCurriculum(courseApp);
-                              }
-                            }
-                          }}
-                          className="bg-app-input border border-app-input-border text-app-text text-xs rounded-lg p-2 focus:outline-none focus:border-indigo-500/50 min-w-[200px]"
-                        >
-                          <option value="">-- Choose Course --</option>
-                          {apps.filter(app => app.category === "courses").map(course => (
-                            <option key={course.id} value={course.id}>{course.name}</option>
-                          ))}
-                        </select>
-                      </div>
+                      <button
+                        onClick={() => setShowCourseBuilder(true)}
+                        className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition cursor-pointer"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Open Course Builder
+                      </button>
                     </div>
 
                     <div className="text-center py-8 px-4 rounded-xl border border-dashed border-app-border/60 bg-app-aside-bg/10 flex flex-col items-center justify-center space-y-2">
                       <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
                         <BookOpen className="w-5 h-5" />
                       </div>
-                      <p className="text-xs text-app-text-muted max-w-md mx-auto">Select a course above, or click "Materials 📚" next to any course in the registrar table below, to open its curriculum and exam editor.</p>
+                      <p className="text-xs text-app-text-muted max-w-md mx-auto">Opens as a full-screen workspace. Create a course, build its modules/lessons/quizzes, then hit "Publish to Website" to make it live here in the marketplace - no separate login, no separate deployment.</p>
                     </div>
                   </section>
 
@@ -2799,165 +2789,15 @@ export default function AdminApp() {
                 </motion.div>
               )}
 
-              {selectedCurriculumCourse && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                >
-                  <motion.div
-                    initial={{ scale: 0.95, y: 15 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.95, y: 15 }}
-                    className="bg-app-bg border border-app-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden text-app-text"
-                  >
-                    {/* Header */}
-                    <div className="p-5 border-b border-app-border flex items-center justify-between bg-app-aside-bg/40">
-                      <div className="flex items-center gap-2.5">
-                        <BookOpen className="w-5 h-5 text-indigo-400" />
-                        <div>
-                          <h3 className="font-bold font-display text-base tracking-tight">Curriculum & Course Materials</h3>
-                          <p className="text-xs text-app-text-muted">{selectedCurriculumCourse.name}</p>
-                        </div>
-                      </div>
-
-                      {/* Tab Selectors */}
-                      <div className="flex p-0.5 bg-zinc-800 rounded-lg border border-zinc-700 text-xs font-mono">
-                        <button
-                          onClick={() => setModalTab("curriculum")}
-                          className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                            modalTab === "curriculum" 
-                              ? "bg-zinc-900 text-white shadow-sm" 
-                              : "text-zinc-400 hover:text-zinc-250"
-                          }`}
-                        >
-                          Curriculum Sections
-                        </button>
-                        <button
-                          onClick={() => setModalTab("exam")}
-                          className={`px-3 py-1 rounded-md transition-all font-medium cursor-pointer ${
-                            modalTab === "exam" 
-                              ? "bg-zinc-900 text-white shadow-sm" 
-                              : "text-zinc-400 hover:text-zinc-250"
-                          }`}
-                        >
-                          Certified Exam
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() => setSelectedCurriculumCourse(null)}
-                        className="p-1.5 hover:bg-app-btn-sec/50 border border-app-border/40 rounded-lg text-app-text-muted hover:text-app-text transition cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Content Scroll */}
-                    <div className="flex-1 p-6 overflow-y-auto space-y-6 bg-app-bg/50">
-                      {modalTab === "exam" ? (
-                        <ExamModule
-                          course={selectedCurriculumCourse}
-                          onSave={handleSaveExamJson}
-                          isSubmitting={submitting}
-                        />
-                      ) : curriculumChapters.length === 0 ? (
-                        <div className="text-center py-10 space-y-3">
-                          <p className="text-sm text-app-text-muted font-mono">This course does not have any curriculum sections yet.</p>
-                          <button
-                            onClick={handleAddChapter}
-                            className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold font-mono transition cursor-pointer"
-                          >
-                            ➕ Add First Chapter
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          {curriculumChapters.map((chapter, chapIdx) => (
-                            <div key={chapIdx} className="border border-app-border/70 rounded-xl bg-app-aside-bg/20 p-4 space-y-4">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-app-border/40">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <span className="text-xs font-mono font-bold text-indigo-400 shrink-0">Chapter {chapIdx + 1}</span>
-                                  <input
-                                    type="text"
-                                    value={chapter.title}
-                                    onChange={(e) => handleUpdateChapterTitle(chapIdx, e.target.value)}
-                                    placeholder="Chapter Title"
-                                    className="flex-1 bg-app-input border border-app-input-border text-app-text font-bold text-xs p-2 rounded-lg focus:outline-none focus:border-indigo-500/50"
-                                  />
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteChapter(chapIdx)}
-                                  className="text-[10px] font-mono text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 border border-rose-500/10 px-2.5 py-1.5 rounded-lg transition cursor-pointer"
-                                >
-                                  Delete Chapter
-                                </button>
-                              </div>
-
-                              {/* Lectures inside chapter */}
-                              <div className="space-y-3 pl-2 sm:pl-4">
-                                {chapter.lectures && chapter.lectures.map((lecture: any, lecIdx: number) => (
-                                  <LectureItemRow
-                                    key={lecture.id || lecIdx}
-                                    lecture={lecture}
-                                    chapIdx={chapIdx}
-                                    lecIdx={lecIdx}
-                                    onUpdate={handleUpdateLecture}
-                                    onDelete={handleDeleteLecture}
-                                    adminToken={adminToken}
-                                  />
-                                ))}
-
-                                <button
-                                  onClick={() => handleAddLecture(chapIdx)}
-                                  className="w-full py-2 border border-dashed border-app-border hover:border-indigo-500/40 hover:bg-indigo-500/5 text-indigo-400 rounded-xl text-xs font-mono transition flex items-center justify-center gap-1.5 cursor-pointer"
-                                >
-                                  ➕ Add Lecture / Lesson Material
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-
-                          <button
-                            onClick={handleAddChapter}
-                            className="w-full py-3 bg-app-btn-sec/50 hover:bg-app-btn-sec border border-app-border text-app-text font-bold rounded-xl text-xs font-mono transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            ➕ Add New Chapter / Section
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer */}
-                    {modalTab === "curriculum" && (
-                      <div className="p-4 border-t border-app-border flex items-center justify-between bg-app-aside-bg/40">
-                        <p className="text-xs text-app-text-muted font-mono">
-                          Total curriculum lessons: {curriculumChapters.reduce((acc, chap) => acc + (chap.lectures?.length || 0), 0)}
-                        </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setSelectedCurriculumCourse(null)}
-                            className="px-4 py-2 border border-app-border hover:bg-app-btn-sec rounded-xl text-xs font-semibold text-app-text transition cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleSaveCurriculum}
-                            disabled={submitting}
-                            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-indigo-600/20 cursor-pointer"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            {submitting ? "Saving material..." : "Save Materials Curriculum ✨"}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
+
+          {/* V79 ACADEMY COURSE BUILDER - full-screen in-admin workspace */}
+          {showCourseBuilder && (
+            <div className="fixed inset-0 z-50">
+              <CourseBuilderPanel onExit={() => setShowCourseBuilder(false)} />
+            </div>
+          )}
 
           {/* SYSTEM FOOTER OF DESIGN SPEC */}
           <footer className="h-10 border-t border-app-border bg-app-header-bg flex items-center justify-between px-8 text-[10px] text-app-text-sec font-mono uppercase tracking-[0.2em] shrink-0 mt-auto">

@@ -2070,6 +2070,414 @@ async function startServer() {
     }
   });
 
+  // ---------------------------------------------------------------------
+  // Course Builder (merged from the standalone V79-Course-Builder app)
+  // ---------------------------------------------------------------------
+  // Full course authoring - courses/modules/lessons/quizzes/assets - now
+  // lives directly in the admin page instead of a separate deployment.
+  // Data is kept in its own JSON store (same simple format the standalone
+  // app used) so none of the existing saas_apps/SQLite logic above is
+  // touched. Publishing a finished course writes straight into that
+  // existing saas_apps table via db.addApp/db.updateApp - no network hop.
+  const CB_DATA_DIR = path.join(process.cwd(), "data");
+  const CB_DATA_FILE = path.join(CB_DATA_DIR, "course_builder_store.json");
+  if (!fs.existsSync(CB_DATA_DIR)) fs.mkdirSync(CB_DATA_DIR, { recursive: true });
+
+  function cbLoad(): any {
+    try {
+      if (fs.existsSync(CB_DATA_FILE)) {
+        return JSON.parse(fs.readFileSync(CB_DATA_FILE, "utf-8"));
+      }
+    } catch (e) {
+      console.error("[CourseBuilder] Error loading data:", e);
+    }
+    const initial = { courses: [], modules: [], lessons: [], quizzes: [], assets: [] };
+    fs.writeFileSync(CB_DATA_FILE, JSON.stringify(initial, null, 2), "utf-8");
+    return initial;
+  }
+
+  function cbSave(data: any) {
+    try {
+      fs.writeFileSync(CB_DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
+      console.error("[CourseBuilder] Error saving data:", e);
+    }
+  }
+
+  let cbDb = cbLoad();
+
+  // Courses
+  app.get("/api/courses", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    res.json(cbDb.courses);
+  });
+
+  app.post("/api/courses", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const newCourse = {
+      id: `course-${Date.now()}`,
+      title: req.body.title || "Untitled Course",
+      shortDescription: req.body.shortDescription || "",
+      fullDescription: req.body.fullDescription || "",
+      category: req.body.category || "General",
+      difficultyLevel: req.body.difficultyLevel || "Beginner",
+      instructor: req.body.instructor || "V79 Academy Instructor",
+      courseVersion: req.body.courseVersion || "1.0.0",
+      thumbnail: req.body.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=800&q=80",
+      estimatedDuration: req.body.estimatedDuration || "2.0 hours",
+      prerequisites: req.body.prerequisites || [],
+      learningObjectives: req.body.learning_objectives || req.body.learningObjectives || [],
+      status: req.body.status || "Draft",
+      pricingType: req.body.pricingType || "free",
+      price: typeof req.body.price === "number" ? req.body.price : 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    cbDb.courses.push(newCourse);
+    cbSave(cbDb);
+    res.status(201).json(newCourse);
+  });
+
+  app.get("/api/courses/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const course = cbDb.courses.find((c: any) => c.id === req.params.id);
+    if (!course) return res.status(404).json({ error: "Course not found" });
+    res.json(course);
+  });
+
+  app.put("/api/courses/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const index = cbDb.courses.findIndex((c: any) => c.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: "Course not found" });
+    cbDb.courses[index] = { ...cbDb.courses[index], ...req.body, updatedAt: new Date().toISOString() };
+    cbSave(cbDb);
+    res.json(cbDb.courses[index]);
+  });
+
+  app.delete("/api/courses/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const courseId = req.params.id;
+    cbDb.courses = cbDb.courses.filter((c: any) => c.id !== courseId);
+    cbDb.modules = cbDb.modules.filter((m: any) => m.courseId !== courseId);
+    cbDb.lessons = cbDb.lessons.filter((l: any) => l.courseId !== courseId);
+    cbDb.assets = cbDb.assets.filter((a: any) => a.courseId !== courseId);
+    cbSave(cbDb);
+    res.json({ success: true });
+  });
+
+  // Modules
+  app.get("/api/courses/:courseId/modules", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const modules = cbDb.modules.filter((m: any) => m.courseId === req.params.courseId);
+    modules.sort((a: any, b: any) => a.orderNumber - b.orderNumber);
+    res.json(modules);
+  });
+
+  app.post("/api/courses/:courseId/modules", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const courseId = req.params.courseId;
+    const courseModules = cbDb.modules.filter((m: any) => m.courseId === courseId);
+    const newModule = {
+      id: `mod-${Date.now()}`,
+      courseId,
+      title: req.body.title || "New Module",
+      description: req.body.description || "",
+      orderNumber: req.body.orderNumber ?? (courseModules.length + 1)
+    };
+    cbDb.modules.push(newModule);
+    cbSave(cbDb);
+    res.status(201).json(newModule);
+  });
+
+  app.put("/api/modules/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const index = cbDb.modules.findIndex((m: any) => m.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: "Module not found" });
+    cbDb.modules[index] = { ...cbDb.modules[index], ...req.body };
+    cbSave(cbDb);
+    res.json(cbDb.modules[index]);
+  });
+
+  app.delete("/api/modules/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const modId = req.params.id;
+    cbDb.modules = cbDb.modules.filter((m: any) => m.id !== modId);
+    cbDb.lessons = cbDb.lessons.filter((l: any) => l.moduleId !== modId);
+    cbSave(cbDb);
+    res.json({ success: true });
+  });
+
+  // Lessons
+  app.get("/api/modules/:moduleId/lessons", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const lessons = cbDb.lessons.filter((l: any) => l.moduleId === req.params.moduleId);
+    lessons.sort((a: any, b: any) => a.orderNumber - b.orderNumber);
+    res.json(lessons);
+  });
+
+  app.post("/api/modules/:moduleId/lessons", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const moduleId = req.params.moduleId;
+    const mod = cbDb.modules.find((m: any) => m.id === moduleId);
+    if (!mod) return res.status(404).json({ error: "Module not found" });
+    const modLessons = cbDb.lessons.filter((l: any) => l.moduleId === moduleId);
+    const newLesson = {
+      id: `les-${Date.now()}`,
+      moduleId,
+      courseId: mod.courseId,
+      title: req.body.title || "New Lesson",
+      description: req.body.description || "",
+      learningObjectives: req.body.learning_objectives || req.body.learningObjectives || [],
+      estimatedTime: req.body.estimatedTime || "20 mins",
+      lessonContent: req.body.lessonContent || "# Lesson Content\n\nAdd content here...",
+      videoUrl: req.body.videoUrl || "",
+      audioUrl: req.body.audioUrl || "",
+      imageUrls: req.body.imageUrls || [],
+      downloads: req.body.downloads || [],
+      exercisePrompt: req.body.exercisePrompt || "",
+      orderNumber: req.body.orderNumber ?? (modLessons.length + 1)
+    };
+    cbDb.lessons.push(newLesson);
+    cbSave(cbDb);
+    res.status(201).json(newLesson);
+  });
+
+  app.get("/api/lessons/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const lesson = cbDb.lessons.find((l: any) => l.id === req.params.id);
+    if (!lesson) return res.status(404).json({ error: "Lesson not found" });
+    res.json(lesson);
+  });
+
+  app.put("/api/lessons/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const index = cbDb.lessons.findIndex((l: any) => l.id === req.params.id);
+    if (index === -1) return res.status(404).json({ error: "Lesson not found" });
+    cbDb.lessons[index] = { ...cbDb.lessons[index], ...req.body };
+    cbSave(cbDb);
+    res.json(cbDb.lessons[index]);
+  });
+
+  app.delete("/api/lessons/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const lesId = req.params.id;
+    cbDb.lessons = cbDb.lessons.filter((l: any) => l.id !== lesId);
+    cbDb.quizzes = cbDb.quizzes.filter((q: any) => q.lessonId !== lesId);
+    cbSave(cbDb);
+    res.json({ success: true });
+  });
+
+  // Quizzes
+  app.get("/api/lessons/:lessonId/quiz", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const quiz = cbDb.quizzes.find((q: any) => q.lessonId === req.params.lessonId);
+    res.json(quiz || null);
+  });
+
+  app.post("/api/lessons/:lessonId/quiz", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const lessonId = req.params.lessonId;
+    let quiz = cbDb.quizzes.find((q: any) => q.lessonId === lessonId);
+    if (quiz) {
+      quiz.title = req.body.title || quiz.title;
+      quiz.passingScore = req.body.passingScore ?? quiz.passingScore;
+      quiz.questions = req.body.questions || quiz.questions;
+    } else {
+      quiz = {
+        id: `quiz-${Date.now()}`,
+        lessonId,
+        title: req.body.title || "Lesson Assessment",
+        passingScore: req.body.passingScore || 80,
+        questions: req.body.questions || []
+      };
+      cbDb.quizzes.push(quiz);
+    }
+    cbSave(cbDb);
+    res.json(quiz);
+  });
+
+  // Assets
+  app.get("/api/courses/:courseId/assets", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const assets = cbDb.assets.filter((a: any) => a.courseId === req.params.courseId);
+    res.json(assets);
+  });
+
+  app.post("/api/courses/:courseId/assets", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const courseId = req.params.courseId;
+    const newAsset = {
+      id: `ast-${Date.now()}`,
+      courseId,
+      moduleId: req.body.moduleId || null,
+      lessonId: req.body.lessonId || null,
+      name: req.body.name || "Asset File",
+      fileType: req.body.fileType || "pdf",
+      url: req.body.url || "",
+      fileSize: req.body.fileSize || "",
+      uploadedAt: new Date().toISOString()
+    };
+    cbDb.assets.push(newAsset);
+    cbSave(cbDb);
+    res.status(201).json(newAsset);
+  });
+
+  app.delete("/api/assets/:id", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    cbDb.assets = cbDb.assets.filter((a: any) => a.id !== req.params.id);
+    cbSave(cbDb);
+    res.json({ success: true });
+  });
+
+  // Export package (used by the "Export" modal in the ported UI)
+  app.get("/api/courses/:id/export-package", requireAdmin, (req, res) => {
+    cbDb = cbLoad();
+    const courseId = req.params.id;
+    const course = cbDb.courses.find((c: any) => c.id === courseId);
+    if (!course) return res.status(404).json({ error: "Course not found" });
+    const modules = cbDb.modules.filter((m: any) => m.courseId === courseId);
+    const lessons = cbDb.lessons.filter((l: any) => l.courseId === courseId);
+    const assets = cbDb.assets.filter((a: any) => a.courseId === courseId);
+    const quizzes = cbDb.quizzes.filter((q: any) => lessons.some((l: any) => l.id === q.lessonId));
+    res.json({
+      "course.json": course,
+      "README.md": `# ${course.title}\n\n${course.fullDescription}\n\nExported from the VISION79 admin Course Builder on ${new Date().toISOString()}`,
+      modules: modules.map((m: any) => ({ ...m, lessons: lessons.filter((l: any) => l.moduleId === m.id) })),
+      quizzes,
+      assets
+    });
+  });
+
+  // ---------------------------------------------------------------------
+  // Publish to Website - now an in-process write instead of an HTTP call.
+  // ---------------------------------------------------------------------
+  function cbSlugify(title: string): string {
+    return (title || "course").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "course";
+  }
+
+  function cbResolveCorrectAnswerIndex(options: string[], correctAnswer: string | number): number {
+    if (typeof correctAnswer === "number") return correctAnswer;
+    const idx = options.findIndex((o) => o === correctAnswer);
+    return idx >= 0 ? idx : 0;
+  }
+
+  function cbBuildAppPayload(course: any, modules: any[], lessons: any[], quizzes: any[]) {
+    const sortedModules = [...modules].sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0));
+    const chapters = sortedModules.map((mod) => {
+      const moduleLessons = lessons
+        .filter((l) => l.moduleId === mod.id)
+        .sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0));
+      return {
+        title: mod.title,
+        lectures: moduleLessons.map((les, idx) => ({
+          id: les.id,
+          title: les.title,
+          duration: les.estimatedTime || "",
+          freePreview: idx === 0 && sortedModules[0]?.id === mod.id,
+          videoUrl: les.videoUrl || undefined,
+          audioUrl: les.audioUrl || undefined,
+          readingMaterial: les.lessonContent || undefined
+        }))
+      };
+    });
+
+    const examQuestions = quizzes.flatMap((quiz: any) =>
+      (quiz.questions || []).map((q: any) => ({
+        question: q.questionText,
+        options: q.options || [],
+        correctAnswer: cbResolveCorrectAnswerIndex(q.options || [], q.correctAnswer)
+      }))
+    );
+
+    return {
+      name: course.title,
+      subtitle: course.shortDescription,
+      description: course.fullDescription,
+      category: "courses",
+      pricingType: course.pricingType || "free",
+      price: course.pricingType === "premium" ? Number(course.price) || 0 : 0,
+      logoUrl: course.thumbnail || "lucide:GraduationCap",
+      accessUrl: `/course/${cbSlugify(course.title)}`,
+      instructor: course.instructor || "",
+      duration: course.estimatedDuration || "",
+      lessonsCount: lessons.length,
+      curriculum: JSON.stringify(chapters),
+      exam: JSON.stringify(examQuestions)
+    };
+  }
+
+  app.post("/api/courses/:id/publish", requireAdmin, async (req, res) => {
+    cbDb = cbLoad();
+    const courseId = req.params.id;
+    const courseIndex = cbDb.courses.findIndex((c: any) => c.id === courseId);
+    if (courseIndex === -1) return res.status(404).json({ error: "Course not found" });
+
+    const course = cbDb.courses[courseIndex];
+    const modules = cbDb.modules.filter((m: any) => m.courseId === courseId);
+    const lessons = cbDb.lessons.filter((l: any) => l.courseId === courseId);
+    const quizzes = cbDb.quizzes.filter((q: any) => lessons.some((l: any) => l.id === q.lessonId));
+
+    if (modules.length === 0 || lessons.length === 0) {
+      return res.status(400).json({ error: "Add at least one module with a lesson before publishing." });
+    }
+
+    try {
+      const payload = cbBuildAppPayload(course, modules, lessons, quizzes);
+      let websiteApp: any = null;
+
+      if (course.websiteAppId) {
+        try {
+          websiteApp = await db.updateApp(Number(course.websiteAppId), payload);
+        } catch {
+          websiteApp = null;
+        }
+      }
+      if (!websiteApp) {
+        websiteApp = await db.addApp(payload);
+      }
+
+      const now = new Date().toISOString();
+      cbDb.courses[courseIndex] = {
+        ...course,
+        status: "Uploaded",
+        websiteAppId: websiteApp.id,
+        websitePublishedAt: now,
+        updatedAt: now
+      };
+      cbSave(cbDb);
+
+      res.json({ success: true, course: cbDb.courses[courseIndex], websiteAppId: websiteApp.id });
+    } catch (err: any) {
+      console.error("[CourseBuilder] Failed to publish course to the website:", err);
+      res.status(502).json({ error: err.message || "Failed to publish course to the website." });
+    }
+  });
+
+  // Gemini AI Assistant Endpoint (Course Builder's AI Course Architect)
+  app.post("/api/gemini/assist", requireAdmin, async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ error: "Gemini API key not configured. Please add GEMINI_API_KEY in the server environment." });
+      }
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: "You are an expert instructional designer and senior curriculum architect for V79 Academy applications (Fire Finance Pro, SIWM, Tiquet, KashDash). Provide precise, professional, educational content in JSON or Markdown format as requested.",
+          temperature: 0.7
+        }
+      });
+      res.json({ result: response.text });
+    } catch (error: any) {
+      console.error("[CourseBuilder] Gemini AI error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate AI content" });
+    }
+  });
+
   // POST increment download or launch trigger
   app.post("/api/apps/increment", async (req, res) => {
     const { id } = req.body;
