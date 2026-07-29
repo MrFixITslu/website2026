@@ -1,11 +1,11 @@
 import { motion } from "motion/react";
-import { Linkedin, Mail, ArrowRight, Users, Award, Globe, Heart } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, Users, Award, Globe, Heart, CheckCircle2, Clock, ShieldCheck, Cpu, Cloud, Wrench, Sparkles } from "lucide-react";
 
 const TEAM = [
   {
     name: "Neil Verdant",
     role: "Founder & Lead Systems Architect",
-    bio: "Over 15 years of enterprise ICT experience across Saint Lucia, Barbados, and Trinidad. Specializes in network architecture, cybersecurity, and cloud infrastructure design.",
+    bio: "Over 20 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
     linkedin: "https://linkedin.com",
     email: "vision79slu@gmail.com",
     initials: "NV",
@@ -14,7 +14,7 @@ const TEAM = [
   {
     name: "Open Position",
     role: "Senior Network Engineer",
-    bio: "We're growing our team. If you have hands-on experience with Cisco, Mikrotik, Fortinet, or enterprise switching, we want to hear from you.",
+    bio: "We're growing our team. If you have hands-on experience with enterprise networking and fibre, we want to hear from you.",
     linkedin: null,
     email: "vision79slu@gmail.com",
     isOpen: true,
@@ -23,8 +23,8 @@ const TEAM = [
   },
   {
     name: "Open Position",
-    role: "IT Sales & Solutions Consultant",
-    bio: "Join our growing sales team. Help Caribbean businesses identify their ICT challenges and present tailored V79SL solutions. Flexible remote role.",
+    role: "IT Solutions Consultant",
+    bio: "Join our growing team. Help Caribbean businesses identify their ICT challenges and present tailored solutions.",
     linkedin: null,
     email: "vision79slu@gmail.com",
     isOpen: true,
@@ -33,61 +33,30 @@ const TEAM = [
   },
 ];
 
-const VALUES = [
-  {
-    icon: Award,
-    title: "Excellence in Delivery",
-    desc: "We hold ourselves to the highest standard in every installation, migration, and support interaction — no shortcuts, no excuses.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
-  },
-  {
-    icon: Users,
-    title: "Client Partnership",
-    desc: "We don't just fix problems; we embed ourselves as trusted long-term technology partners for every client business.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-  },
-  {
-    icon: Globe,
-    title: "Caribbean-First Thinking",
-    desc: "Our solutions account for Caribbean realities — power instability, hurricane preparedness, limited local ISP redundancy.",
-    color: "text-sky-400",
-    bg: "bg-sky-500/10",
-    border: "border-sky-500/20",
-  },
-  {
-    icon: Heart,
-    title: "Community Investment",
-    desc: "V79SL actively supports Saint Lucian youth in technology through affordable training, mentorship, and certification preparation.",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/20",
-  },
+const WHY_CHOOSE_US = [
+  { title: "20+ years ICT industry experience", icon: Clock },
+  { title: "Enterprise networking expertise", icon: Globe },
+  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
+  { title: "Custom software development", icon: Sparkles },
+  { title: "AI automation solutions", icon: Cpu },
+  { title: "Business process optimisation", icon: Wrench },
+  { title: "Local Caribbean support", icon: Heart },
+  { title: "Fast response times", icon: ShieldCheck },
 ];
 
-const MILESTONES = [
-  { year: "2018", event: "V79SL founded in Castries, providing freelance IT support to local SMEs." },
-  { year: "2020", event: "Expanded into cloud infrastructure and Microsoft 365 managed services." },
-  { year: "2022", event: "Launched the V79 SaaS Marketplace and custom software development division." },
-  { year: "2023", event: "Secured first hotel and hospitality contracts in the Rodney Bay corridor." },
-  { year: "2024", event: "Established formal cybersecurity audit and penetration testing practice." },
-  { year: "2026", event: "Operating across 5 Eastern Caribbean islands with 450+ protected nodes." },
-];
+
 
 export default function AboutPage() {
   return (
     <div className="space-y-20 pb-16">
-      {/* ── Mission Hero ──────────────────────────────────────────── */}
+      {/* ── Mission Hero / Our Story ──────────────────────────────── */}
       <section className="relative px-6 lg:px-8 pt-12">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-1/3 w-[400px] h-[400px] bg-indigo-500/6 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto text-center space-y-6">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Our Story</span>
+            <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">About Vision79</span>
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -95,32 +64,43 @@ export default function AboutPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white leading-tight"
           >
-            Powering Caribbean Business with Technology That Actually Works
+            Our Story
           </motion.h1>
-          <motion.p
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-base text-app-text-sec font-light leading-relaxed"
+            className="text-base text-app-text-sec font-light leading-relaxed space-y-4 text-left glass p-8 rounded-2xl border border-app-border"
           >
-            V79SL was founded on a simple belief: Caribbean businesses deserve the same caliber of enterprise ICT solutions as any Fortune 500 company. We combine world-class technical expertise with a deep understanding of our local environment to deliver technology that truly works here.
-          </motion.p>
+            <p>
+              Vision79 was founded with one goal—to bring world-class technology solutions to the Caribbean.
+            </p>
+            <p>
+              With more than 20 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 combines technical expertise with practical business knowledge.
+            </p>
+            <p>
+              From helping businesses modernize their operations to building custom applications that solve real problems, we focus on creating technology that delivers measurable results.
+            </p>
+            <p>
+              Today Vision79 is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
+            </p>
+          </motion.div>
         </div>
       </section>
 
-      {/* ── Mission / Vision ──────────────────────────────────────── */}
+      {/* ── Mission & Vision ──────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="glass rounded-2xl p-8 border border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-transparent space-y-4"
           >
-            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-indigo-400">Our Mission</div>
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">To Accelerate Caribbean Digital Growth</h2>
+            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-indigo-400">Mission</div>
+            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Empowering Caribbean Businesses</h2>
             <p className="text-sm text-app-text-sec font-light leading-relaxed">
-              We empower Saint Lucian and Eastern Caribbean businesses to compete in the global digital economy by delivering resilient, secure, and cutting-edge ICT infrastructure. Every solution we build is designed to maximize operational efficiency and minimize downtime.
+              To empower Caribbean businesses through innovative technology, automation, and digital transformation.
             </p>
           </motion.div>
           <motion.div
@@ -129,39 +109,42 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="glass rounded-2xl p-8 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent space-y-4"
           >
-            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-emerald-400">Our Vision</div>
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">The Caribbean's Most Trusted MSP</h2>
+            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-emerald-400">Vision</div>
+            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Trusted Technology Innovation</h2>
             <p className="text-sm text-app-text-sec font-light leading-relaxed">
-              To become the definitive Managed Services Partner for every hotel, retailer, healthcare provider, and government institution across the Caribbean — recognized not just for technical capability, but for genuine client outcomes and community impact.
+              To become the Caribbean's most trusted technology innovation company by creating software and ICT solutions that improve how people live and work.
             </p>
           </motion.div>
         </div>
       </section>
 
-      {/* ── Core Values ───────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8">
+      {/* ── Why Choose Us ─────────────────────────────────────────── */}
+      <section className="px-6 lg:px-8 space-y-8 max-w-3xl mx-auto">
         <div className="text-center space-y-2">
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Principles</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The Values We Work By</h2>
+          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Excellence</span>
+          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Us</h2>
         </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {VALUES.map((v, i) => {
-            const Icon = v.icon;
+        <div className="space-y-4 relative">
+          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
+          {WHY_CHOOSE_US.map((item, i) => {
+            const Icon = item.icon;
             return (
               <motion.div
-                key={v.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                key={item.title}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className={`glass rounded-2xl p-6 border ${v.border} space-y-4 hover:scale-[1.01] transition-all`}
+                className="flex items-center gap-5 relative"
               >
-                <div className={`w-10 h-10 rounded-xl ${v.bg} border ${v.border} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${v.color}`} />
+                <div className="w-[44px] shrink-0 text-right flex justify-end">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <Icon className="w-4 h-4" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <h3 className="font-bold text-sm text-app-text dark:text-white">{v.title}</h3>
-                  <p className="text-xs text-app-text-sec font-light leading-relaxed">{v.desc}</p>
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-indigo-400/50 shrink-0 shadow-lg shadow-indigo-500/30" />
+                <div className="glass rounded-xl px-4 py-3 border border-app-border flex-1">
+                  <p className="text-xs font-semibold text-app-text dark:text-white">{item.title}</p>
                 </div>
               </motion.div>
             );
@@ -169,40 +152,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── Timeline ──────────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-2">
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Our Journey</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">From Freelance to Full MSP</h2>
-        </div>
-        <div className="max-w-2xl mx-auto space-y-4 relative">
-          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
-          {MILESTONES.map((m, i) => (
-            <motion.div
-              key={m.year}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="flex items-start gap-5 relative"
-            >
-              <div className="w-[44px] shrink-0 text-right">
-                <span className="text-[11px] font-mono font-extrabold text-indigo-400">{m.year}</span>
-              </div>
-              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-indigo-400/50 shrink-0 mt-1 shadow-lg shadow-indigo-500/30" />
-              <div className="glass rounded-xl px-4 py-3 border border-app-border flex-1">
-                <p className="text-xs text-app-text-sec font-light">{m.event}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+
 
       {/* ── Team ──────────────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8">
+      <section className="px-6 lg:px-8 space-y-8 max-w-5xl mx-auto">
         <div className="text-center space-y-2">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">The Team</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The People Behind V79SL</h2>
+          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The People Behind Vision79</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {TEAM.map((member, i) => (
@@ -244,10 +200,10 @@ export default function AboutPage() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8">
+      <section className="px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Ready to work with V79SL?</h2>
+            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
             <p className="text-sm text-app-text-sec font-light">Let's have a conversation about your ICT challenges.</p>
           </div>
           <a

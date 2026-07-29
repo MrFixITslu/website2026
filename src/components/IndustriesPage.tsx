@@ -1,48 +1,24 @@
 import { motion } from "motion/react";
-import { ArrowRight, Building2, ShoppingBag, Heart, GraduationCap, Scale, Palmtree } from "lucide-react";
+import { ArrowRight, Building2, ShoppingBag, Heart, GraduationCap, Scale, Palmtree, Briefcase, Landmark } from "lucide-react";
 
 const INDUSTRIES = [
   {
-    icon: Palmtree,
-    title: "Hotels & Hospitality",
-    desc: "High-performance IT as a guest experience differentiator. We specialize in hospitality network design, PMS integrations, and guest Wi-Fi.",
-    points: ["High-density guest Wi-Fi with VLAN isolation","PMS and POS system integration","Security camera network management","24/7 support aligned with hotel operations","Bandwidth management and QoS"],
-    badge: "Priority Industry",
-    badgeColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    gradient: "from-amber-500/8 to-orange-500/4",
-    border: "border-amber-500/20",
-    iconColor: "text-amber-400",
-    iconBg: "bg-amber-500/10",
-  },
-  {
-    icon: ShoppingBag,
-    title: "Retail & Point of Sale",
-    desc: "Resilient POS infrastructure and cloud sync solutions for Saint Lucian retailers facing power surges and connectivity drops.",
-    points: ["POS system installation and maintenance","Payment gateway and merchant integration","Inventory database design and cloud sync","UPS and surge protection planning","LTE failover for connectivity continuity"],
-    badge: "",
-    badgeColor: "",
-    gradient: "from-emerald-500/8 to-teal-500/4",
-    border: "border-emerald-500/20",
-    iconColor: "text-emerald-400",
-    iconBg: "bg-emerald-500/10",
-  },
-  {
-    icon: Heart,
-    title: "Healthcare & Medical",
-    desc: "HIPAA-aligned ICT environments for Caribbean healthcare providers requiring strict data privacy and reliable uptime.",
-    points: ["EMR/EHR system infrastructure support","Patient data encryption and access control","Compliance-aligned network segmentation","Medical device network integration","Backup and continuity for clinical systems"],
-    badge: "Compliance-Ready",
-    badgeColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
-    gradient: "from-rose-500/8 to-pink-500/4",
-    border: "border-rose-500/20",
-    iconColor: "text-rose-400",
-    iconBg: "bg-rose-500/10",
+    icon: Briefcase,
+    title: "Small Businesses",
+    desc: "Reliable, right-sized IT support, backup, and cloud solutions designed for growing Caribbean businesses.",
+    points: ["Day-to-day IT helpdesk", "Secure cloud backups", "Office networking & Wi-Fi", "Hardware procurement"],
+    badge: "SME Focused",
+    badgeColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
+    gradient: "from-indigo-500/8 to-blue-500/4",
+    border: "border-indigo-500/20",
+    iconColor: "text-indigo-400",
+    iconBg: "bg-indigo-500/10",
   },
   {
     icon: GraduationCap,
-    title: "Education & Schools",
+    title: "Schools",
     desc: "Connected learning environments with filtered internet, device management, and e-learning infrastructure.",
-    points: ["Campus-wide wireless network design","Content filtering and parental controls","Student device management (MDM)","Google Workspace / M365 EDU licensing","E-learning platform hosting and support"],
+    points: ["Campus wireless networking", "Content filtering & security", "Student device management", "E-learning support"],
     badge: "",
     badgeColor: "",
     gradient: "from-violet-500/8 to-purple-500/4",
@@ -51,28 +27,76 @@ const INDUSTRIES = [
     iconBg: "bg-violet-500/10",
   },
   {
-    icon: Scale,
-    title: "Legal & Professional Services",
-    desc: "Security-first IT environments for law firms, accounting practices, and financial advisors handling sensitive client data.",
-    points: ["Encrypted file storage and document management","Secure remote access for hybrid workers","Email archiving and legal hold configuration","Multi-Factor Authentication enforcement","Annual cybersecurity audits"],
-    badge: "Security-First",
-    badgeColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
-    gradient: "from-indigo-500/8 to-blue-500/4",
-    border: "border-indigo-500/20",
-    iconColor: "text-indigo-400",
-    iconBg: "bg-indigo-500/10",
-  },
-  {
     icon: Building2,
-    title: "Government & Non-Profits",
-    desc: "Compliant ICT solutions that serve citizens and maximize limited public sector budgets with full accountability.",
-    points: ["Government email and data compliance","Citizen portal and web application development","Network infrastructure for public buildings","Data sovereignty and local hosting solutions","IT procurement consulting"],
+    title: "Government",
+    desc: "Compliant ICT solutions that serve citizens and maximize public sector budgets with full accountability.",
+    points: ["Government email & data compliance", "Citizen portal & web applications", "Secure network infrastructure", "Data sovereignty solutions"],
     badge: "",
     badgeColor: "",
     gradient: "from-sky-500/8 to-cyan-500/4",
     border: "border-sky-500/20",
     iconColor: "text-sky-400",
     iconBg: "bg-sky-500/10",
+  },
+  {
+    icon: Palmtree,
+    title: "Hospitality",
+    desc: "High-performance IT as a guest experience differentiator. Hospitality network design, PMS integrations, and guest Wi-Fi.",
+    points: ["High-density guest Wi-Fi", "PMS and POS system integration", "Security camera management", "24/7 operational support"],
+    badge: "Priority Industry",
+    badgeColor: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    gradient: "from-amber-500/8 to-orange-500/4",
+    border: "border-amber-500/20",
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-500/10",
+  },
+  {
+    icon: Heart,
+    title: "Healthcare",
+    desc: "Secure ICT environments for Caribbean healthcare providers requiring strict data privacy and reliable uptime.",
+    points: ["EMR/EHR infrastructure support", "Patient data encryption", "Compliance-aligned segmentation", "Clinical system backups"],
+    badge: "Compliance-Ready",
+    badgeColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
+    gradient: "from-rose-500/8 to-pink-500/4",
+    border: "border-rose-500/20",
+    iconColor: "text-rose-400",
+    iconBg: "bg-rose-500/10",
+  },
+  {
+    icon: ShoppingBag,
+    title: "Retail",
+    desc: "Resilient POS infrastructure and cloud sync solutions for retailers facing power surges and connectivity drops.",
+    points: ["POS installation & maintenance", "Payment gateway integration", "Inventory database cloud sync", "UPS & surge protection"],
+    badge: "",
+    badgeColor: "",
+    gradient: "from-emerald-500/8 to-teal-500/4",
+    border: "border-emerald-500/20",
+    iconColor: "text-emerald-400",
+    iconBg: "bg-emerald-500/10",
+  },
+  {
+    icon: Landmark,
+    title: "Financial Services",
+    desc: "Security-first IT environments for financial institutions, accounting practices, and advisory firms.",
+    points: ["Encrypted file storage", "Secure remote access", "Multi-Factor Authentication", "Annual cybersecurity audits"],
+    badge: "Security-First",
+    badgeColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    gradient: "from-teal-500/8 to-cyan-500/4",
+    border: "border-teal-500/20",
+    iconColor: "text-teal-400",
+    iconBg: "bg-teal-500/10",
+  },
+  {
+    icon: Scale,
+    title: "Non-Profit Organisations",
+    desc: "Cost-effective technology solutions, cloud collaboration tools, and grants-aligned ICT consulting.",
+    points: ["M365 non-profit licensing", "Secure donor database setup", "Remote collaboration tools", "Budget-friendly IT support"],
+    badge: "",
+    badgeColor: "",
+    gradient: "from-purple-500/8 to-indigo-500/4",
+    border: "border-purple-500/20",
+    iconColor: "text-purple-400",
+    iconBg: "bg-purple-500/10",
   },
 ];
 
@@ -86,15 +110,15 @@ export default function IndustriesPage({ onNavigate }: { onNavigate: (v: string)
         <div className="relative z-10 space-y-4">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Industry Focus</span>
           <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white">
-            Solutions Tailored to Your Industry
+            Industries We Support
           </h1>
           <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
-            Every industry has unique technology requirements. V79SL builds specialized ICT solutions for your sector's specific challenges.
+            We proudly support small businesses, schools, government, hospitality, healthcare, retail, financial services, and non-profit organisations.
           </p>
         </div>
       </section>
 
-      <section className="px-6 lg:px-8">
+      <section className="px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {INDUSTRIES.map((ind, i) => {
             const Icon = ind.icon;
@@ -141,13 +165,13 @@ export default function IndustriesPage({ onNavigate }: { onNavigate: (v: string)
         </div>
       </section>
 
-      <section className="px-6 lg:px-8">
+      <section className="px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="rounded-3xl bg-gradient-to-r from-indigo-600 to-violet-600 p-10 sm:p-14 text-center text-white space-y-5 relative overflow-hidden shadow-xl">
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
           <div className="relative z-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl font-extrabold font-display">Don't see your industry?</h2>
             <p className="max-w-lg mx-auto text-sm text-indigo-100 font-light">
-              V79SL works with businesses of all types. Get in touch and we'll design a custom ICT solution for your needs.
+              Vision79 works with organizations of all types. Get in touch and we'll design a custom ICT solution for your needs.
             </p>
           </div>
           <button
