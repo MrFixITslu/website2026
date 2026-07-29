@@ -122,7 +122,7 @@ export default function AboutPage() {
       <section className="px-6 lg:px-8 space-y-8 max-w-3xl mx-auto">
         <div className="text-center space-y-2">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Excellence</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Us</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Us</h2>
         </div>
         <div className="space-y-4 relative">
           <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
@@ -158,7 +158,7 @@ export default function AboutPage() {
       <section className="px-6 lg:px-8 space-y-8 max-w-5xl mx-auto">
         <div className="text-center space-y-2">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">The Team</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The People Behind Vision79</h2>
+          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The People Behind Vision79</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {TEAM.map((member, i) => (
@@ -201,9 +201,9 @@ export default function AboutPage() {
 
       {/* ── CTA ───────────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1">
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
+            <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
             <p className="text-sm text-app-text-sec font-light">Let's have a conversation about your ICT challenges.</p>
           </div>
           <a

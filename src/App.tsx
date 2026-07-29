@@ -304,12 +304,12 @@ export default function App() {
                 {/* Solutions Quick Links */}
                 <div className="grid sm:grid-cols-3 gap-4">
                   {[
-                    { label: "ICT Services & Pricing", desc: "Managed service plans, SLAs, and pricing", action: () => setShowServicesPriceList(true), color: "emerald" },
-                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { setSelectedCategory("courses"); setShowServicesPriceList(false); }, color: "violet" },
-                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => { setSelectedCategory("all"); setShowServicesPriceList(false); }, color: "indigo" },
+                    { label: "ICT Services & Pricing", desc: "Managed service plans, SLAs, and pricing", action: () => setShowServicesPriceList(true), classes: "hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]", textClasses: "group-hover:text-emerald-400" },
+                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { setSelectedCategory("courses"); setShowServicesPriceList(false); }, classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
+                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => { setSelectedCategory("all"); setShowServicesPriceList(false); }, classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
                   ].map(s => (
-                    <button key={s.label} onClick={s.action} className={`glass p-5 rounded-2xl border border-app-border hover:border-${s.color}-500/30 text-left space-y-1.5 transition-all cursor-pointer hover:bg-${s.color}-500/[0.02] group`}>
-                      <div className={`text-xs font-bold font-display text-app-text dark:text-white group-hover:text-${s.color}-400 transition`}>{s.label}</div>
+                    <button key={s.label} onClick={s.action} className={`glass p-5 rounded-2xl border border-app-border text-left space-y-1.5 transition-all cursor-pointer group ${s.classes}`}>
+                      <div className={`text-xs font-bold font-display text-app-text dark:text-white transition ${s.textClasses}`}>{s.label}</div>
                       <div className="text-[11px] text-app-text-sec font-light">{s.desc}</div>
                     </button>
                   ))}

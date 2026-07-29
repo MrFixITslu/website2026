@@ -868,7 +868,7 @@ export function CourseCertification({
                   <p className="text-[10px] sm:text-xs font-serif italic text-zinc-500">
                     This official credential is proudly awarded to
                   </p>
-                  <h3 className="text-2xl sm:text-3.5xl font-extrabold text-indigo-700 tracking-wide underline decoration-amber-600/40 decoration-wavy py-1 uppercase font-serif">
+                  <h3 className="text-2xl sm:text-4xl font-extrabold text-indigo-700 tracking-wide underline decoration-amber-600/40 decoration-wavy py-1 uppercase font-serif">
                     {studentName.trim() || "VISION79 SCHOLAR"}
                   </h3>
                 </div>

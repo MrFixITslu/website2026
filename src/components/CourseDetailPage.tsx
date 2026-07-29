@@ -380,7 +380,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-4.5xl font-extrabold tracking-tight leading-tight text-white font-display">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white font-display">
             {course.name}
           </h1>
           

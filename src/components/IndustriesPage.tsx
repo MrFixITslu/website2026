@@ -166,17 +166,16 @@ export default function IndustriesPage({ onNavigate }: { onNavigate: (v: string)
       </section>
 
       <section className="px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="rounded-3xl bg-gradient-to-r from-indigo-600 to-violet-600 p-10 sm:p-14 text-center text-white space-y-5 relative overflow-hidden shadow-xl">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
-          <div className="relative z-10 space-y-3">
-            <h2 className="text-2xl sm:text-3xl font-extrabold font-display">Don't see your industry?</h2>
-            <p className="max-w-lg mx-auto text-sm text-indigo-100 font-light">
+        <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Don't see your industry?</h2>
+            <p className="text-sm text-app-text-sec font-light max-w-lg">
               Vision79 works with organizations of all types. Get in touch and we'll design a custom ICT solution for your needs.
             </p>
           </div>
           <button
             onClick={() => onNavigate("contact")}
-            className="relative z-10 flex items-center gap-2.5 px-7 py-3 rounded-xl bg-white text-indigo-700 text-sm font-extrabold shadow-lg hover:bg-indigo-50 transition mx-auto cursor-pointer"
+            className="shrink-0 flex items-center gap-2.5 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
           >
             Contact Our Team <ArrowRight className="w-4 h-4" />
           </button>

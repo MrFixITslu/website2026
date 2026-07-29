@@ -364,7 +364,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       <section className="px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-2">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Client Stories</span>
-          <h2 className="text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
             Trusted Across Saint Lucia
           </h2>
         </div>
