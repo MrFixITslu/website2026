@@ -70,9 +70,8 @@ const SERVICES = [
 
 const METRICS = [
   { label: "Uptime SLA", value: "99.9", suffix: "%", desc: "Guaranteed availability" },
-  { label: "Helpdesk Tickets Resolved", value: "1500", suffix: "+", desc: "Since 2018" },
-  { label: "Network Nodes Protected", value: "450", suffix: "+", desc: "Across the Caribbean" },
-  { label: "Response Time", value: "4", suffix: "hr", desc: "On-site SLA guarantee" },
+  { label: "Telecoms & ICT Experience", value: "25", suffix: "+", desc: "Years in the industry" },
+  { label: "Response Time", value: "1", suffix: "hr", desc: "On-site SLA guarantee" },
 ];
 
 const ASSESSMENT_SCOPE = [
@@ -265,7 +264,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── Metrics ───────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
