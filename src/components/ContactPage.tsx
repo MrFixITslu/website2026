@@ -76,7 +76,12 @@ export default function ContactPage() {
   return (
     <div className="space-y-16 pb-16">
       {/* Hero */}
-      <section className="pt-10 px-6 lg:px-8 text-center space-y-4">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="pt-10 px-6 lg:px-8 text-center space-y-4"
+      >
         <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Get in Touch</span>
         <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white">
           Let's Talk About Your Business Technology
@@ -84,7 +89,7 @@ export default function ContactPage() {
         <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
           Fill out the form below and our team will reach out within one business day to schedule your free ICT consultation.
         </p>
-      </section>
+      </motion.section>
 
       <section className="px-6 lg:px-8">
         <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">

@@ -201,7 +201,13 @@ export default function AboutPage() {
 
       {/* ── CTA ───────────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6"
+        >
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
             <p className="text-sm text-app-text-sec font-light">Let's have a conversation about your ICT challenges.</p>
@@ -212,7 +218,7 @@ export default function AboutPage() {
           >
             Get in Touch <ArrowRight className="w-4 h-4" />
           </a>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

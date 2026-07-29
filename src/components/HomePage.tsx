@@ -252,7 +252,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── Metrics ───────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
@@ -273,8 +273,14 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* ── Services Grid ─────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-3">
+      <section className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-3"
+        >
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">What We Do</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
             Comprehensive ICT Services
@@ -282,7 +288,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light">
             From helpdesk to enterprise architecture, we cover every dimension of your business technology needs.
           </p>
-        </div>
+        </motion.div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {SERVICES.map((s, i) => {
             const Icon = s.icon;
@@ -314,7 +320,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── Why V79SL ─────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="rounded-3xl border border-app-border bg-gradient-to-br from-indigo-500/[0.04] to-violet-500/[0.03] p-8 sm:p-12 relative overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-7xl mx-auto rounded-3xl border border-app-border bg-gradient-to-br from-indigo-500/[0.04] to-violet-500/[0.03] p-8 sm:p-12 relative overflow-hidden"
+        >
           <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
           <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
@@ -357,17 +369,23 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ── Testimonials ──────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-2">
+      <section className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-2"
+        >
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Client Stories</span>
           <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
             Trusted Across Saint Lucia
           </h2>
-        </div>
+        </motion.div>
         <div className="relative max-w-2xl mx-auto">
           {TESTIMONIALS.map((t, i) => (
             <motion.div
@@ -403,7 +421,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── CTA Banner ────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-r from-indigo-600 to-violet-600 p-10 sm:p-14 text-center text-white space-y-6 relative overflow-hidden shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="max-w-7xl mx-auto rounded-3xl bg-gradient-to-r from-indigo-600 to-violet-600 p-10 sm:p-14 text-center text-white space-y-6 relative overflow-hidden shadow-2xl"
+        >
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px"}} />
           <div className="relative z-10 space-y-4">
             <h2 className="text-3xl sm:text-4xl font-extrabold font-display tracking-tight">
@@ -424,7 +448,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <Phone className="w-4 h-4" /> +1 758 726 0035
             </a>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

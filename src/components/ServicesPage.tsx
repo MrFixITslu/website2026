@@ -133,7 +133,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/3 w-[350px] h-[350px] bg-indigo-500/6 rounded-full blur-3xl" />
         </div>
-        <div className="relative z-10 space-y-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative z-10 space-y-4">
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">What We Offer</span>
           <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white">
             Services
@@ -141,7 +141,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
           <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
             Enterprise ICT services, cloud solutions, custom software, AI automation, and cybersecurity designed for Caribbean businesses.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       {/* Accordion Service Cards */}
@@ -215,7 +215,13 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
 
       {/* CTA */}
       <section className="px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6"
+        >
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Not sure which service you need?</h2>
             <p className="text-sm text-app-text-sec font-light">Request a free ICT assessment. We'll audit your current setup and recommend exactly what fits your budget.</p>
@@ -231,7 +237,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
               <Phone className="w-4 h-4" /> Call Us
             </a>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

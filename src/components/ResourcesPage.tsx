@@ -98,7 +98,12 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
 
   return (
     <div className="space-y-16 pb-16">
-      <section className="pt-10 px-6 lg:px-8 text-center space-y-4">
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="pt-10 px-6 lg:px-8 text-center space-y-4"
+      >
         <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Knowledge Base</span>
         <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white">
           Resources & ICT Insights
@@ -106,9 +111,9 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
         <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
           Expert guidance on cybersecurity, cloud infrastructure, and business technology from the V79SL team.
         </p>
-      </section>
+      </motion.section>
 
-      <section className="px-6 lg:px-8">
+      <section className="px-6 lg:px-8 max-w-7xl mx-auto">
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3].map((n) => (
