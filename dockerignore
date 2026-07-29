@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+coverage
+.git
+.gitignore
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+*.db
+*.db-journal
+data/.admin_auth.json
+data/.encryption_key
+uploads
