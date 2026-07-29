@@ -19,12 +19,15 @@ import {
   MessageSquare,
   Star,
   CheckCircle,
+  CheckCircle2,
   Sparkles,
   BookOpen,
   UploadCloud,
   Check,
   Loader2,
-  Bell
+  Bell,
+  Copy,
+  Mail
 } from "lucide-react";
 import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
@@ -799,6 +802,44 @@ export default function AdminApp() {
   const [selectedFeedbackRatingFilter, setSelectedFeedbackRatingFilter] = useState<number | "all">("all");
   const [selectedFeedbackTypeFilter, setSelectedFeedbackTypeFilter] = useState<"all" | "idea" | "feedback">("all");
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
+
+  // Sales Outreach Toolkit (moved here from the public site's Launch Pack page — internal use only)
+  const [outreachRecipient, setOutreachRecipient] = useState("Business Owner");
+  const [outreachCompany, setOutreachCompany] = useState("Caribbean Enterprise");
+  const [outreachSender, setOutreachSender] = useState("VISION79 ICT Specialist");
+  const [outreachCopied, setOutreachCopied] = useState(false);
+
+  const outreachSubject = `ICT Business Health Assessment for ${outreachCompany}`;
+  const outreachBodyText = `Hello ${outreachRecipient},
+
+I hope you are doing well.
+
+Many Caribbean businesses rely heavily on technology every day, but often do not have the resources to properly manage cybersecurity, backups, user support, and their overall ICT environment.
+
+V79 ICT Solutions helps businesses reduce technology risks by providing professional ICT management, cybersecurity support, Microsoft 365 services, and network solutions.
+
+We are offering an ICT Business Health Assessment designed to identify:
+
+- Technology risks
+- Cybersecurity gaps
+- Backup weaknesses
+- Opportunities to improve reliability and efficiency
+
+Following the assessment, we provide a practical improvement roadmap based on your business needs.
+
+I would welcome the opportunity to meet and discuss how we can support your organization.
+
+Regards,
+
+${outreachSender}
+V79 ICT Solutions`;
+
+  const handleCopyOutreachTemplate = () => {
+    const textToCopy = `Subject: ${outreachSubject}\n\n${outreachBodyText}`;
+    navigator.clipboard.writeText(textToCopy);
+    setOutreachCopied(true);
+    setTimeout(() => setOutreachCopied(false), 2000);
+  };
 
   const notifications = useMemo(() => {
     const list: Array<{
@@ -2786,6 +2827,105 @@ export default function AdminApp() {
                       })()}
                     </div>
                   </div>
+
+                  {/* SALES OUTREACH TOOLKIT — moved here from the public Launch Pack page */}
+                  <div id="sales-outreach-toolkit" className="pt-8 border-t border-app-border/45 space-y-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-5 h-5 text-indigo-500" />
+                        <h3 className="text-base font-bold font-display text-app-text tracking-tight">Sales Outreach Toolkit</h3>
+                      </div>
+                      <p className="text-xs text-app-text-sec font-mono">
+                        Customize and copy the official V79 cold outreach email script for reaching regional decision-makers. Internal use only.
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                      {/* Left Side: Customizers */}
+                      <div className="lg:col-span-4 bg-app-aside-bg/30 border border-app-border rounded-2xl p-5 space-y-4 shadow-sm">
+                        <span className="text-[9px] font-mono uppercase text-indigo-400 font-bold tracking-wider block">Template Customizers:</span>
+
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-mono uppercase text-app-text-sec block">Recipient Name</label>
+                            <input
+                              type="text"
+                              value={outreachRecipient}
+                              onChange={(e) => setOutreachRecipient(e.target.value)}
+                              placeholder="Business Owner"
+                              className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500/40"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-mono uppercase text-app-text-sec block">Recipient Company</label>
+                            <input
+                              type="text"
+                              value={outreachCompany}
+                              onChange={(e) => setOutreachCompany(e.target.value)}
+                              placeholder="Caribbean Enterprise"
+                              className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500/40"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-mono uppercase text-app-text-sec block">Your Name / Sign-off</label>
+                            <input
+                              type="text"
+                              value={outreachSender}
+                              onChange={(e) => setOutreachSender(e.target.value)}
+                              placeholder="VISION79 ICT Specialist"
+                              className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500/40"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-app-border/40 text-[10px] text-app-text-muted leading-relaxed font-mono space-y-1">
+                          <p className="font-bold text-app-text text-[11px] uppercase mb-1">How to Use This Template:</p>
+                          <p>1. Tailor the input fields to your target prospect.</p>
+                          <p>2. Click "Copy Template Copy".</p>
+                          <p>3. Paste into Outlook, Gmail, or your outreach tool and send.</p>
+                        </div>
+                      </div>
+
+                      {/* Right Side: Rendered Email Preview */}
+                      <div className="lg:col-span-8 border border-app-border rounded-2xl overflow-hidden shadow-md bg-app-aside-bg/15">
+                        <div className="bg-zinc-950 p-4 border-b border-app-border space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-3 h-3 rounded-full bg-red-500/80" />
+                              <span className="w-3 h-3 rounded-full bg-amber-500/80" />
+                              <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                            </div>
+                            <button
+                              onClick={handleCopyOutreachTemplate}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-mono font-bold rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              {outreachCopied ? (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Copied to Clipboard!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Copy Template Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          <div className="text-xs text-zinc-400 font-mono space-y-1 pt-1.5">
+                            <p><span className="text-zinc-600">To:</span> prospect@example.com</p>
+                            <p><span className="text-zinc-600">Subject:</span> <strong className="text-zinc-200">{outreachSubject}</strong></p>
+                          </div>
+                        </div>
+
+                        <div className="p-6 sm:p-8 bg-app-bg text-app-text text-sm leading-relaxed font-sans max-h-[480px] overflow-y-auto whitespace-pre-wrap select-text">
+                          {outreachBodyText}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </motion.div>
               )}
 

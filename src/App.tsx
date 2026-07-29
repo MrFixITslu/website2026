@@ -13,7 +13,6 @@ import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { CourseDetailPage } from "./components/CourseDetailPage";
-import { ServicesPriceList } from "./components/ServicesPriceList";
 import { OnboardingFeedback } from "./components/OnboardingFeedback";
 
 const isPromoActive = (app: SaaSApp) => {
@@ -50,7 +49,6 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<SaaSApp | null>(null);
-  const [showServicesPriceList, setShowServicesPriceList] = useState(false);
   const [selectedToolForFeedback, setSelectedToolForFeedback] = useState<SaaSApp | null>(null);
   const [ads, setAds] = useState<SaaSAd[]>([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
@@ -281,11 +279,7 @@ export default function App() {
 
         <section id="solutions" className="scroll-mt-20 max-w-7xl mx-auto px-6 lg:px-12 w-full">
           <AnimatePresence mode="wait">
-            {showServicesPriceList ? (
-              <motion.div key="spl" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
-                <ServicesPriceList onBack={() => setShowServicesPriceList(false)} />
-              </motion.div>
-            ) : selectedToolForFeedback ? (
+            {selectedToolForFeedback ? (
               <motion.div key="feedback" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
                 <OnboardingFeedback app={selectedToolForFeedback} onBack={() => setSelectedToolForFeedback(null)} />
               </motion.div>
@@ -304,9 +298,9 @@ export default function App() {
                 {/* Solutions Quick Links */}
                 <div className="grid sm:grid-cols-3 gap-4">
                   {[
-                    { label: "ICT Services & Pricing", desc: "Managed service plans, SLAs, and pricing", action: () => setShowServicesPriceList(true), classes: "hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]", textClasses: "group-hover:text-emerald-400" },
-                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { setSelectedCategory("courses"); setShowServicesPriceList(false); }, classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
-                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => { setSelectedCategory("all"); setShowServicesPriceList(false); }, classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
+                    { label: "ICT Services & Pricing", desc: "Managed service plans, SLAs, and pricing", action: () => scrollTo("services"), classes: "hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]", textClasses: "group-hover:text-emerald-400" },
+                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => setSelectedCategory("courses"), classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
+                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => setSelectedCategory("all"), classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
                   ].map(s => (
                     <button key={s.label} onClick={s.action} className={`glass p-5 rounded-2xl border border-app-border text-left space-y-1.5 transition-all cursor-pointer group ${s.classes}`}>
                       <div className={`text-xs font-bold font-display text-app-text dark:text-white transition ${s.textClasses}`}>{s.label}</div>
@@ -320,7 +314,7 @@ export default function App() {
                     <div className="relative h-[200px] sm:h-[160px] w-full select-none">
                       <AnimatePresence mode="wait">
                         <motion.div key={currentAdIndex} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}
-                          onClick={() => { const link = ads[currentAdIndex]?.linkUrl; if (link?.includes("service") || link === "/services-pricing") setShowServicesPriceList(true); else if (link) window.open(link, "_blank", "noopener,noreferrer"); }}
+                          onClick={() => { const link = ads[currentAdIndex]?.linkUrl; if (link?.includes("service") || link === "/services-pricing") scrollTo("services"); else if (link) window.open(link, "_blank", "noopener,noreferrer"); }}
                           className="absolute inset-0 flex flex-col sm:flex-row items-stretch cursor-pointer">
                           <div className="relative w-full sm:w-2/5 h-32 sm:h-full bg-zinc-800 overflow-hidden shrink-0">
                             <img src={ads[currentAdIndex].imageUrl} alt={ads[currentAdIndex].title} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" referrerPolicy="no-referrer" />
