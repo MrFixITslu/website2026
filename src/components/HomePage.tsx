@@ -158,56 +158,62 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center space-y-8">
-          {/* Badge */}
+          {/* Badge Tagline */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="flex justify-center"
           >
-            <span className="inline-flex items-center gap-2 text-[10px] font-mono font-extrabold uppercase tracking-[0.25em] text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-4 py-1.5 rounded-full">
+            <span className="inline-flex items-center gap-2 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-4 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              Saint Lucia's Premier ICT Managed Services Partner
+              Build Better. Work Smarter. Grow Faster.
             </span>
           </motion.div>
 
-          {/* Headline */}
+          {/* Headline & Description */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
             className="space-y-4"
           >
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight leading-tight text-app-text dark:text-white">
-              Enterprise ICT Solutions<br />
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight leading-tight text-app-text dark:text-white">
+              Technology that helps<br />
               <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                Built for the Caribbean
+                Caribbean businesses grow.
               </span>
             </h1>
-            <p className="max-w-2xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
-              V79SL delivers world-class Managed IT, Cybersecurity, Cloud, and Custom Software solutions to businesses across Saint Lucia and the Eastern Caribbean.
+            <p className="max-w-3xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
+              V79 builds custom software, managed IT solutions, cloud services, AI automation, and digital platforms designed for Caribbean businesses, governments, schools, and entrepreneurs.
             </p>
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* Call to Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5"
           >
             <button
               onClick={() => onNavigate("contact")}
               className="group flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 cursor-pointer"
             >
-              Request a Free Consultation
+              Book a Free Consultation
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => onNavigate("services")}
               className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-app-aside-bg/60 hover:bg-app-aside-bg border border-app-border text-app-text text-sm font-semibold transition-all duration-200 cursor-pointer"
             >
-              Explore Services
+              Explore Our Services
+            </button>
+            <button
+              onClick={() => onNavigate("solutions")}
+              className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-app-aside-bg/60 hover:bg-app-aside-bg border border-app-border text-app-text text-sm font-semibold transition-all duration-200 cursor-pointer"
+            >
+              View Our Projects
             </button>
           </motion.div>
 
