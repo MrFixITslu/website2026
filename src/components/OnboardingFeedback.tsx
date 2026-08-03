@@ -111,7 +111,7 @@ export function OnboardingFeedback({ app, onBack }: OnboardingFeedbackProps) {
   const totalCount = feedbacks.length;
   const averageRating = totalCount > 0 
     ? feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / totalCount 
-    : (app.rating || 4.8);
+    : (app.rating || 0);
 
   // Rating distribution
   const distribution = [0, 0, 0, 0, 0]; // 5 to 1 star index mapping

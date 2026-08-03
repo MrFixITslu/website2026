@@ -6,7 +6,7 @@ const TEAM = [
   {
     name: "Neil Verdant",
     role: "Founder & Lead Systems Architect",
-    bio: "Over 20 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
+    bio: "Over 25 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
     linkedin: "https://linkedin.com",
     email: "vision79slu@gmail.com",
     initials: "NV",
@@ -35,9 +35,8 @@ const TEAM = [
 ];
 
 const WHY_CHOOSE_US = [
-  { title: "20+ years ICT industry experience", icon: Clock },
+  { title: "25+ years ICT & Telecoms industry experience", icon: Clock },
   { title: "Enterprise networking expertise", icon: Globe },
-  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
   { title: "Custom software development", icon: Sparkles },
   { title: "AI automation solutions", icon: Cpu },
   { title: "Business process optimisation", icon: Wrench },
@@ -99,16 +98,16 @@ export default function AboutPage() {
             className="text-base text-app-text-sec font-light leading-relaxed space-y-4 text-left glass p-8 rounded-2xl border border-app-border"
           >
             <p>
-              Vision79 was founded with one goal—to bring world-class technology solutions to the Caribbean.
+              Vision79 Digital was founded with one goal—to bring world-class technology solutions to the Caribbean.
             </p>
             <p>
-              With more than 20 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 combines technical expertise with practical business knowledge.
+              With more than 25 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 Digital combines technical expertise with practical business knowledge.
             </p>
             <p>
               From helping businesses modernize their operations to building custom applications that solve real problems, we focus on creating technology that delivers measurable results.
             </p>
             <p>
-              Today Vision79 is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
+              Today Vision79 Digital is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
             </p>
           </motion.div>
         </div>
@@ -214,7 +213,7 @@ export default function AboutPage() {
           <div className="space-y-1 flex-1">
             <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest block font-bold">Built for the Caribbean</span>
             <p className="text-xs text-app-text-sec leading-relaxed">
-              We design with island realities in mind: local internet bottlenecks, hurricane preparedness, and Saint Lucian regulatory conditions.
+              We design with island realities in mind: local internet bottlenecks, hurricane preparedness, and Caribbean regulatory conditions.
             </p>
           </div>
           <div className="flex flex-col gap-1.5 font-mono text-[11px] text-app-text-sec shrink-0">
