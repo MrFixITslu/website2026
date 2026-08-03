@@ -35,9 +35,8 @@ const TEAM = [
 ];
 
 const WHY_CHOOSE_US = [
-  { title: "25+ years ICT industry experience", icon: Clock },
+  { title: "25+ years ICT & Telecoms industry experience", icon: Clock },
   { title: "Enterprise networking expertise", icon: Globe },
-  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
   { title: "Custom software development", icon: Sparkles },
   { title: "AI automation solutions", icon: Cpu },
   { title: "Business process optimisation", icon: Wrench },
@@ -214,7 +213,7 @@ export default function AboutPage() {
           <div className="space-y-1 flex-1">
             <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest block font-bold">Built for the Caribbean</span>
             <p className="text-xs text-app-text-sec leading-relaxed">
-              We design with island realities in mind: local internet bottlenecks, hurricane preparedness, and Saint Lucian regulatory conditions.
+              We design with island realities in mind: local internet bottlenecks, hurricane preparedness, and Caribbean regulatory conditions.
             </p>
           </div>
           <div className="flex flex-col gap-1.5 font-mono text-[11px] text-app-text-sec shrink-0">
