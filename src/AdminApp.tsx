@@ -413,7 +413,7 @@ export default function AdminApp() {
   const [formInstructor, setFormInstructor] = useState("");
   const [formDuration, setFormDuration] = useState("12.5 hrs");
   const [formLessonsCount, setFormLessonsCount] = useState("24");
-  const [formRating, setFormRating] = useState("4.8");
+  const [formRating, setFormRating] = useState("0");
   const [formSyllabus, setFormSyllabus] = useState("");
   const [syllabusTab, setSyllabusTab] = useState<"write" | "preview">("write");
 
@@ -650,7 +650,7 @@ export default function AdminApp() {
     setFormInstructor(app.instructor || "");
     setFormDuration(app.duration || "12.5 hrs");
     setFormLessonsCount(app.lessonsCount !== undefined ? app.lessonsCount.toString() : "24");
-    setFormRating(app.rating !== undefined ? app.rating.toString() : "4.8");
+    setFormRating(app.rating !== undefined ? app.rating.toString() : "0");
     setFormSyllabus(app.syllabus || "");
     setSyllabusTab("write");
     
@@ -686,7 +686,7 @@ export default function AdminApp() {
     setFormInstructor("");
     setFormDuration("12.5 hrs");
     setFormLessonsCount("24");
-    setFormRating("4.8");
+    setFormRating("0");
     setFormSyllabus("");
     setSyllabusTab("write");
     setAdminNotification(null);
@@ -1170,7 +1170,7 @@ V79 ICT Solutions`;
         setFormInstructor("");
         setFormDuration("12.5 hrs");
         setFormLessonsCount("24");
-        setFormRating("4.8");
+        setFormRating("0");
         setFormSyllabus("");
         if (formCategory === "courses") {
           setAdminNotification({

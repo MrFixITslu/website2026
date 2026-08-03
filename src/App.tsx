@@ -396,7 +396,7 @@ export default function App() {
                                 <p className="text-[11px] text-app-text-sec font-mono mt-1 tracking-wide">{app.subtitle}</p>
                                 <div className="flex items-center gap-1.5 mt-2 text-[10px] font-mono">
                                   <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                                  <span className="font-bold text-yellow-500">{app.rating || 4.8}</span>
+                                  <span className="font-bold text-yellow-500">{app.rating || 0}</span>
                                   <span className="text-app-text-muted">•</span>
                                   <span className="text-app-text-muted">{isCourse ? `By ${app.instructor || "Expert"}` : "Reviews"}</span>
                                 </div>

@@ -902,7 +902,7 @@ class SqliteDatabase {
             // Alter table statements to add newer columns dynamically for Courses supporting
             this.db.run("ALTER TABLE saas_apps ADD COLUMN price REAL DEFAULT 0", () => {});
             this.db.run("ALTER TABLE saas_apps ADD COLUMN instructor TEXT", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN rating REAL DEFAULT 4.7", () => {});
+            this.db.run("ALTER TABLE saas_apps ADD COLUMN rating REAL DEFAULT 0", () => {});
             this.db.run("ALTER TABLE saas_apps ADD COLUMN duration TEXT", () => {});
             this.db.run("ALTER TABLE saas_apps ADD COLUMN lessonsCount INTEGER DEFAULT 10", () => {});
             this.db.run("ALTER TABLE saas_apps ADD COLUMN curriculum TEXT", () => {});
@@ -931,7 +931,7 @@ class SqliteDatabase {
                     app.launchCount || 0,
                     app.price || 0,
                     app.instructor || "",
-                    app.rating || 4.7,
+                    app.rating || 0,
                     app.duration || "",
                     app.lessonsCount || 0,
                     app.curriculum || ""
@@ -1102,7 +1102,7 @@ class SqliteDatabase {
         app.accessUrl,
         app.price || 0,
         app.instructor || "",
-        app.rating || 4.7,
+        app.rating || 0,
         app.duration || "",
         app.lessonsCount || 0,
         app.curriculum || "",
