@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ArrowRight, Phone, Mail,
-  CheckCircle, MapPin, Star, ChevronDown, ShieldCheck, Lightbulb, Map
+  MapPin, Star, ChevronDown, ShieldCheck,
+  Clock, Lock, Users, Heart
 } from "lucide-react";
 
 const SERVICES = [
@@ -75,36 +76,36 @@ const METRICS = [
   { label: "Response Time", value: "4", suffix: "hr", desc: "On-site SLA guarantee" },
 ];
 
-const ASSESSMENT_SCOPE = [
-  { num: "1", title: "Infrastructure Review", items: ["Computer Health", "Router Diagnostics", "ISP Speed Verification", "WiFi Signal Mapping"], badgeClasses: "bg-indigo-500/10 text-indigo-400" },
-  { num: "2", title: "Security Audit", items: ["Password Practices", "Multi-Factor Status", "Endpoint Security", "Active User Access"], badgeClasses: "bg-rose-500/10 text-rose-400" },
-  { num: "3", title: "Data Protection", items: ["Backup Integrity", "Cloud Storage Setup", "M365 Email Audits", "Recovery Testing"], badgeClasses: "bg-sky-500/10 text-sky-400" },
-];
-
-const ASSESSMENT_DELIVERABLES = [
-  { icon: BarChart3, label: "Current ICT Security Score" },
-  { icon: ShieldCheck, label: "Identified Risks & Vulnerabilities" },
-  { icon: Lightbulb, label: "Recommended Practical Solutions" },
-  { icon: Map, label: "90-Day Priority Action Roadmap" },
+const WHY_CHOOSE_VISION79 = [
+  { title: "25+ years ICT & Telecoms industry experience", icon: Clock },
+  { title: "99.9% uptime SLA with real financial accountability", icon: ShieldCheck },
+  { title: "On-site response guaranteed across Saint Lucia", icon: MapPin },
+  { title: "Hurricane & power surge business continuity planning", icon: Shield },
+  { title: "Satellite & LTE internet failover configuration", icon: Network },
+  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
+  { title: "Custom software & AI automation solutions", icon: Cpu },
+  { title: "Local data compliance & privacy-first architecture", icon: Lock },
+  { title: "Bilingual support (English & Kwéyòl) for all clients", icon: Users },
+  { title: "Caribbean-rooted, built for island realities", icon: Heart },
 ];
 
 const TESTIMONIALS = [
   {
     name: "Sandra Charles",
     role: "General Manager, Rodney Bay Marina",
-    text: "V79SL transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
+    text: "Vision79 Digital transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
     rating: 5,
   },
   {
     name: "Marcus Joseph",
     role: "CFO, Island Retail Group",
-    text: "Our Microsoft 365 migration was seamless. V79SL handled everything — licensing, data migration, and staff training. Highly professional.",
+    text: "Our Microsoft 365 migration was seamless. Vision79 Digital handled everything — licensing, data migration, and staff training. Highly professional.",
     rating: 5,
   },
   {
     name: "Angela Delmar",
     role: "Director, Castries Health Associates",
-    text: "The cybersecurity audit revealed critical gaps we never knew existed. V79SL's remediation plan was thorough and executed without interruption.",
+    text: "The cybersecurity audit revealed critical gaps we never knew existed. Vision79 Digital's remediation plan was thorough and executed without interruption.",
     rating: 5,
   },
 ];
@@ -331,129 +332,52 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* ── ICT Business Health Assessment ───────────────────────────
-           Merged from the internal Launch Pack "Business Assessment (Lead Offer)" tab.
-           NOTE: this is a paid entry-point diagnostic ($1,500 XCD one-time), distinct
-           from the "free assessment" wording used in this page's other CTA buttons —
-           worth reconciling the messaging site-wide. */}
-      <section className="px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="glass rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.04] to-transparent p-6 sm:p-10 space-y-8"
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Entry Offer</span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight max-w-xl">
-                Know Your Technology Risks Before They Become Costly Business Blockades
-              </h2>
-              <p className="text-sm text-app-text-sec font-light max-w-xl leading-relaxed">
-                A thorough diagnostic sweep uncovering hidden system bugs, network limits, server performance issues, and password vulnerabilities.
-              </p>
-            </div>
-            <div className="shrink-0 bg-indigo-600 border border-indigo-400 rounded-xl px-5 py-3 text-white text-center">
-              <span className="text-[10px] font-mono block text-indigo-200">ICT Business Health Assessment</span>
-              <span className="text-2xl font-black font-display tracking-tighter block">EC$1,500</span>
-              <span className="text-[9px] font-mono block text-indigo-200">One-Time Fee</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {ASSESSMENT_SCOPE.map((s) => (
-              <div key={s.title} className="p-4 rounded-xl border border-app-border bg-app-aside-bg/25 space-y-2">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs font-mono ${s.badgeClasses}`}>{s.num}</div>
-                <p className="text-xs font-bold text-app-text dark:text-white">{s.title}</p>
-                <ul className="text-[10px] text-app-text-muted space-y-1 leading-normal font-mono">
-                  {s.items.map((it) => <li key={it}>• {it}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-5 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.02] space-y-3">
-            <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block tracking-wider">The Deliverable: Business Intelligence Report</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {ASSESSMENT_DELIVERABLES.map((d) => {
-                const Icon = d.icon;
-                return (
-                  <div key={d.label} className="flex items-center gap-2 text-xs font-mono text-app-text-sec">
-                    <Icon className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>{d.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 border-t border-app-border/40">
-            <button
-              onClick={() => onNavigate("contact")}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
-            >
-              Book Your Assessment <ArrowRight className="w-4 h-4" />
-            </button>
-            <a href="tel:+17587260035" className="flex items-center gap-2 text-sm font-semibold text-app-text-sec hover:text-indigo-400 transition">
-              <Phone className="w-4 h-4" /> Or call +1 758 726 0035
-            </a>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* ── Why V79SL ─────────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="max-w-7xl mx-auto rounded-3xl border border-app-border bg-gradient-to-br from-indigo-500/[0.04] to-violet-500/[0.03] p-8 sm:p-12 relative overflow-hidden"
-        >
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-          <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Why Choose V79SL</span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
-                  Caribbean-Rooted.<br />Enterprise-Grade.
-                </h2>
-                <p className="text-sm text-app-text-sec font-light leading-relaxed">
-                  We understand the unique challenges Caribbean businesses face — from hurricane preparedness and power redundancy to internet failover and local compliance. Our solutions are built for this environment.
-                </p>
-              </div>
-              <button
-                onClick={() => onNavigate("about")}
-                className="flex items-center gap-2 text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
+      {/* ── Why Choose Vision79 Digital ───────────────────────────────
+           Merged from the former "Know Your Technology Risks" assessment intro slot.
+           List style merged from the About page's "Why Choose Us" section; the ICT
+           Business Health Assessment offer itself now lives on the Services page. */}
+      <section className="px-6 lg:px-8 space-y-8 max-w-3xl mx-auto">
+        <div className="text-center space-y-2">
+          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Excellence</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Vision79 Digital</h2>
+          <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light">
+            Caribbean-rooted, enterprise-grade — we understand the unique challenges Caribbean businesses face and build solutions for this environment.
+          </p>
+        </div>
+        <div className="space-y-4 relative">
+          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
+          {WHY_CHOOSE_VISION79.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className="flex items-center gap-5 relative"
               >
-                Meet the V79SL team <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                "99.9% uptime SLA with real financial accountability",
-                "On-site response guaranteed across Saint Lucia",
-                "Hurricane & power surge business continuity planning",
-                "Satellite & LTE internet failover configuration",
-                "Local data compliance & privacy-first architecture",
-                "Bilingual support (English & Kwéyòl) for all clients",
-              ].map((point, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.07 }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl bg-app-aside-bg/40 border border-app-border hover:border-emerald-500/30 transition"
-                >
-                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-xs text-app-text-sec font-light">{point}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+                <div className="w-[44px] shrink-0 text-right flex justify-end">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-indigo-400/50 shrink-0 shadow-lg shadow-indigo-500/30" />
+                <div className="glass rounded-xl px-4 py-3 border border-app-border flex-1">
+                  <p className="text-xs font-semibold text-app-text dark:text-white">{item.title}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+        <div className="text-center">
+          <button
+            onClick={() => onNavigate("about")}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
+          >
+            Meet the Vision79 Digital team <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </section>
 
       {/* ── Testimonials ──────────────────────────────────────────── */}

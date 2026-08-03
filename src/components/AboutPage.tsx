@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Linkedin, Mail, ArrowRight, Users, Award, Globe, Heart, CheckCircle2, Clock, ShieldCheck, Cpu, Cloud, Wrench, Sparkles, AlertTriangle, Zap } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, Users, Award, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 
 const TEAM = [
   {
     name: "Neil Verdant",
     role: "Founder & Lead Systems Architect",
-    bio: "Over 20 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
+    bio: "Over 25 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
     linkedin: "https://linkedin.com",
     email: "vision79slu@gmail.com",
     initials: "NV",
@@ -34,16 +34,9 @@ const TEAM = [
   },
 ];
 
-const WHY_CHOOSE_US = [
-  { title: "20+ years ICT industry experience", icon: Clock },
-  { title: "Enterprise networking expertise", icon: Globe },
-  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
-  { title: "Custom software development", icon: Sparkles },
-  { title: "AI automation solutions", icon: Cpu },
-  { title: "Business process optimisation", icon: Wrench },
-  { title: "Local Caribbean support", icon: Heart },
-  { title: "Fast response times", icon: ShieldCheck },
-];
+// NOTE: "Why Choose Us" was merged into the "Why Choose Vision79 Digital"
+// section on the Home page (see HomePage.tsx), which now uses this section's
+// timeline list style.
 
 const CHALLENGES = [
   { title: "Internal Limits", desc: "Severely limited internal IT expertise, leaving critical networks unmanaged." },
@@ -99,16 +92,16 @@ export default function AboutPage() {
             className="text-base text-app-text-sec font-light leading-relaxed space-y-4 text-left glass p-8 rounded-2xl border border-app-border"
           >
             <p>
-              Vision79 was founded with one goal—to bring world-class technology solutions to the Caribbean.
+              Vision79 Digital was founded with one goal—to bring world-class technology solutions to the Caribbean.
             </p>
             <p>
-              With more than 20 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 combines technical expertise with practical business knowledge.
+              With more than 25 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 Digital combines technical expertise with practical business knowledge.
             </p>
             <p>
               From helping businesses modernize their operations to building custom applications that solve real problems, we focus on creating technology that delivers measurable results.
             </p>
             <p>
-              Today Vision79 is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
+              Today Vision79 Digital is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
             </p>
           </motion.div>
         </div>
@@ -226,42 +219,6 @@ export default function AboutPage() {
           </div>
         </motion.div>
       </section>
-
-      {/* ── Why Choose Us ─────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8 max-w-3xl mx-auto">
-        <div className="text-center space-y-2">
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Excellence</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Us</h2>
-        </div>
-        <div className="space-y-4 relative">
-          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
-          {WHY_CHOOSE_US.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="flex items-center gap-5 relative"
-              >
-                <div className="w-[44px] shrink-0 text-right flex justify-end">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-indigo-400/50 shrink-0 shadow-lg shadow-indigo-500/30" />
-                <div className="glass rounded-xl px-4 py-3 border border-app-border flex-1">
-                  <p className="text-xs font-semibold text-app-text dark:text-white">{item.title}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-
 
       {/* ── Team ──────────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8 space-y-8 max-w-5xl mx-auto">
