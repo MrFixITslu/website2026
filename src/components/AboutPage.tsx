@@ -34,9 +34,22 @@ const TEAM = [
   },
 ];
 
+<<<<<<< HEAD
 // NOTE: "Why Choose Us" was merged into the "Why Choose Vision79 Digital"
 // section on the Home page (see HomePage.tsx), which now uses this section's
 // timeline list style.
+=======
+const WHY_CHOOSE_US = [
+  { title: "25+ years ICT industry experience", icon: Clock },
+  { title: "Enterprise networking expertise", icon: Globe },
+  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
+  { title: "Custom software development", icon: Sparkles },
+  { title: "AI automation solutions", icon: Cpu },
+  { title: "Business process optimisation", icon: Wrench },
+  { title: "Local Caribbean support", icon: Heart },
+  { title: "Fast response times", icon: ShieldCheck },
+];
+>>>>>>> 5c2b1402ce5e06dc868f658ff2ca032fcea0f5c1
 
 const CHALLENGES = [
   { title: "Internal Limits", desc: "Severely limited internal IT expertise, leaving critical networks unmanaged." },
