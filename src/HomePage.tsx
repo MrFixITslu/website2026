@@ -91,7 +91,7 @@ const TESTIMONIALS = [
   {
     name: "Sandra Charles",
     role: "General Manager, Rodney Bay Marina",
-    text: "V79SL transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
+    text: "Vision79 Digital transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
     rating: 5,
   },
   {
@@ -197,7 +197,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </span>
             </h1>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
-              V79 builds custom software, managed IT solutions, cloud services, AI automation, and digital platforms designed for Caribbean businesses, governments, schools, and entrepreneurs.
+              Vision79 Digital builds custom software, managed IT solutions, cloud services, AI automation, and digital platforms designed for Caribbean businesses, governments, schools, and entrepreneurs.
             </p>
           </motion.div>
 
@@ -332,7 +332,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── ICT Business Health Assessment ───────────────────────────
            Merged from the internal Launch Pack "Business Assessment (Lead Offer)" tab.
-           NOTE: this is a paid entry-point diagnostic ($1,500 XCD one-time), distinct
+           NOTE: this is a paid entry-point diagnostic ($250 XCD one-time), distinct
            from the "free assessment" wording used in this page's other CTA buttons —
            worth reconciling the messaging site-wide. */}
       <section className="px-6 lg:px-8 max-w-7xl mx-auto">
@@ -401,7 +401,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </motion.div>
       </section>
 
-      {/* ── Why V79SL ─────────────────────────────────────────────── */}
+      {/* ── Why Vision79 Digital ─────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -426,7 +426,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 onClick={() => onNavigate("about")}
                 className="flex items-center gap-2 text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
               >
-                Meet the V79SL team <ArrowRight className="w-4 h-4" />
+                Meet the Vision79 Digital team <ArrowRight className="w-4 h-4" />
               </button>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -434,9 +434,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 "99.9% uptime SLA with real financial accountability",
                 "On-site response guaranteed across Saint Lucia",
                 "Hurricane & power surge business continuity planning",
-                "Satellite & LTE internet failover configuration",
                 "Local data compliance & privacy-first architecture",
-                "Bilingual support (English & Kwéyòl) for all clients",
               ].map((point, i) => (
                 <motion.div
                   key={i}
