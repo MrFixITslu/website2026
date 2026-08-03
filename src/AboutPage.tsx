@@ -35,7 +35,7 @@ const TEAM = [
 ];
 
 const WHY_CHOOSE_US = [
-  { title: "20+ years ICT industry experience", icon: Clock },
+  { title: "25+ years ICT industry experience", icon: Clock },
   { title: "Enterprise networking expertise", icon: Globe },
   { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
   { title: "Custom software development", icon: Sparkles },
