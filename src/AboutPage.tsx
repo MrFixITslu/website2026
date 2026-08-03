@@ -6,7 +6,7 @@ const TEAM = [
   {
     name: "Neil Verdant",
     role: "Founder & Lead Systems Architect",
-    bio: "Over 20 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
+    bio: "Over 25 years of enterprise ICT experience across telecommunications, fibre networks, and cloud infrastructure.",
     linkedin: "https://linkedin.com",
     email: "vision79slu@gmail.com",
     initials: "NV",
