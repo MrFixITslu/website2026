@@ -92,19 +92,19 @@ const TESTIMONIALS = [
   {
     name: "Sandra Charles",
     role: "General Manager, Rodney Bay Marina",
-    text: "V79SL transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
+    text: "Vision79 Digital transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
     rating: 5,
   },
   {
     name: "Marcus Joseph",
     role: "CFO, Island Retail Group",
-    text: "Our Microsoft 365 migration was seamless. V79SL handled everything — licensing, data migration, and staff training. Highly professional.",
+    text: "Our Microsoft 365 migration was seamless. Vision79 Digital handled everything — licensing, data migration, and staff training. Highly professional.",
     rating: 5,
   },
   {
     name: "Angela Delmar",
     role: "Director, Castries Health Associates",
-    text: "The cybersecurity audit revealed critical gaps we never knew existed. V79SL's remediation plan was thorough and executed without interruption.",
+    text: "The cybersecurity audit revealed critical gaps we never knew existed. Vision79 Digital's remediation plan was thorough and executed without interruption.",
     rating: 5,
   },
 ];
