@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
   Sun, Moon, Menu, X, ArrowRight, Search, Package, AlertTriangle,
   ChevronLeft, ChevronRight, Megaphone, Star,
@@ -14,6 +14,7 @@ import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { CourseDetailPage } from "./components/CourseDetailPage";
 import { OnboardingFeedback } from "./components/OnboardingFeedback";
+import { AppCardSkeleton } from "./components/ui/Skeleton";
 
 const isPromoActive = (app: SaaSApp) => {
   if (app.category !== "courses" || !app.createdAt) return false;
@@ -181,6 +182,7 @@ export default function App() {
   };
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="flex flex-col min-h-screen bg-app-bg text-app-text antialiased selection:bg-indigo-500/20 selection:text-indigo-400">
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
@@ -198,13 +200,21 @@ export default function App() {
             <button
               key={sec.id}
               onClick={() => scrollTo(sec.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all cursor-pointer ${
-                activeSection === sec.id
-                  ? "bg-indigo-500/10 text-indigo-400 font-bold"
-                  : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg"
+              className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+                activeSection === sec.id ? "text-indigo-400 font-bold" : "text-app-text-sec hover:text-app-text"
               }`}
             >
-              {sec.label}
+              {activeSection === sec.id && (
+                <motion.div
+                  layoutId="nav-active-pill"
+                  className="absolute inset-0 bg-indigo-500/10 rounded-lg"
+                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                />
+              )}
+              {activeSection !== sec.id && (
+                <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 bg-app-aside-bg transition-opacity" />
+              )}
+              <span className="relative z-10">{sec.label}</span>
             </button>
           ))}
           <button
@@ -240,11 +250,18 @@ export default function App() {
               <button
                 key={sec.id}
                 onClick={() => scrollTo(sec.id)}
-                className={`px-4 py-3 rounded-xl text-sm font-semibold text-left transition cursor-pointer ${
-                  activeSection === sec.id ? "bg-indigo-500/15 text-indigo-400 font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg"
+                className={`relative px-4 py-3 rounded-xl text-sm font-semibold text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
+                  activeSection === sec.id ? "text-indigo-400 font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg transition-colors"
                 }`}
               >
-                {sec.label}
+                {activeSection === sec.id && (
+                  <motion.div
+                    layoutId="nav-active-pill-mobile"
+                    className="absolute inset-0 bg-indigo-500/15 rounded-xl"
+                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10">{sec.label}</span>
               </button>
             ))}
           </motion.div>
@@ -350,7 +367,7 @@ export default function App() {
                 <div>
                   {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {[1, 2, 3].map(n => <div key={n} className="glass p-5 rounded-2xl h-60 animate-pulse" />)}
+                      {[1, 2, 3].map(n => <AppCardSkeleton key={n} />)}
                     </div>
                   ) : errorMsg ? (
                     <div className="text-center py-12 glass rounded-2xl space-y-3">
@@ -483,5 +500,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </MotionConfig>
   );
 }

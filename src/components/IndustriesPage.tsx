@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { ArrowRight, Building2, ShoppingBag, Heart, GraduationCap, Scale, Palmtree, Briefcase, Landmark } from "lucide-react";
+import { Button } from "./ui/Button";
 
 const INDUSTRIES = [
   {
@@ -179,12 +180,9 @@ export default function IndustriesPage({ onNavigate }: { onNavigate: (v: string)
               Vision79 works with organizations of all types. Get in touch and we'll design a custom ICT solution for your needs.
             </p>
           </div>
-          <button
-            onClick={() => onNavigate("contact")}
-            className="shrink-0 flex items-center gap-2.5 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
-          >
-            Contact Our Team <ArrowRight className="w-4 h-4" />
-          </button>
+          <Button onClick={() => onNavigate("contact")} variant="primary" className="shrink-0" icon={<ArrowRight className="w-4 h-4" />}>
+            Contact Our Team
+          </Button>
         </motion.div>
       </section>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users } from "lucide-react";
+import { FieldError } from "./ui/FieldError";
 
 const CHALLENGES = [
   "Poor internet reliability / downtime",
@@ -92,7 +93,13 @@ export default function ContactPage() {
       </motion.section>
 
       <section className="px-6 lg:px-8">
-        <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto"
+        >
           {/* Contact Info */}
           <div className="space-y-5">
             <h2 className="text-base font-extrabold font-display text-app-text dark:text-white">Contact Information</h2>
@@ -100,10 +107,18 @@ export default function ContactPage() {
               { icon: Phone, label: "Phone", value: "+1 758 726 0035", href: "tel:+17587260035" },
               { icon: Mail, label: "Email", value: "vision79slu@gmail.com", href: "mailto:vision79slu@gmail.com" },
               { icon: MapPin, label: "Location", value: "Castries, Saint Lucia", href: null },
-            ].map((c) => {
+            ].map((c, i) => {
               const Icon = c.icon;
               const content = (
-                <div key={c.label} className="flex items-start gap-3 glass rounded-xl p-4 border border-app-border hover:border-indigo-500/30 transition-colors group">
+                <motion.div
+                  key={c.label}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.07 }}
+                  whileHover={{ y: -2 }}
+                  className="flex items-start gap-3 glass rounded-xl p-4 border border-app-border hover:border-indigo-500/30 hover:shadow-lg transition-[border-color,box-shadow] group"
+                >
                   <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
                     <Icon className="w-4 h-4 text-indigo-400" />
                   </div>
@@ -111,9 +126,9 @@ export default function ContactPage() {
                     <div className="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">{c.label}</div>
                     <div className="text-sm font-semibold text-app-text dark:text-white group-hover:text-indigo-400 transition">{c.value}</div>
                   </div>
-                </div>
+                </motion.div>
               );
-              return c.href ? <a key={c.label} href={c.href}>{content}</a> : content;
+              return c.href ? <a key={c.label} href={c.href} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-xl block">{content}</a> : content;
             })}
 
             <div className="glass rounded-xl p-4 border border-app-border space-y-2">
@@ -160,7 +175,7 @@ export default function ContactPage() {
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Full Name *</label>
                       <input id="contact-name" name="name" value={form.name} onChange={handleChange} placeholder="Neil Verdant" className={inputClass("name")} />
-                      {errors.name && <p className="text-[10px] text-rose-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.name}</p>}
+                      <FieldError message={errors.name} />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Company *</label>
@@ -168,7 +183,7 @@ export default function ContactPage() {
                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
                         <input id="contact-company" name="company" value={form.company} onChange={handleChange} placeholder="Island Retail Ltd." className={inputClass("company") + " pl-9"} />
                       </div>
-                      {errors.company && <p className="text-[10px] text-rose-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.company}</p>}
+                      <FieldError message={errors.company} />
                     </div>
                   </div>
 
@@ -179,7 +194,7 @@ export default function ContactPage() {
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
                         <input id="contact-email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@company.com" className={inputClass("email") + " pl-9"} />
                       </div>
-                      {errors.email && <p className="text-[10px] text-rose-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.email}</p>}
+                      <FieldError message={errors.email} />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Phone Number *</label>
@@ -187,7 +202,7 @@ export default function ContactPage() {
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
                         <input id="contact-phone" type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 758 000 0000" className={inputClass("phone") + " pl-9"} />
                       </div>
-                      {errors.phone && <p className="text-[10px] text-rose-400 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.phone}</p>}
+                      <FieldError message={errors.phone} />
                     </div>
                   </div>
 
@@ -224,18 +239,26 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  {serverError && (
-                    <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono">
-                      <AlertCircle className="w-4 h-4 shrink-0" />
-                      {serverError}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {serverError && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        role="alert"
+                        className="flex items-center gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono"
+                      >
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        {serverError}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <button
                     id="contact-submit"
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
                   >
                     {submitting ? (
                       <>
@@ -257,7 +280,7 @@ export default function ContactPage() {
               )}
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

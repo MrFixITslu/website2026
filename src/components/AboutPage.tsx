@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Linkedin, Mail, ArrowRight, Users, Award, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
+import { Button } from "./ui/Button";
 
 const TEAM = [
   {
@@ -169,7 +170,8 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="glass rounded-2xl p-5 border border-rose-500/15 bg-rose-500/[0.02] space-y-1.5"
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className="glass rounded-2xl p-5 border border-rose-500/15 bg-rose-500/[0.02] space-y-1.5 hover:shadow-lg hover:shadow-rose-500/5 hover:border-rose-500/30 transition-[border-color,box-shadow] duration-300"
             >
               <div className="flex items-center gap-2 text-rose-400">
                 <AlertTriangle className="w-4 h-4" />
@@ -234,7 +236,8 @@ export default function AboutPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className={`glass rounded-2xl p-6 border border-app-border space-y-4 ${member.isOpen ? "border-dashed" : ""} hover:border-indigo-500/30 transition-colors`}
+              whileHover={{ y: -3, transition: { duration: 0.2 } }}
+              className={`glass rounded-2xl p-6 border border-app-border space-y-4 ${member.isOpen ? "border-dashed" : ""} hover:border-indigo-500/30 hover:shadow-lg transition-[border-color,box-shadow] duration-300`}
             >
               <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${member.color} flex items-center justify-center text-white font-extrabold text-xl font-display shadow-lg`}>
@@ -324,12 +327,9 @@ export default function AboutPage() {
             <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
             <p className="text-sm text-app-text-sec font-light">Let's have a conversation about your ICT challenges.</p>
           </div>
-          <a
-            href="mailto:vision79slu@gmail.com"
-            className="shrink-0 flex items-center gap-2.5 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
-          >
-            Get in Touch <ArrowRight className="w-4 h-4" />
-          </a>
+          <Button href="mailto:vision79slu@gmail.com" variant="primary" className="shrink-0" icon={<ArrowRight className="w-4 h-4" />}>
+            Get in Touch
+          </Button>
         </motion.div>
       </section>
     </div>

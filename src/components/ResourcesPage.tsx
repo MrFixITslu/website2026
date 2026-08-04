@@ -3,6 +3,8 @@ import { motion } from "motion/react";
 import { ArrowLeft, Calendar, User, Tag, BookOpen, ArrowRight } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import type { BlogArticle } from "../types";
+import { ArticleCardSkeleton } from "./ui/Skeleton";
+import { Button } from "./ui/Button";
 
 interface ResourcesPageProps {
   onNavigate?: (v: string) => void;
@@ -83,12 +85,9 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
           <div className="pt-6 border-t border-app-border">
             <div className="glass rounded-2xl p-6 text-center space-y-3 border border-indigo-500/20">
               <p className="text-sm text-app-text-sec font-light">Have questions? Our team is ready to help your business implement these best practices.</p>
-              <button
-                onClick={() => onNavigate?.("contact")}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition mx-auto cursor-pointer"
-              >
-                Talk to an Expert <ArrowRight className="w-4 h-4" />
-              </button>
+              <Button onClick={() => onNavigate?.("contact")} variant="primary" className="mx-auto" icon={<ArrowRight className="w-4 h-4" />}>
+                Talk to an Expert
+              </Button>
             </div>
           </div>
         </div>
@@ -116,9 +115,7 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
       <section className="px-6 lg:px-8 max-w-7xl mx-auto">
         {loading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="glass rounded-2xl border border-app-border h-80 animate-pulse" />
-            ))}
+            {[1, 2, 3].map((n) => <ArticleCardSkeleton key={n} />)}
           </div>
         ) : error ? (
           <div className="text-center py-16 space-y-3">
@@ -139,8 +136,9 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
                 onClick={() => openArticle(article.slug)}
-                className="glass rounded-2xl border border-app-border hover:border-indigo-500/30 text-left overflow-hidden group transition-all duration-300 hover:shadow-lg cursor-pointer"
+                className="glass rounded-2xl border border-app-border hover:border-indigo-500/30 text-left overflow-hidden group transition-[border-color,box-shadow] duration-300 hover:shadow-lg cursor-pointer"
               >
                 {article.coverImage && (
                   <div className="h-40 overflow-hidden">

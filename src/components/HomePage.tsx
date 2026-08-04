@@ -5,6 +5,7 @@ import {
   MapPin, Star, ChevronDown, ShieldCheck,
   Clock, Lock, Users, Heart
 } from "lucide-react";
+import { Button } from "./ui/Button";
 
 const SERVICES = [
   {
@@ -164,11 +165,23 @@ export default function HomePage({ onNavigate }: HomePageProps) {
     <div className="space-y-20 pb-16">
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <section className="relative min-h-[82vh] flex flex-col justify-center overflow-hidden pt-16">
-        {/* Background gradients */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-500/8 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-emerald-500/6 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-0 w-[300px] h-[300px] bg-violet-500/5 rounded-full blur-3xl" />
+        {/* Background gradients — slow ambient drift, respects prefers-reduced-motion via MotionConfig */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <motion.div
+            animate={{ scale: [1, 1.08, 1], x: [0, 20, 0], y: [0, -15, 0] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-500/8 rounded-full blur-3xl"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.12, 1], x: [0, -18, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-emerald-500/6 rounded-full blur-3xl"
+          />
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], y: [0, 20, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            className="absolute top-1/3 right-0 w-[300px] h-[300px] bg-violet-500/5 rounded-full blur-3xl"
+          />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center space-y-8">
@@ -210,25 +223,21 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3.5"
           >
-            <button
+            <Button
               onClick={() => onNavigate("contact")}
-              className="group flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 cursor-pointer"
+              variant="primary"
+              size="lg"
+              className="group"
+              icon={<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             >
               Book a Free Consultation
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => onNavigate("services")}
-              className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-app-aside-bg/60 hover:bg-app-aside-bg border border-app-border text-app-text text-sm font-semibold transition-all duration-200 cursor-pointer"
-            >
+            </Button>
+            <Button onClick={() => onNavigate("services")} variant="secondary" size="lg">
               Explore Our Services
-            </button>
-            <button
-              onClick={() => onNavigate("solutions")}
-              className="flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-app-aside-bg/60 hover:bg-app-aside-bg border border-app-border text-app-text text-sm font-semibold transition-all duration-200 cursor-pointer"
-            >
+            </Button>
+            <Button onClick={() => onNavigate("solutions")} variant="secondary" size="lg">
               View Our Projects
-            </button>
+            </Button>
           </motion.div>
 
           {/* Contact quick bar */}

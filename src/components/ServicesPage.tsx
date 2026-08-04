@@ -4,6 +4,7 @@ import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ChevronDown, CheckCircle, ArrowRight, Phone,
   ShieldCheck, Lightbulb, Map
 } from "lucide-react";
+import { Button } from "./ui/Button";
 
 const ASSESSMENT_SCOPE = [
   { num: "1", title: "Infrastructure Review", items: ["Computer Health", "Router Diagnostics", "ISP Speed Verification", "WiFi Signal Mapping"], badgeClasses: "bg-indigo-500/10 text-indigo-400" },
@@ -285,12 +286,9 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 border-t border-app-border/40">
-            <button
-              onClick={() => onNavigate("contact")}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
-            >
-              Book Your Assessment <ArrowRight className="w-4 h-4" />
-            </button>
+            <Button onClick={() => onNavigate("contact")} variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
+              Book Your Assessment
+            </Button>
             <a href="tel:+17587260035" className="flex items-center gap-2 text-sm font-semibold text-app-text-sec hover:text-indigo-400 transition">
               <Phone className="w-4 h-4" /> Or call +1 758 726 0035
             </a>
@@ -312,15 +310,12 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
             <p className="text-sm text-app-text-sec font-light">Request a free ICT assessment. We'll audit your current setup and recommend exactly what fits your budget.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
-            <button
-              onClick={() => onNavigate("contact")}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold transition-all shadow-md cursor-pointer"
-            >
-              Free Assessment <ArrowRight className="w-4 h-4" />
-            </button>
-            <a href="tel:+17587260035" className="flex items-center gap-2 px-6 py-3 rounded-xl bg-app-aside-bg border border-app-border text-app-text text-sm font-semibold hover:bg-app-aside-bg/80 transition">
-              <Phone className="w-4 h-4" /> Call Us
-            </a>
+            <Button onClick={() => onNavigate("contact")} variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
+              Free Assessment
+            </Button>
+            <Button href="tel:+17587260035" variant="secondary" iconBefore={<Phone className="w-4 h-4" />}>
+              Call Us
+            </Button>
           </div>
         </motion.div>
       </section>
