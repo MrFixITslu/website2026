@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Linkedin, Mail, ArrowRight, Users, Award, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import { Button } from "./ui/Button";
 
 const TEAM = [

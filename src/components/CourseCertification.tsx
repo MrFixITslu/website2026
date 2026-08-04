@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   Award, 
   CheckCircle2, 
@@ -675,7 +676,7 @@ export function CourseCertification({
                           {q.options.map((opt, optIdx) => (
                             <label 
                               key={optIdx} 
-                              className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-[11px] leading-relaxed cursor-pointer transition ${
+                              className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-[11px] leading-relaxed cursor-pointer transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-500/50 ${
                                 selectedAnswers[idx] === optIdx
                                   ? "bg-indigo-500/10 border-indigo-500/40 text-indigo-400"
                                   : "bg-app-input border-app-input-border text-app-text-sec hover:border-app-border"
@@ -697,23 +698,32 @@ export function CourseCertification({
                     ))}
                   </div>
 
-                  {examError && (
-                    <div className="p-2 rounded bg-red-500/5 border border-red-500/10 text-[10px] text-red-400 leading-relaxed font-mono">
-                      ⚠️ {examError}
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {examError && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.18 }}
+                        role="alert"
+                        className="p-2 rounded bg-red-500/5 border border-red-500/10 text-[10px] text-red-400 leading-relaxed font-mono overflow-hidden"
+                      >
+                        ⚠️ {examError}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   <div className="flex gap-2 pt-2">
                     <button
                       type="submit"
-                      className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition cursor-pointer"
+                      className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
                     >
                       Submit Architecture Exam
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsTakingExam(false)}
-                      className="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-lg transition cursor-pointer"
+                      className="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs rounded-lg transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
                     >
                       Cancel
                     </button>

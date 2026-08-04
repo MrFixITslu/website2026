@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense, lazy } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
-  Sun, Moon, Menu, X, ArrowRight, Search, Package, AlertTriangle,
+  Sun, Moon, Menu, X, Search, Package, AlertTriangle,
   ChevronLeft, ChevronRight, Megaphone, Star,
 } from "lucide-react";
 import HomePage from "./components/HomePage";
@@ -12,9 +12,18 @@ import ResourcesPage from "./components/ResourcesPage";
 import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
-import { CourseDetailPage } from "./components/CourseDetailPage";
-import { OnboardingFeedback } from "./components/OnboardingFeedback";
-import { AppCardSkeleton } from "./components/ui/Skeleton";
+import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
+
+// Lazy-loaded: only needed once a user actually opens a course or tool
+// feedback flow, not on initial marketing-site paint. CourseDetailPage
+// alone pulls in the 950-line CourseCertification module, so this keeps
+// that entirely out of the bundle everyone downloads to see the homepage.
+const CourseDetailPage = lazy(() =>
+  import("./components/CourseDetailPage").then(m => ({ default: m.CourseDetailPage }))
+);
+const OnboardingFeedback = lazy(() =>
+  import("./components/OnboardingFeedback").then(m => ({ default: m.OnboardingFeedback }))
+);
 
 const isPromoActive = (app: SaaSApp) => {
   if (app.category !== "courses" || !app.createdAt) return false;
@@ -231,8 +240,32 @@ export default function App() {
           <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
             {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
           </button>
-          <button onClick={() => setMobileNavOpen(p => !p)} className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
-            {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          <button onClick={() => setMobileNavOpen(p => !p)} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50">
+            <AnimatePresence mode="wait" initial={false}>
+              {mobileNavOpen ? (
+                <motion.span
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="block"
+                >
+                  <X className="w-4 h-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="block"
+                >
+                  <Menu className="w-4 h-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </header>
@@ -298,11 +331,15 @@ export default function App() {
           <AnimatePresence mode="wait">
             {selectedToolForFeedback ? (
               <motion.div key="feedback" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
-                <OnboardingFeedback app={selectedToolForFeedback} onBack={() => setSelectedToolForFeedback(null)} />
+                <Suspense fallback={<SectionLoadingFallback />}>
+                  <OnboardingFeedback app={selectedToolForFeedback} onBack={() => setSelectedToolForFeedback(null)} />
+                </Suspense>
               </motion.div>
             ) : selectedCourse ? (
               <motion.div key="course" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
-                <CourseDetailPage course={selectedCourse} onBack={() => setSelectedCourse(null)} />
+                <Suspense fallback={<SectionLoadingFallback />}>
+                  <CourseDetailPage course={selectedCourse} onBack={() => setSelectedCourse(null)} />
+                </Suspense>
               </motion.div>
             ) : (
               <motion.div key="explore" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.15 }} className="space-y-8">
@@ -475,7 +512,7 @@ export default function App() {
             <ul className="space-y-1.5 text-app-text-sec font-light">
               {SECTIONS.map(s => (
                 <li key={s.id}>
-                  <button onClick={() => scrollTo(s.id)} className="hover:text-indigo-400 transition cursor-pointer">{s.label}</button>
+                  <button onClick={() => scrollTo(s.id)} className="hover:text-indigo-400 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">{s.label}</button>
                 </li>
               ))}
             </ul>
@@ -485,8 +522,8 @@ export default function App() {
             <div className="font-bold text-app-text uppercase tracking-wider font-mono text-[11px]">Contact Us</div>
             <div className="space-y-1.5 text-app-text-sec font-light">
               <div>Castries, Saint Lucia</div>
-              <div>Phone: <a href="tel:+17587260035" className="text-indigo-400 hover:underline">+1 758 726 0035</a></div>
-              <div>Email: <a href="mailto:vision79slu@gmail.com" className="text-indigo-400 hover:underline font-semibold">vision79slu@gmail.com</a></div>
+              <div>Phone: <a href="tel:+17587260035" className="text-indigo-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">+1 758 726 0035</a></div>
+              <div>Email: <a href="mailto:vision79slu@gmail.com" className="text-indigo-400 hover:underline font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">vision79slu@gmail.com</a></div>
             </div>
           </div>
         </div>

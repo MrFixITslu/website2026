@@ -726,11 +726,12 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                         value={newQuestionTxt}
                         onChange={(e) => setNewQuestionTxt(e.target.value)}
                         placeholder="Ask deep architectural questions about this course layout..."
-                        className="flex-1 bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs placeholder:text-app-text-muted/50 focus:outline-none focus:border-indigo-500"
+                        className="flex-1 bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs placeholder:text-app-text-muted/50 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
                       />
                       <button 
                         type="submit"
-                        className="bg-app-text text-app-bg px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 hover:opacity-90"
+                        disabled={!newQuestionTxt.trim()}
+                        className="bg-app-text text-app-bg px-4 py-2.5 rounded-xl text-xs font-semibold cursor-pointer flex items-center gap-1.5 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
                       >
                         <Send className="w-3 h-3" />
                         Ask Q
@@ -946,7 +947,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                                         key={stars}
                                         type="button"
                                         onClick={() => setRatingInput(stars)}
-                                        className="p-1 focus:outline-none hover:scale-115 transition bg-transparent border-none"
+                                        className="p-1 focus:outline-none hover:scale-[1.15] transition bg-transparent border-none"
                                       >
                                         <Star
                                           className={`w-5 h-5 transition-all ${
@@ -974,16 +975,25 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                                 />
                               </div>
 
-                              {submitError && (
-                                <p className="text-[10px] text-red-400 font-mono leading-normal bg-red-500/5 p-2 rounded border border-red-500/10">
-                                  ⚠️ {submitError}
-                                </p>
-                              )}
+                              <AnimatePresence>
+                                {submitError && (
+                                  <motion.p
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    role="alert"
+                                    className="text-[10px] text-red-400 font-mono leading-normal bg-red-500/5 p-2 rounded border border-red-500/10 overflow-hidden"
+                                  >
+                                    ⚠️ {submitError}
+                                  </motion.p>
+                                )}
+                              </AnimatePresence>
 
                               <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full py-2 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40"
+                                className="w-full py-2 px-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition duration-200 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
                               >
                                 {isSubmitting ? (
                                   <>

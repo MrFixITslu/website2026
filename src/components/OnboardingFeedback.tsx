@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   Star, 
   MessageSquare, 
@@ -324,7 +324,7 @@ export function OnboardingFeedback({ app, onBack }: OnboardingFeedbackProps) {
                             onClick={() => setRating(starVal)}
                             onMouseEnter={() => setHoveredRating(starVal)}
                             onMouseLeave={() => setHoveredRating(null)}
-                            className="focus:outline-none hover:scale-120 transition-all duration-150 bg-transparent border-none p-0 cursor-pointer text-amber-400"
+                            className="focus:outline-none hover:scale-[1.15] transition-all duration-150 bg-transparent border-none p-0 cursor-pointer text-amber-400"
                           >
                             <Star
                               className={`w-7 h-7 transition-all ${
@@ -361,11 +361,20 @@ export function OnboardingFeedback({ app, onBack }: OnboardingFeedbackProps) {
                   />
                 </div>
 
-                {submitError && (
-                  <p className="text-[10px] text-rose-400 font-mono leading-normal bg-rose-500/5 p-2.5 rounded border border-rose-500/10">
-                    ⚠️ {submitError}
-                  </p>
-                )}
+                <AnimatePresence>
+                  {submitError && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.18 }}
+                      role="alert"
+                      className="text-[10px] text-rose-400 font-mono leading-normal bg-rose-500/5 p-2.5 rounded border border-rose-500/10 overflow-hidden"
+                    >
+                      ⚠️ {submitError}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
 
                 <button
                   type="submit"

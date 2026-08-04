@@ -379,14 +379,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             );
           })}
         </div>
-        <div className="text-center">
-          <button
-            onClick={() => onNavigate("about")}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
-          >
-            Meet the Vision79 Digital team <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
       </section>
 
       {/* ── Testimonials ──────────────────────────────────────────── */}

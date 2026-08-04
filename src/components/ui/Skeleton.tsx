@@ -2,6 +2,15 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-lg bg-app-btn-sec/70 ${className}`} />;
 }
 
+/** Generic Suspense fallback for lazy-loaded route-like sections (course detail, tool feedback). */
+export function SectionLoadingFallback() {
+  return (
+    <div className="flex items-center justify-center py-24" role="status" aria-label="Loading">
+      <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+    </div>
+  );
+}
+
 /** Mirrors the resource article-card anatomy (cover image, tag, title, blurb). */
 export function ArticleCardSkeleton() {
   return (
