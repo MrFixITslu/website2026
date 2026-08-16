@@ -192,19 +192,11 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-<<<<<<< Updated upstream
-    <div className="flex flex-col min-h-screen bg-app-bg text-app-text antialiased selection:bg-indigo-500/20 selection:text-indigo-400">
-      {/* Apple-inspired Sticky Header */}
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
-        <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs tracking-tighter bg-indigo-600 text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">V79</div>
-=======
     <div className="flex flex-col min-h-screen bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
         <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs tracking-tighter bg-v79-coral text-white shadow-md shadow-v79-coral/20 group-hover:scale-105 transition-transform">V79</div>
->>>>>>> Stashed changes
           <span className="font-display tracking-tight text-app-text uppercase">
             <span className="font-bold text-sm sm:text-base">VISION79 DIGITAL</span>
             <span className="font-normal text-xs sm:text-sm text-app-text-sec"> | ICT SOLUTIONS</span>
@@ -217,23 +209,14 @@ export default function App() {
             <button
               key={sec.id}
               onClick={() => scrollTo(sec.id)}
-<<<<<<< Updated upstream
-              className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
-                activeSection === sec.id ? "text-indigo-400 font-bold" : "text-app-text-sec hover:text-app-text"
-=======
               className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
                 activeSection === sec.id ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text"
->>>>>>> Stashed changes
               }`}
             >
               {activeSection === sec.id && (
                 <motion.div
                   layoutId="nav-active-pill"
-<<<<<<< Updated upstream
-                  className="absolute inset-0 bg-indigo-500/10 rounded-lg"
-=======
                   className="absolute inset-0 bg-v79-teal/10 rounded-lg"
->>>>>>> Stashed changes
                   transition={{ type: "spring", stiffness: 380, damping: 32 }}
                 />
               )}
@@ -248,26 +231,16 @@ export default function App() {
             className="ml-3 p-2 rounded-lg border border-app-border bg-app-btn-sec text-app-text hover:bg-app-btn-sec/80 transition-all cursor-pointer"
             aria-label="Toggle Theme"
           >
-<<<<<<< Updated upstream
-            {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-=======
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
->>>>>>> Stashed changes
           </button>
         </nav>
 
         {/* Mobile controls */}
         <div className="flex md:hidden items-center gap-2">
           <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
-<<<<<<< Updated upstream
-            {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-600" />}
-          </button>
-          <button onClick={() => setMobileNavOpen(p => !p)} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50">
-=======
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
           </button>
           <button onClick={() => setMobileNavOpen(p => !p)} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
->>>>>>> Stashed changes
             <AnimatePresence mode="wait" initial={false}>
               {mobileNavOpen ? (
                 <motion.span
@@ -310,23 +283,14 @@ export default function App() {
               <button
                 key={sec.id}
                 onClick={() => scrollTo(sec.id)}
-<<<<<<< Updated upstream
-                className={`relative px-4 py-3 rounded-xl text-sm font-semibold text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
-                  activeSection === sec.id ? "text-indigo-400 font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg transition-colors"
-=======
                 className={`relative px-4 py-3 rounded-xl text-sm font-semibold text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
                   activeSection === sec.id ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg transition-colors"
->>>>>>> Stashed changes
                 }`}
               >
                 {activeSection === sec.id && (
                   <motion.div
                     layoutId="nav-active-pill-mobile"
-<<<<<<< Updated upstream
-                    className="absolute inset-0 bg-indigo-500/15 rounded-xl"
-=======
                     className="absolute inset-0 bg-v79-teal/15 rounded-xl"
->>>>>>> Stashed changes
                     transition={{ type: "spring", stiffness: 380, damping: 32 }}
                   />
                 )}
@@ -530,38 +494,6 @@ export default function App() {
         </section>
       </main>
 
-<<<<<<< Updated upstream
-      {/* Spacious Apple-Inspired Footer - Zero Overlap */}
-      <footer className="border-t border-app-border bg-app-header-bg py-12 px-6 lg:px-12 mt-auto">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 pb-10 border-b border-app-border">
-          <div className="space-y-3 md:col-span-2">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-indigo-600 text-white">V79</div>
-              <span className="font-bold text-base font-display text-app-text tracking-tight uppercase">VISION79 DIGITAL | ICT SOLUTIONS</span>
-            </div>
-            <p className="text-xs text-app-text-sec font-light max-w-sm leading-relaxed">
-              World-class managed IT, cybersecurity, cloud infrastructure, and software development for businesses across Saint Lucia and the Eastern Caribbean.
-            </p>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="font-bold text-app-text uppercase tracking-wider font-mono text-[11px]">Quick Links</div>
-            <ul className="space-y-1.5 text-app-text-sec font-light">
-              {SECTIONS.map(s => (
-                <li key={s.id}>
-                  <button onClick={() => scrollTo(s.id)} className="hover:text-indigo-400 transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">{s.label}</button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="font-bold text-app-text uppercase tracking-wider font-mono text-[11px]">Contact Us</div>
-            <div className="space-y-1.5 text-app-text-sec font-light">
-              <div>Castries, Saint Lucia</div>
-              <div>Phone: <a href="tel:+17587260035" className="text-indigo-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">+1 758 726 0035</a></div>
-              <div>Email: <a href="mailto:vision79slu@gmail.com" className="text-indigo-400 hover:underline font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded">vision79slu@gmail.com</a></div>
-=======
       {/* Footer */}
       <footer className="border-t border-app-border bg-v79-navy dark:bg-v79-navy-dark py-12 px-6 lg:px-12 mt-auto">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-white/10">
@@ -569,20 +501,11 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-v79-coral text-white">V79</div>
               <span className="font-bold text-base font-display text-white tracking-tight uppercase">VISION79 DIGITAL | ICT SOLUTIONS</span>
->>>>>>> Stashed changes
             </div>
             <p className="text-xs text-white/60 font-light max-w-sm leading-relaxed">
               World-class managed IT, cybersecurity, cloud infrastructure, and software development for businesses across Saint Lucia and the Eastern Caribbean.
             </p>
           </div>
-<<<<<<< Updated upstream
-        </div>
-
-        <div className="max-w-7xl mx-auto pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-app-text-muted font-mono">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>System Operational · 99.9% Uptime SLA</span>
-=======
 
           <div className="space-y-2 text-xs">
             <div className="font-bold text-white uppercase tracking-wider font-mono text-[11px]">Services</div>
@@ -630,9 +553,7 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4">
             <span>© 2026 VISION79 DIGITAL INC. All rights reserved.</span>
->>>>>>> Stashed changes
           </div>
-          <div>© 2026 VISION79 DIGITAL INC. All rights reserved.</div>
         </div>
       </footer>
     </div>

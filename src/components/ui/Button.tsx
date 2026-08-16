@@ -7,15 +7,9 @@ type Size = "md" | "lg";
 // Color/shape only — no padding here, so callers never need to fight
 // Tailwind's generated stylesheet order to override it (see Size below).
 const VARIANT_CLASSES: Record<Variant, string> = {
-<<<<<<< Updated upstream
-  primary: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-500/20 rounded-xl font-bold",
-  secondary: "bg-app-aside-bg border border-app-border text-app-text hover:bg-app-aside-bg/80 rounded-xl font-semibold",
-  ghost: "text-indigo-400 hover:text-indigo-300 font-semibold",
-=======
   primary: "bg-v79-coral hover:bg-v79-coral-dark text-white shadow-md shadow-v79-coral/25 rounded-xl font-bold",
   secondary: "bg-transparent border-2 border-v79-navy/25 dark:border-v79-teal-light/30 text-app-text hover:bg-app-aside-bg/80 rounded-xl font-semibold",
   ghost: "text-v79-teal hover:text-v79-teal-dark dark:hover:text-v79-teal-light font-semibold",
->>>>>>> Stashed changes
 };
 
 // Padding only applies to primary/secondary — ghost is an inline text link.
@@ -29,11 +23,7 @@ const SIZE_CLASSES: Record<Size, string> = {
 
 const BASE_CLASSES =
   "inline-flex items-center gap-2 text-sm transition-all cursor-pointer " +
-<<<<<<< Updated upstream
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg";
-=======
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg";
->>>>>>> Stashed changes
 
 interface CommonProps {
   variant?: Variant;

@@ -2,13 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ArrowRight, Phone, Mail,
-<<<<<<< Updated upstream
-  MapPin, Star, ChevronDown, ShieldCheck,
-  Clock, Lock, Users, Heart
-=======
   MapPin, Star, ShieldCheck,
   Clock, Lock, Users, AlertTriangle, TrendingDown, Zap, Frown, Quote, CheckCircle2
->>>>>>> Stashed changes
 } from "lucide-react";
 import { Button } from "./ui/Button";
 
@@ -73,19 +68,6 @@ const ASSESSMENT_STEPS = [
   { icon: Monitor, title: "Infrastructure Review", desc: "Computers, routers, WiFi, and network hardware." },
   { icon: Lock, title: "Security Audit", desc: "Passwords, MFA, endpoint protection, access controls." },
   { icon: Cloud, title: "Data Protection", desc: "Backups, cloud storage, and disaster recovery readiness." },
-];
-
-const WHY_CHOOSE_VISION79 = [
-  { title: "25+ years ICT & Telecoms industry experience", icon: Clock },
-  { title: "99.9% uptime SLA with real financial accountability", icon: ShieldCheck },
-  { title: "On-site response guaranteed across Saint Lucia", icon: MapPin },
-  { title: "Hurricane & power surge business continuity planning", icon: Shield },
-  { title: "Satellite & LTE internet failover configuration", icon: Network },
-  { title: "Cloud & Microsoft 365 specialists", icon: Cloud },
-  { title: "Custom software & AI automation solutions", icon: Cpu },
-  { title: "Local data compliance & privacy-first architecture", icon: Lock },
-  { title: "Bilingual support (English & Kwéyòl) for all clients", icon: Users },
-  { title: "Caribbean-rooted, built for island realities", icon: Heart },
 ];
 
 const TESTIMONIALS = [
@@ -159,39 +141,22 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="space-y-20 pb-16">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-<<<<<<< Updated upstream
-      <section className="relative min-h-[82vh] flex flex-col justify-center overflow-hidden pt-16">
-        {/* Background gradients — slow ambient drift, respects prefers-reduced-motion via MotionConfig */}
-=======
       <section className="relative min-h-[82vh] flex flex-col justify-center overflow-hidden pt-16 grid-texture">
         {/* Ambient brand-color drift — navy/teal/coral, not generic tech-blue */}
->>>>>>> Stashed changes
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div
             animate={{ scale: [1, 1.08, 1], x: [0, 20, 0], y: [0, -15, 0] }}
             transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-<<<<<<< Updated upstream
-            className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-500/8 rounded-full blur-3xl"
-=======
             className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-v79-teal/8 rounded-full blur-3xl"
->>>>>>> Stashed changes
           />
           <motion.div
             animate={{ scale: [1, 1.12, 1], x: [0, -18, 0] }}
             transition={{ duration: 18, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-<<<<<<< Updated upstream
-            className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-emerald-500/6 rounded-full blur-3xl"
-=======
             className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-v79-coral/6 rounded-full blur-3xl"
->>>>>>> Stashed changes
           />
           <motion.div
             animate={{ scale: [1, 1.1, 1], y: [0, 20, 0] }}
             transition={{ duration: 16, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-<<<<<<< Updated upstream
-            className="absolute top-1/3 right-0 w-[300px] h-[300px] bg-violet-500/5 rounded-full blur-3xl"
-          />
-=======
             className="absolute top-1/3 right-0 w-[300px] h-[300px] bg-v79-navy/6 dark:bg-v79-teal/8 rounded-full blur-3xl"
           />
           {/* Abstract Caribbean archipelago rendered as a network/node diagram */}
@@ -227,7 +192,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 6 : 4} fill="var(--color-v79-coral)" />
             ))}
           </svg>
->>>>>>> Stashed changes
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center space-y-8">
@@ -238,15 +202,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             transition={{ duration: 0.5 }}
             className="flex justify-center"
           >
-<<<<<<< Updated upstream
-            <span className="inline-flex items-center gap-2 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] text-indigo-400 bg-indigo-500/10 border border-indigo-500/25 px-4 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              Build Better. Work Smarter. Grow Faster.
-=======
             <span className="inline-flex items-center gap-2 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] text-v79-teal bg-v79-teal/10 border border-v79-teal/25 px-4 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-v79-teal animate-pulse" />
               Enterprise ICT Partner — Since 2018
->>>>>>> Stashed changes
             </span>
           </motion.div>
 
@@ -258,15 +216,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             className="space-y-4"
           >
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight leading-tight text-app-text dark:text-white">
-<<<<<<< Updated upstream
-              Technology that helps<br />
-              <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                Caribbean businesses grow.
-=======
               Enterprise Technology<br />
               <span className="bg-gradient-to-r from-v79-teal via-v79-teal-light to-v79-teal bg-clip-text text-transparent">
                 Built for Caribbean Realities.
->>>>>>> Stashed changes
               </span>
             </h1>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
@@ -288,21 +240,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               className="group"
               icon={<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             >
-<<<<<<< Updated upstream
-              Book a Free Consultation
-=======
               Get Your Free ICT Assessment
->>>>>>> Stashed changes
             </Button>
             <Button onClick={() => onNavigate("services")} variant="secondary" size="lg">
               Explore Our Services
             </Button>
-<<<<<<< Updated upstream
-            <Button onClick={() => onNavigate("solutions")} variant="secondary" size="lg">
-              View Our Projects
-            </Button>
-=======
->>>>>>> Stashed changes
           </motion.div>
 
           {/* Contact quick bar */}
@@ -358,11 +300,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           transition={{ duration: 0.5 }}
           className="text-center space-y-3"
         >
-<<<<<<< Updated upstream
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">What We Do</span>
-=======
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">What We Do</span>
->>>>>>> Stashed changes
           <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
             Comprehensive ICT Services
           </h2>
@@ -413,45 +351,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-<<<<<<< Updated upstream
-      {/* ── Why Choose Vision79 Digital ───────────────────────────────
-           Merged from the former "Know Your Technology Risks" assessment intro slot.
-           List style merged from the About page's "Why Choose Us" section; the ICT
-           Business Health Assessment offer itself now lives on the Services page. */}
-      <section className="px-6 lg:px-8 space-y-8 max-w-3xl mx-auto">
-        <div className="text-center space-y-2">
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Excellence</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">Why Choose Vision79 Digital</h2>
-          <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light">
-            Caribbean-rooted, enterprise-grade — we understand the unique challenges Caribbean businesses face and build solutions for this environment.
-          </p>
-        </div>
-        <div className="space-y-4 relative">
-          <div className="absolute left-[52px] top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-indigo-500/20 to-transparent pointer-events-none" />
-          {WHY_CHOOSE_VISION79.map((item, i) => {
-            const Icon = item.icon;
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="flex items-center gap-5 relative"
-              >
-                <div className="w-[44px] shrink-0 text-right flex justify-end">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-indigo-400/50 shrink-0 shadow-lg shadow-indigo-500/30" />
-                <div className="glass rounded-xl px-4 py-3 border border-app-border flex-1">
-                  <p className="text-xs font-semibold text-app-text dark:text-white">{item.title}</p>
-                </div>
-              </motion.div>
-            );
-          })}
-=======
 
       {/* ── Why Choose Vision79 Digital ───────────────────────────────
            Feature grid on a contrasting sand-tinted band to break up
@@ -552,7 +451,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               })}
             </div>
           </div>
->>>>>>> Stashed changes
         </div>
       </section>
 
@@ -565,20 +463,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           transition={{ duration: 0.5 }}
           className="text-center space-y-2"
         >
-<<<<<<< Updated upstream
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Client Stories</span>
-=======
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">Client Stories</span>
->>>>>>> Stashed changes
           <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
             Trusted Across Saint Lucia
           </h2>
         </motion.div>
-<<<<<<< Updated upstream
-        <div className="relative max-w-2xl mx-auto">
-=======
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
->>>>>>> Stashed changes
           {TESTIMONIALS.map((t, i) => (
             <motion.div
               key={t.name}
@@ -683,11 +573,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-<<<<<<< Updated upstream
-          className="max-w-7xl mx-auto rounded-3xl bg-gradient-to-r from-indigo-600 to-violet-600 p-10 sm:p-14 text-center text-white space-y-6 relative overflow-hidden shadow-2xl"
-=======
           className="max-w-7xl mx-auto rounded-3xl bg-gradient-to-r from-v79-navy to-v79-navy-light p-10 sm:p-14 text-center text-white space-y-6 relative overflow-hidden shadow-2xl"
->>>>>>> Stashed changes
         >
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px"}} />
           <div className="relative z-10 space-y-4">

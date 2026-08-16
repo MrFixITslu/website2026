@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-<<<<<<< Updated upstream
-import { Linkedin, Mail, ArrowRight, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
-=======
 import { Linkedin, Mail, ArrowRight, CheckCircle2, AlertTriangle, Zap, ShieldCheck, Compass, Heart } from "lucide-react";
->>>>>>> Stashed changes
 import { Button } from "./ui/Button";
 
 const TEAM = [
@@ -36,27 +32,6 @@ const TEAM = [
   },
 ];
 
-<<<<<<< Updated upstream
-// NOTE: "Why Choose Us" was merged into the "Why Choose Vision79 Digital"
-// section on the Home page (see HomePage.tsx), which now uses this section's
-// timeline list style.
-
-const CHALLENGES = [
-  { title: "Internal Limits", desc: "Severely limited internal IT expertise, leaving critical networks unmanaged." },
-  { title: "Cyber Threats", desc: "Increasing ransomware, phishing, and local credential compromise vectors." },
-  { title: "Infrastructure", desc: "Unmanaged networks, poor Wi-Fi cover, and frequent hardware dropouts." },
-  { title: "Poor Backups", desc: "Unverified back-up configurations, aging equipment, and lack of recovery testing." },
-];
-
-const IMPACT_AREAS = ["Customer Service", "Financial Revenue", "Employee Productivity", "Business Reputation"];
-
-const CARIBBEAN_BUILT = [
-  "Hurricane Recovery Ready",
-  "Proactive, Not Break-Fix",
-  "Telecommunications Heritage",
-];
-
-=======
 const VALUES = [
   { label: "Resiliency", icon: ShieldCheck },
   { label: "Affordable Enterprise Class", icon: Compass },
@@ -82,7 +57,6 @@ const CARIBBEAN_BUILT = [
   "Telecommunications Heritage",
 ];
 
->>>>>>> Stashed changes
 const SERVICE_PROMISE = [
   { title: "Professional Comms", desc: "Clear, prompt updates.", detail: "Every email, phone call, or dispatch is logged in our ticketing portal and explained in straightforward, jargon-free English." },
   { title: "Clear Expectations", desc: "Guaranteed responsibilities.", detail: "We establish precise operational frameworks, ensuring you always know exactly who handles password resets, router reboots, or hardware upgrades." },
@@ -98,22 +72,14 @@ export default function AboutPage() {
 
   return (
     <div className="space-y-20 pb-16">
-<<<<<<< Updated upstream
-      {/* ── Mission Hero / Our Story ──────────────────────────────── */}
-=======
       {/* ── Hero ──────────────────────────────────────────────────── */}
->>>>>>> Stashed changes
       <section className="relative px-6 lg:px-8 pt-12">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-1/3 w-[400px] h-[400px] bg-v79-teal/6 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto text-center space-y-4">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-<<<<<<< Updated upstream
-            <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">About Vision79</span>
-=======
             <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">About Vision79</span>
->>>>>>> Stashed changes
           </motion.div>
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
@@ -123,33 +89,6 @@ export default function AboutPage() {
           >
             Our Story
           </motion.h1>
-<<<<<<< Updated upstream
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-base text-app-text-sec font-light leading-relaxed space-y-4 text-left glass p-8 rounded-2xl border border-app-border"
-          >
-            <p>
-              Vision79 Digital was founded with one goal—to bring world-class technology solutions to the Caribbean.
-            </p>
-            <p>
-              With more than 25 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, Vision79 Digital combines technical expertise with practical business knowledge.
-            </p>
-            <p>
-              From helping businesses modernize their operations to building custom applications that solve real problems, we focus on creating technology that delivers measurable results.
-            </p>
-            <p>
-              Today Vision79 Digital is growing into a technology group that develops innovative digital products while providing professional ICT consulting and managed services throughout the Caribbean.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Mission & Vision ──────────────────────────────────────── */}
-      <section className="px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-=======
         </div>
       </section>
 
@@ -158,28 +97,12 @@ export default function AboutPage() {
            image (or heritage/team imagery placeholder). */}
       <section className="px-6 lg:px-8">
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
->>>>>>> Stashed changes
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             className="space-y-5"
           >
-<<<<<<< Updated upstream
-            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-indigo-400">Mission</div>
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Empowering Caribbean Businesses</h2>
-            <p className="text-sm text-app-text-sec font-light leading-relaxed">
-              To empower Caribbean businesses through innovative technology, automation, and digital transformation.
-            </p>
-            <div className="pt-3 border-t border-indigo-500/15 space-y-2.5">
-              <p className="text-xs font-semibold text-indigo-400 italic">"Keep businesses connected, secure, and productive."</p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-app-btn-sec border border-app-border text-app-text-sec">✓ Resiliency</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-app-btn-sec border border-app-border text-app-text-sec">✓ Affordable Enterprise Class</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-app-btn-sec border border-app-border text-app-text-sec">✓ Proactive Sovereignty</span>
-              </div>
-            </div>
-=======
             <p className="text-sm text-app-text-sec font-light leading-relaxed">
               Vision79 Digital was founded with one goal — to bring world-class technology solutions to the Caribbean. With more than 25 years of experience delivering telecommunications, enterprise ICT services, fibre networks, cloud infrastructure, and software solutions, we combine technical expertise with practical business knowledge.
             </p>
@@ -207,7 +130,6 @@ export default function AboutPage() {
                 );
               })}
             </div>
->>>>>>> Stashed changes
           </motion.div>
 
           <motion.div
@@ -216,13 +138,6 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="relative aspect-square rounded-2xl bg-gradient-to-br from-v79-navy to-v79-navy-light overflow-hidden flex items-center justify-center border border-v79-teal/20"
           >
-<<<<<<< Updated upstream
-            <div className="text-xs font-mono font-extrabold uppercase tracking-widest text-emerald-400">Vision</div>
-            <h2 className="text-xl font-extrabold font-display text-app-text dark:text-white">Trusted Technology Innovation</h2>
-            <p className="text-sm text-app-text-sec font-light leading-relaxed">
-              To become the Caribbean's most trusted technology innovation company by creating software and ICT solutions that improve how people live and work.
-            </p>
-=======
             <div className="absolute inset-0 fiber-texture" />
             <div className="relative z-10 text-center space-y-2">
               <div className="w-20 h-20 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-extrabold text-3xl font-display">
@@ -231,29 +146,10 @@ export default function AboutPage() {
               <p className="text-white font-bold text-sm font-display">Neil Verdant</p>
               <p className="text-white/50 text-xs font-mono">Founder & Lead Systems Architect</p>
             </div>
->>>>>>> Stashed changes
           </motion.div>
         </div>
       </section>
 
-<<<<<<< Updated upstream
-      {/* ── The Challenge We Solve ────────────────────────────────── */}
-      <section className="px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center space-y-2"
-        >
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Why It Matters</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The Challenge Facing Caribbean Organizations</h2>
-          <p className="max-w-2xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
-            Technology is critical to modern enterprise survival. Yet most Caribbean organizations are hamstrung by the same severe vulnerabilities.
-          </p>
-        </motion.div>
-
-=======
 
       {/* ── The Challenge We Solve ────────────────────────────────── */}
       <section className="px-6 lg:px-8 max-w-5xl mx-auto space-y-6">
@@ -271,7 +167,6 @@ export default function AboutPage() {
           </p>
         </motion.div>
 
->>>>>>> Stashed changes
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {CHALLENGES.map((c, i) => (
             <motion.div
@@ -281,15 +176,9 @@ export default function AboutPage() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
-<<<<<<< Updated upstream
-              className="glass rounded-2xl p-5 border border-rose-500/15 bg-rose-500/[0.02] space-y-1.5 hover:shadow-lg hover:shadow-rose-500/5 hover:border-rose-500/30 transition-[border-color,box-shadow] duration-300"
-            >
-              <div className="flex items-center gap-2 text-rose-400">
-=======
               className="glass rounded-2xl p-5 border border-v79-coral/15 bg-v79-coral/[0.02] space-y-1.5 hover:shadow-lg hover:shadow-v79-coral/5 hover:border-v79-coral/30 transition-[border-color,box-shadow] duration-300"
             >
               <div className="flex items-center gap-2 text-v79-coral-light">
->>>>>>> Stashed changes
                 <AlertTriangle className="w-4 h-4" />
                 <p className="text-xs font-bold font-mono uppercase tracking-wide">{c.title}</p>
               </div>
@@ -303,15 +192,6 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-<<<<<<< Updated upstream
-          className="p-4 rounded-xl bg-rose-500/[0.03] border border-rose-500/15 space-y-2.5"
-        >
-          <p className="text-[10px] font-mono uppercase text-rose-400 font-bold">A Single Failure in Your Technology Stack Impacts:</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs font-semibold text-app-text-sec">
-            {IMPACT_AREAS.map((area) => (
-              <span key={area} className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" /> {area}
-=======
           className="p-4 rounded-xl bg-v79-coral/[0.03] border border-v79-coral/15 space-y-2.5"
         >
           <p className="text-[10px] font-mono uppercase text-v79-coral-light font-bold">A Single Failure in Your Technology Stack Impacts:</p>
@@ -319,7 +199,6 @@ export default function AboutPage() {
             {IMPACT_AREAS.map((area) => (
               <span key={area} className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-v79-coral shrink-0" /> {area}
->>>>>>> Stashed changes
               </span>
             ))}
           </div>
@@ -330,17 +209,10 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
-<<<<<<< Updated upstream
-          className="p-5 rounded-xl border border-amber-500/20 bg-amber-500/[0.02] flex flex-col sm:flex-row sm:items-center gap-4"
-        >
-          <div className="space-y-1 flex-1">
-            <span className="text-[10px] font-mono text-amber-500 uppercase tracking-widest block font-bold">Built for the Caribbean</span>
-=======
           className="p-5 rounded-xl border border-v79-coral/20 bg-v79-coral/[0.02] flex flex-col sm:flex-row sm:items-center gap-4"
         >
           <div className="space-y-1 flex-1">
             <span className="text-[10px] font-mono text-v79-coral uppercase tracking-widest block font-bold">Built for the Caribbean</span>
->>>>>>> Stashed changes
             <p className="text-xs text-app-text-sec leading-relaxed">
               We design with island realities in mind: local internet bottlenecks, hurricane preparedness, and Saint Lucian regulatory conditions.
             </p>
@@ -348,11 +220,7 @@ export default function AboutPage() {
           <div className="flex flex-col gap-1.5 font-mono text-[11px] text-app-text-sec shrink-0">
             {CARIBBEAN_BUILT.map((item) => (
               <p key={item} className="flex items-center gap-1.5">
-<<<<<<< Updated upstream
-                <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" /> {item}
-=======
                 <Zap className="w-3.5 h-3.5 text-v79-coral shrink-0" /> {item}
->>>>>>> Stashed changes
               </p>
             ))}
           </div>
@@ -362,11 +230,7 @@ export default function AboutPage() {
       {/* ── Team ──────────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8 space-y-8 max-w-5xl mx-auto">
         <div className="text-center space-y-2">
-<<<<<<< Updated upstream
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">The Team</span>
-=======
           <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">The Team</span>
->>>>>>> Stashed changes
           <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">The People Behind Vision79</h2>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -378,11 +242,7 @@ export default function AboutPage() {
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
-<<<<<<< Updated upstream
-              className={`glass rounded-2xl p-6 border border-app-border space-y-4 ${member.isOpen ? "border-dashed" : ""} hover:border-indigo-500/30 hover:shadow-lg transition-[border-color,box-shadow] duration-300`}
-=======
               className={`glass rounded-2xl p-6 border border-app-border space-y-4 ${member.isOpen ? "border-dashed" : ""} hover:border-v79-teal/30 hover:shadow-lg transition-[border-color,box-shadow] duration-300`}
->>>>>>> Stashed changes
             >
               <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl font-display shadow-lg ${member.isOpen ? "bg-gradient-to-br from-v79-coral to-v79-coral-dark" : "bg-gradient-to-br from-v79-navy to-v79-teal-dark"}`}>
@@ -420,27 +280,16 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-<<<<<<< Updated upstream
-          className="glass rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.01] p-6 sm:p-8 space-y-4"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-2 text-emerald-400">
-=======
           className="glass rounded-2xl border border-v79-teal/15 bg-v79-teal/[0.01] p-6 sm:p-8 space-y-4"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2 text-v79-teal-light">
->>>>>>> Stashed changes
               <CheckCircle2 className="w-5 h-5" />
               <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Our Service Promise</h2>
             </div>
             <button
               onClick={() => setShowPromiseDetail(!showPromiseDetail)}
-<<<<<<< Updated upstream
-              className="text-xs font-mono text-indigo-400 hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
-=======
               className="text-xs font-mono text-v79-teal hover:underline cursor-pointer flex items-center gap-1 self-start sm:self-auto"
->>>>>>> Stashed changes
             >
               {showPromiseDetail ? "Hide Details" : "Read Full Scope"}
             </button>
@@ -448,13 +297,8 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
             {SERVICE_PROMISE.map((p) => (
-<<<<<<< Updated upstream
-              <div key={p.title} className="p-4 rounded-xl bg-app-btn-sec/30 border border-emerald-500/15 text-center space-y-1">
-                <span className="text-emerald-500 font-bold block text-lg">✓</span>
-=======
               <div key={p.title} className="p-4 rounded-xl bg-app-btn-sec/30 border border-v79-teal/15 text-center space-y-1">
                 <span className="text-v79-teal font-bold block text-lg">✓</span>
->>>>>>> Stashed changes
                 <p className="text-xs font-bold text-app-text dark:text-white">{p.title}</p>
                 <p className="text-[10px] text-app-text-muted leading-tight font-mono">{p.desc}</p>
               </div>
@@ -482,11 +326,7 @@ export default function AboutPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-<<<<<<< Updated upstream
-          className="glass rounded-2xl border border-indigo-500/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6"
-=======
           className="glass rounded-2xl border border-v79-teal/20 p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6"
->>>>>>> Stashed changes
         >
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold font-display text-app-text dark:text-white">Ready to work with Vision79?</h2>
