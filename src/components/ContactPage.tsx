@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+<<<<<<< Updated upstream
 import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users } from "lucide-react";
+=======
+import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users, Lock } from "lucide-react";
+>>>>>>> Stashed changes
 import { FieldError } from "./ui/FieldError";
 
 const CHALLENGES = [
@@ -52,10 +56,21 @@ export default function ContactPage() {
     setServerError(null);
 
     try {
+      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+      const token = await new Promise<string>((resolve, reject) => {
+        // @ts-expect-error grecaptcha loaded via script tag in index.html
+        if (!window.grecaptcha) { reject(new Error("reCAPTCHA not loaded")); return; }
+        // @ts-expect-error
+        window.grecaptcha.ready(() => {
+          // @ts-expect-error
+          window.grecaptcha.execute(siteKey, { action: "submit" }).then(resolve).catch(reject);
+        });
+      });
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, recaptchaToken: token }),
       });
       const data = await res.json();
       if (!res.ok) { setServerError(data.error || "Submission failed."); }
@@ -70,8 +85,8 @@ export default function ContactPage() {
   const inputClass = (field: string) =>
     `w-full bg-app-input border rounded-xl px-4 py-3 text-sm text-app-text placeholder:text-app-text-muted/50 focus:outline-none focus:ring-1 transition-all ${
       errors[field]
-        ? "border-rose-500 focus:ring-rose-500/40"
-        : "border-app-input-border focus:ring-indigo-500/40 focus:border-indigo-500/60"
+        ? "border-v79-coral focus:ring-v79-coral/40"
+        : "border-app-input-border focus:ring-v79-teal/40 focus:border-v79-teal/60"
     }`;
 
   return (
@@ -83,7 +98,11 @@ export default function ContactPage() {
         transition={{ duration: 0.5 }}
         className="pt-10 px-6 lg:px-8 text-center space-y-4"
       >
+<<<<<<< Updated upstream
         <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Get in Touch</span>
+=======
+        <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">Get in Touch</span>
+>>>>>>> Stashed changes
         <h1 className="text-4xl sm:text-5xl font-extrabold font-display tracking-tight text-app-text dark:text-white">
           Let's Talk About Your Business Technology
         </h1>
@@ -117,18 +136,29 @@ export default function ContactPage() {
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.07 }}
                   whileHover={{ y: -2 }}
+<<<<<<< Updated upstream
                   className="flex items-start gap-3 glass rounded-xl p-4 border border-app-border hover:border-indigo-500/30 hover:shadow-lg transition-[border-color,box-shadow] group"
                 >
                   <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
                     <Icon className="w-4 h-4 text-indigo-400" />
+=======
+                  className="flex items-start gap-3 glass rounded-xl p-4 border border-app-border hover:border-v79-teal/30 hover:shadow-lg transition-[border-color,box-shadow] group"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-v79-teal/10 border border-v79-teal/20 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-v79-teal" />
+>>>>>>> Stashed changes
                   </div>
                   <div>
                     <div className="text-[10px] font-mono text-app-text-muted uppercase tracking-widest">{c.label}</div>
-                    <div className="text-sm font-semibold text-app-text dark:text-white group-hover:text-indigo-400 transition">{c.value}</div>
+                    <div className="text-sm font-semibold text-app-text dark:text-white group-hover:text-v79-teal transition">{c.value}</div>
                   </div>
                 </motion.div>
               );
+<<<<<<< Updated upstream
               return c.href ? <a key={c.label} href={c.href} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 rounded-xl block">{content}</a> : content;
+=======
+              return c.href ? <a key={c.label} href={c.href} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-xl block">{content}</a> : content;
+>>>>>>> Stashed changes
             })}
 
             <div className="glass rounded-xl p-4 border border-app-border space-y-2">
@@ -136,8 +166,23 @@ export default function ContactPage() {
               <div className="space-y-1 text-xs text-app-text-sec font-light">
                 <div className="flex justify-between"><span>Mon – Fri</span><span className="font-semibold text-app-text">8:00 AM – 5:00 PM</span></div>
                 <div className="flex justify-between"><span>Saturday</span><span className="font-semibold text-app-text">9:00 AM – 1:00 PM</span></div>
-                <div className="flex justify-between"><span>Emergency</span><span className="font-semibold text-emerald-400">24/7 MSP Clients</span></div>
+                <div className="flex justify-between"><span>Emergency</span><span className="font-semibold text-v79-teal-light">24/7 MSP Clients</span></div>
               </div>
+            </div>
+
+            {/* Location graphic */}
+            <div className="relative rounded-xl overflow-hidden border border-app-border h-32 grid-texture bg-v79-sand-light/40 dark:bg-v79-navy-light/20 flex items-center justify-center">
+              <div className="relative z-10 flex flex-col items-center gap-1 text-v79-teal">
+                <div className="w-9 h-9 rounded-full bg-v79-teal/15 border border-v79-teal/30 flex items-center justify-center">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-app-text-sec">Castries, Saint Lucia</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-[10px] text-app-text-muted font-mono px-1">
+              <Lock className="w-3 h-3 shrink-0 mt-0.5" />
+              <span>Your contact details are encrypted and stored securely.</span>
             </div>
           </div>
 
@@ -149,17 +194,17 @@ export default function ContactPage() {
                   key="success"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="glass rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-10 text-center space-y-4 h-full flex flex-col items-center justify-center"
+                  className="glass rounded-2xl border border-v79-teal/30 bg-v79-teal/5 p-10 text-center space-y-4 h-full flex flex-col items-center justify-center"
                 >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                    <CheckCircle className="w-8 h-8 text-emerald-400" />
+                  <div className="w-16 h-16 rounded-full bg-v79-teal/15 border border-v79-teal/30 flex items-center justify-center">
+                    <CheckCircle className="w-8 h-8 text-v79-teal-light" />
                   </div>
                   <h2 className="text-2xl font-extrabold font-display text-app-text dark:text-white">Request Received!</h2>
                   <p className="text-sm text-app-text-sec font-light max-w-sm">
                     Thank you for contacting V79SL. A member of our team will reach out to you within one business day to discuss your ICT needs.
                   </p>
                   <div className="text-[11px] font-mono text-app-text-muted pt-2">
-                    For urgent matters: <a href="tel:+17587260035" className="text-indigo-400 hover:underline">+1 758 726 0035</a>
+                    For urgent matters: <a href="tel:+17587260035" className="text-v79-teal hover:underline">+1 758 726 0035</a>
                   </div>
                 </motion.div>
               ) : (
@@ -246,7 +291,11 @@ export default function ContactPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -8 }}
                         role="alert"
+<<<<<<< Updated upstream
                         className="flex items-center gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono"
+=======
+                        className="flex items-center gap-2.5 p-3.5 rounded-xl bg-v79-coral/10 border border-v79-coral/20 text-v79-coral-light text-xs font-mono"
+>>>>>>> Stashed changes
                       >
                         <AlertCircle className="w-4 h-4 shrink-0" />
                         {serverError}
@@ -258,7 +307,11 @@ export default function ContactPage() {
                     id="contact-submit"
                     type="submit"
                     disabled={submitting}
+<<<<<<< Updated upstream
                     className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
+=======
+                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-v79-coral hover:bg-v79-coral-dark disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-v79-coral/20 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
+>>>>>>> Stashed changes
                   >
                     {submitting ? (
                       <>
@@ -273,8 +326,9 @@ export default function ContactPage() {
                     )}
                   </button>
 
-                  <p className="text-[10px] text-app-text-muted text-center font-mono">
-                    Your contact details are encrypted and stored securely. We never share client data.
+                  <p className="flex items-center justify-center gap-1.5 text-[10px] text-app-text-muted text-center font-mono">
+                    <Lock className="w-3 h-3 shrink-0" />
+                    We respond within 1 business day. Your information is encrypted and never shared.
                   </p>
                 </motion.form>
               )}
