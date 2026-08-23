@@ -287,7 +287,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
 
           <div className="flex flex-col sm:flex-row items-center gap-4 pt-2 border-t border-app-border/40">
             <Button onClick={() => onNavigate("contact")} variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
-              Book Your Assessment
+              Book a Free ICT Consultation
             </Button>
             <a href="tel:+17587260035" className="flex items-center gap-2 text-sm font-semibold text-app-text-sec hover:text-indigo-400 transition">
               <Phone className="w-4 h-4" /> Or call +1 758 726 0035
@@ -311,7 +311,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <Button onClick={() => onNavigate("contact")} variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
-              Free Assessment
+              Request Affordable ICT Support
             </Button>
             <Button href="tel:+17587260035" variant="secondary" iconBefore={<Phone className="w-4 h-4" />}>
               Call Us

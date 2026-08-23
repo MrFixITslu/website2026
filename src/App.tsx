@@ -350,9 +350,8 @@ export default function App() {
                 </div>
 
                 {/* Solutions Quick Links */}
-                <div className="grid sm:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   {[
-                    { label: "ICT Services & Pricing", desc: "Managed service plans, SLAs, and pricing", action: () => scrollTo("services"), classes: "hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]", textClasses: "group-hover:text-emerald-400" },
                     { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => setSelectedCategory("courses"), classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
                     { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => setSelectedCategory("all"), classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
                   ].map(s => (

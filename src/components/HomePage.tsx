@@ -141,7 +141,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="space-y-20 pb-16">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative min-h-[82vh] flex flex-col justify-center overflow-hidden pt-16 grid-texture">
+      <section className="relative min-h-[82vh] flex flex-col justify-center overflow-hidden pt-16">
         {/* Ambient brand-color drift — navy/teal/coral, not generic tech-blue */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <motion.div
@@ -240,10 +240,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               className="group"
               icon={<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             >
-              Get Your Free ICT Assessment
+              Book a Free ICT Consultation
             </Button>
-            <Button onClick={() => onNavigate("services")} variant="secondary" size="lg">
-              Explore Our Services
+            <Button onClick={() => onNavigate("contact")} variant="secondary" size="lg">
+              Request Affordable ICT Support
             </Button>
           </motion.div>
 
@@ -509,7 +509,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="max-w-6xl mx-auto rounded-3xl border-2 border-v79-teal/25 bg-app-bg grid-texture overflow-hidden shadow-xl"
+          className="max-w-6xl mx-auto rounded-3xl border-2 border-v79-teal/25 bg-app-bg overflow-hidden shadow-xl"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left: product + price */}
@@ -530,7 +530,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </p>
               <div>
                 <Button onClick={() => onNavigate("contact")} variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
-                  Request Your Assessment
+                  Book a Free ICT Consultation
                 </Button>
               </div>
             </div>

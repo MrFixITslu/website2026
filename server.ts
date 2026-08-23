@@ -1666,6 +1666,17 @@ async function startServer() {
   }
 
   // Middleware
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    // Only apply Strict-Transport-Security in production-like environments to avoid SSL blocks during local testing
+    if (isProduction) {
+      res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+    next();
+  });
+
   app.use(express.json({ limit: "5mb" }));
 
   // Static serving for uploaded course materials (audio, video, documents)
@@ -2816,6 +2827,73 @@ async function startServer() {
       console.error(`[API] Error fetching article slug ${slug}:`, e);
       res.status(500).json({ error: "Failed to load article content" });
     }
+  });
+
+  // --- Dynamic SEO Sitemaps and Robots.txt ---
+  app.get("/robots.txt", (req, res) => {
+    res.type("text/plain");
+    res.send(
+      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/admin\n\nSitemap: https://v79sl.duckdns.org/sitemap.xml`
+    );
+  });
+
+  app.get("/sitemap.xml", (req, res) => {
+    res.type("application/xml");
+    
+    let articlesXml = "";
+    try {
+      if (fs.existsSync(ARTICLES_DIR)) {
+        const files = fs.readdirSync(ARTICLES_DIR).filter(f => f.endsWith(".md"));
+        files.forEach(file => {
+          const slug = file.replace(".md", "");
+          // Each article has its section anchor route
+          articlesXml += `  <url>\n    <loc>https://v79sl.duckdns.org/resources?article=${slug}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+        });
+      }
+    } catch (err) {
+      console.error("Error generating sitemap articles:", err);
+    }
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://v79sl.duckdns.org/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#about</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#services</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#industries</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#solutions</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#resources</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://v79sl.duckdns.org/#contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+${articlesXml}</urlset>`;
+    
+    res.send(sitemap);
   });
 
   // Vite development vs production serving logic

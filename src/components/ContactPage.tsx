@@ -20,7 +20,7 @@ const EMPLOYEE_RANGES = ["1–5", "6–20", "21–50", "51–100", "100+"];
 export default function ContactPage() {
   const [form, setForm] = useState({
     name: "", company: "", email: "", phone: "",
-    employees: "", biggestChallenge: "", message: "",
+    employees: "", biggestChallenge: "", requestedAction: "", message: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -34,6 +34,7 @@ export default function ContactPage() {
     if (!form.email.trim()) errs.email = "Email address is required.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Enter a valid email address.";
     if (!form.phone.trim()) errs.phone = "Phone number is required.";
+    if (!form.requestedAction) errs.requestedAction = "Please select your primary request / goal.";
     return errs;
   };
 
@@ -250,6 +251,19 @@ export default function ContactPage() {
                         {CHALLENGES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Primary Request / Goal *</label>
+                    <select id="contact-action" name="requestedAction" value={form.requestedAction} onChange={handleChange} className={inputClass("requestedAction") + " appearance-none cursor-pointer"}>
+                      <option value="">Select your objective...</option>
+                      <option value="Book a Free ICT Consultation">Book a Free ICT Consultation (Primary CTA)</option>
+                      <option value="Request Affordable ICT Support">Request Affordable ICT Support (Secondary CTA)</option>
+                      <option value="Managed IT Services Inquiry">Inquire about Managed IT Services & SLAs</option>
+                      <option value="Cybersecurity Audit Request">Request a Cybersecurity Vulnerability Audit</option>
+                      <option value="Custom Software / AI Automation">Request Custom Software or AI Workflows</option>
+                    </select>
+                    <FieldError message={errors.requestedAction} />
                   </div>
 
                   <div className="space-y-1.5">
