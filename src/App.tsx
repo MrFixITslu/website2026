@@ -192,7 +192,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className="flex flex-col min-h-screen bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
+    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
         <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">

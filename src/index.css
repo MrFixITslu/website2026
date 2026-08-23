@@ -112,6 +112,12 @@
     --btn-secondary-border: rgba(79, 196, 184, 0.2);
   }
 
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+  }
+
   body {
     background-color: var(--bg-app);
     color: var(--text-primary);

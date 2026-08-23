@@ -1670,6 +1670,7 @@ async function startServer() {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     // Only apply Strict-Transport-Security in production-like environments to avoid SSL blocks during local testing
     if (isProduction) {
       res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
@@ -2806,8 +2807,15 @@ async function startServer() {
 
   app.get("/api/articles/:slug", (req, res) => {
     const slug = req.params.slug;
+    if (!slug || typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
+      return res.status(400).json({ error: "Invalid article identifier format" });
+    }
     try {
-      const fullPath = path.join(ARTICLES_DIR, `${slug}.md`);
+      const fullPath = path.resolve(ARTICLES_DIR, `${slug}.md`);
+      const resolvedArticlesDir = path.resolve(ARTICLES_DIR);
+      if (!fullPath.startsWith(resolvedArticlesDir)) {
+        return res.status(400).json({ error: "Invalid path reference" });
+      }
       if (!fs.existsSync(fullPath)) {
         return res.status(404).json({ error: "Article not found" });
       }

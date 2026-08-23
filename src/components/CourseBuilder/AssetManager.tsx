@@ -170,7 +170,7 @@ export function AssetManager({ course }: AssetManagerProps) {
                 <a
                   href={ast.url}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="p-2 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
                   title="Open Asset"
                 >
