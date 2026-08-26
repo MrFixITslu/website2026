@@ -22,6 +22,14 @@ services:
       # or Docker Compose will silently mangle the value (e.g. "P@ss$h3rWord"
       # must be written "P@ss$$h3rWord").
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      # V79Tiquet Gateway (Contact form → Client Management lead capture).
+      # Both unset = integration simply inactive, no error. Internal Docker
+      # address is used by default since both apps share proxy_network —
+      # see README-INTEGRATION.md for why that's preferred over routing
+      # through the public internet.
+      - V79TIQUET_INTAKE_URL=${V79TIQUET_INTAKE_URL:-http://v79-tiquet-manager:3050/api/public/intake}
+      - V79TIQUET_INTAKE_SECRET=${V79TIQUET_INTAKE_SECRET}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY:-}
     ports:
       # PORT MAPPING: host_port:container_port
       # Adjust both sides if you want to use a different port, e.g., "80:80"

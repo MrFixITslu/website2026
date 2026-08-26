@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import multer from "multer";
+import rateLimit from "express-rate-limit";
 
 // Configure environment variable definitions
 dotenv.config();
@@ -828,6 +829,31 @@ class JsonDatabase {
       phone: decryptPII(list[index].phone)
     };
   }
+
+  // Tracks delivery of this lead to the V79Tiquet gateway, separate from
+  // the visitor-facing status/adminNotes above. tiquetEventId is set once,
+  // on creation, and reused on every retry attempt.
+  async updateLeadTiquetSync(id: number, tiquetEventId: string, tiquetSyncStatus: string): Promise<void> {
+    const list = this.readLeads();
+    const index = list.findIndex(l => l.id === Number(id));
+    if (index === -1) return;
+    list[index].tiquetEventId = tiquetEventId;
+    list[index].tiquetSyncStatus = tiquetSyncStatus;
+    this.writeLeads(list);
+  }
+
+  async getPendingTiquetLeads(): Promise<any[]> {
+    const list = this.readLeads();
+    return list
+      .filter(l => l.tiquetSyncStatus === "pending")
+      .map(l => ({
+        ...l,
+        name: decryptPII(l.name),
+        company: decryptPII(l.company),
+        email: decryptPII(l.email),
+        phone: decryptPII(l.phone)
+      }));
+  }
 }
 
 class SqliteDatabase {
@@ -979,6 +1005,15 @@ class SqliteDatabase {
                     console.error("[SQLite DB] Leads Table Creation failed:", lErr);
                     return reject(lErr);
                   }
+                  // V79Tiquet gateway tracking: tiquetEventId is a stable id
+                  // generated once per submission and reused on retry, so a
+                  // retried delivery can't create a duplicate client/job on
+                  // the Tiquet side. tiquetSyncStatus lets a periodic sweep
+                  // find and retry any lead that didn't make it over yet,
+                  // without touching the local record the visitor already
+                  // has confirmation for.
+                  this.db.run("ALTER TABLE saas_leads ADD COLUMN tiquetEventId TEXT", () => {});
+                  this.db.run("ALTER TABLE saas_leads ADD COLUMN tiquetSyncStatus TEXT", () => {});
                   resolve();
                 }
               );
@@ -1491,6 +1526,34 @@ class SqliteDatabase {
             phone: decryptPII(row.phone)
           });
         });
+      });
+    });
+  }
+
+  // Tracks delivery of this lead to the V79Tiquet gateway, separate from
+  // the visitor-facing status/adminNotes above. tiquetEventId is set once,
+  // on creation, and reused on every retry attempt.
+  async updateLeadTiquetSync(id: number, tiquetEventId: string, tiquetSyncStatus: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        "UPDATE saas_leads SET tiquetEventId = ?, tiquetSyncStatus = ? WHERE id = ?",
+        [tiquetEventId, tiquetSyncStatus, Number(id)],
+        (err: any) => (err ? reject(err) : resolve())
+      );
+    });
+  }
+
+  async getPendingTiquetLeads(): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all("SELECT * FROM saas_leads WHERE tiquetSyncStatus = 'pending'", [], (err: any, rows: any[]) => {
+        if (err) return reject(err);
+        resolve((rows || []).map(row => ({
+          ...row,
+          name: decryptPII(row.name),
+          company: decryptPII(row.company),
+          email: decryptPII(row.email),
+          phone: decryptPII(row.phone)
+        })));
       });
     });
   }
@@ -2724,9 +2787,155 @@ async function startServer() {
     }
   });
 
+  // ── V79Tiquet Gateway: sends this lead to V79Tiquet's Client Management ──
+  // as a Client, and never blocks or fails the visitor's submission — the
+  // lead is already safely persisted locally (db.addLead, above) regardless
+  // of whether this succeeds. See README-INTEGRATION.md for the full design.
+  const V79TIQUET_INTAKE_URL = process.env.V79TIQUET_INTAKE_URL; // e.g. http://v79-tiquet-manager:3050/api/public/intake
+  const V79TIQUET_INTAKE_SECRET = process.env.V79TIQUET_INTAKE_SECRET;
+  const TIQUET_RETRY_DELAYS_MS = [1500, 4000];
+
+  function tiquetGatewayConfigured(): boolean {
+    return !!(V79TIQUET_INTAKE_URL && V79TIQUET_INTAKE_SECRET);
+  }
+
+  async function attemptTiquetDelivery(payload: Record<string, unknown>): Promise<boolean | "permanent-failure"> {
+    const res = await fetch(V79TIQUET_INTAKE_URL as string, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Intake-Secret": V79TIQUET_INTAKE_SECRET as string,
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) return true;
+    if (res.status >= 400 && res.status < 500) {
+      const body = await res.json().catch(() => null);
+      console.warn(`[V79Tiquet Gateway] Rejected (HTTP ${res.status}): ${body?.error || "no error detail"} — will not retry.`);
+      return "permanent-failure";
+    }
+    return false; // 5xx / unexpected — treat as transient, worth retrying
+  }
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  /**
+   * Delivers one lead to V79Tiquet, with a couple of quick inline retries.
+   * Never throws. Returns true once delivered (or permanently rejected —
+   * nothing more to do), false if it should be left 'pending' for the
+   * periodic sweep to retry later.
+   */
+  async function sendLeadToTiquet(lead: any, eventId: string): Promise<boolean> {
+    if (!tiquetGatewayConfigured()) return true; // integration not configured — nothing to do, not an error
+
+    const payload = {
+      eventId,
+      source: "website2026",
+      name: lead.name,
+      company: lead.company,
+      email: lead.email,
+      phone: lead.phone,
+      employees: lead.employees || undefined,
+      biggestChallenge: lead.biggestChallenge || undefined,
+      message: lead.message || undefined,
+    };
+
+    for (let attempt = 0; attempt <= TIQUET_RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        const result = await attemptTiquetDelivery(payload);
+        if (result === true || result === "permanent-failure") return true;
+      } catch (err: any) {
+        console.warn(`[V79Tiquet Gateway] Delivery attempt ${attempt + 1} failed: ${err.message}`);
+      }
+      if (attempt < TIQUET_RETRY_DELAYS_MS.length) await sleep(TIQUET_RETRY_DELAYS_MS[attempt]);
+    }
+    console.warn(`[V79Tiquet Gateway] Lead ${eventId} still pending delivery after inline retries — periodic sweep will keep trying.`);
+    return false;
+  }
+
+  // Periodic sweep: catches any lead whose Tiquet delivery didn't succeed
+  // via the inline retries above (e.g. Tiquet was down for longer than
+  // those cover). Mirrors the same setInterval-based retry pattern already
+  // used for the V79Tiquet ↔ FFPRO2 gateway integration.
+  //
+  // Each lead is processed independently (its own try/catch) rather than
+  // one shared try/catch around the whole loop — otherwise a single
+  // transient failure partway through (e.g. a momentary SQLite lock on the
+  // status update) would abort the rest of that cycle's batch entirely,
+  // needlessly delaying leads that had nothing wrong with them.
+  setInterval(async () => {
+    if (!tiquetGatewayConfigured()) return;
+    let pending: any[];
+    try {
+      pending = await db.getPendingTiquetLeads();
+    } catch (err: any) {
+      console.error("[V79Tiquet Gateway] Sweep failed to query pending leads:", err.message);
+      return;
+    }
+    for (const lead of pending) {
+      try {
+        const delivered = await sendLeadToTiquet(lead, lead.tiquetEventId);
+        if (delivered) await db.updateLeadTiquetSync(lead.id, lead.tiquetEventId, "sent");
+      } catch (err: any) {
+        console.error(`[V79Tiquet Gateway] Sweep failed for lead ${lead.id}:`, err.message);
+      }
+    }
+  }, 5 * 60 * 1000);
+
+  // Basic Google reCAPTCHA v3 server-side verification. The frontend
+  // already generates a token (ContactPage.tsx) but nothing previously
+  // checked it — meaning the CAPTCHA was decorative. This matters more now
+  // that a successful submission also creates a client in V79Tiquet, so a
+  // spam bot hitting this endpoint pollutes Client Management, not just this
+  // app's own local lead list. Skipped gracefully (not an error) if
+  // RECAPTCHA_SECRET_KEY isn't configured, matching this app's existing
+  // pattern of every integration being optional until its env vars are set.
+  async function verifyRecaptcha(token: unknown): Promise<boolean> {
+    const secret = process.env.RECAPTCHA_SECRET_KEY;
+    if (!secret) return true;
+    // A token that's missing entirely (not one that was provided and
+    // failed) is treated as "couldn't verify" rather than "rejected" —
+    // ad-blockers and privacy extensions commonly block Google's reCAPTCHA
+    // script outright, which would otherwise silently reject real visitors
+    // and lose real sales leads with zero visibility that anything went
+    // wrong. A bot that skips the page entirely and never gets a token
+    // still has to get through the rate limiter and duplicate-detection
+    // downstream; a bot that DOES get a token and fails verification is a
+    // much stronger, more deliberate signal and is still rejected below.
+    if (typeof token !== "string" || !token) {
+      console.warn("[reCAPTCHA] No token provided (likely blocked client-side) — allowing submission through.");
+      return true;
+    }
+    try {
+      const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await res.json();
+      return !!data.success && (typeof data.score !== "number" || data.score >= 0.5);
+    } catch (err: any) {
+      console.warn("[reCAPTCHA] Verification request failed, allowing submission through:", err.message);
+      return true; // don't let a reCAPTCHA outage block legitimate visitors
+    }
+  }
+
+  // 10 submissions per 15 minutes per IP — generous for a real visitor
+  // (this form isn't submitted repeatedly in normal use), tight enough to
+  // blunt a scripted flood aimed at this endpoint.
+  const leadsLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests. Please try again later or contact us directly." },
+  });
+
   // --- Leads API Endpoints ---
-  app.post("/api/leads", async (req, res) => {
-    const { name, company, email, phone, employees, biggestChallenge, message } = req.body;
+  app.post("/api/leads", leadsLimiter, async (req, res) => {
+    const { name, company, email, phone, employees, biggestChallenge, message, recaptchaToken } = req.body;
     
     // Server-side validation
     if (!name || !name.trim() || !company || !company.trim() || !email || !email.trim() || !phone || !phone.trim()) {
@@ -2738,8 +2947,12 @@ async function startServer() {
       return res.status(400).json({ error: "Please enter a valid email address." });
     }
 
+    if (!(await verifyRecaptcha(recaptchaToken))) {
+      return res.status(400).json({ error: "Verification failed. Please try again." });
+    }
+
     try {
-      const newLead = await db.addLead({
+      const leadData = {
         name: name.trim(),
         company: company.trim(),
         email: email.trim(),
@@ -2747,8 +2960,31 @@ async function startServer() {
         employees: employees || "",
         biggestChallenge: biggestChallenge || "",
         message: message || ""
-      });
+      };
+      const newLead = await db.addLead(leadData);
+
+      // Mark as pending BEFORE attempting delivery — so even if this
+      // process crashes mid-delivery, the lead is still a durable,
+      // retryable record for the periodic sweep to pick up. Respond to the
+      // visitor immediately after — do NOT await the Tiquet delivery here.
+      // It has its own inline retries with backoff (see sendLeadToTiquet),
+      // and if V79Tiquet is unreachable in a way that hangs rather than
+      // instantly refusing (a network partition, an overloaded container),
+      // awaiting it here could make a visitor wait upwards of 30 seconds
+      // for a response to their own form submission — the entire point of
+      // this being resilient to V79Tiquet being unavailable is defeated if
+      // its unavailability is what the visitor has to sit through.
+      const eventId = crypto.randomUUID();
+      await db.updateLeadTiquetSync(newLead.id, eventId, "pending");
       res.status(201).json(newLead);
+
+      sendLeadToTiquet(leadData, eventId)
+        .then((delivered) => {
+          if (delivered) return db.updateLeadTiquetSync(newLead.id, eventId, "sent");
+        })
+        .catch((err) => {
+          console.error(`[V79Tiquet Gateway] Unexpected error delivering lead ${newLead.id}:`, err.message);
+        });
     } catch (e) {
       console.error("[API] Error adding lead:", e);
       res.status(500).json({ error: "Failed to submit request. Please try again or call us." });
