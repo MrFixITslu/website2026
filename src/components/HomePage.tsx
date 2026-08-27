@@ -292,7 +292,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* ── Services Grid ─────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto">
+      <section id="services-overview" className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -355,7 +355,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       {/* ── Why Choose Vision79 Digital ───────────────────────────────
            Feature grid on a contrasting sand-tinted band to break up
            white space between the services grid and testimonials. */}
-      <section className="py-16 bg-v79-sand-light/50 dark:bg-v79-navy-light/20 border-y border-app-border">
+      <section id="why-v79" className="py-16 bg-v79-sand-light/50 dark:bg-v79-navy-light/20 border-y border-app-border scroll-mt-24">
         <div className="px-6 lg:px-8 space-y-8 max-w-6xl mx-auto">
           <div className="text-center space-y-2">
             <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">Excellence</span>
@@ -392,7 +392,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
 
       {/* ── Problem Agitation ─────────────────────────────────────── */}
-      <section className="py-20 bg-v79-navy dark:bg-v79-navy-dark fiber-texture relative overflow-hidden">
+      <section id="cost-of-downtime" className="py-20 bg-v79-navy dark:bg-v79-navy-dark fiber-texture relative overflow-hidden scroll-mt-24">
         <div className="px-6 lg:px-8 max-w-4xl mx-auto text-center space-y-12 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -455,7 +455,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* ── Testimonials ──────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto">
+      <section id="testimonials" className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -503,7 +503,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       {/* ── ICT Business Health Assessment ───────────────────────────
            Standalone, visually distinct pricing/CTA block. Free
            consultation vs. paid full audit kept unambiguous. */}
-      <section className="px-6 lg:px-8">
+      <section id="free-assessment" className="px-6 lg:px-8 scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, Suspense, lazy } from "react";
+import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
   Sun, Moon, Menu, X, Search, Package, AlertTriangle,
-  ChevronLeft, ChevronRight, Megaphone, Star,
+  ChevronLeft, ChevronRight, ChevronDown, Megaphone, Star,
 } from "lucide-react";
 import HomePage from "./components/HomePage";
 import AboutPage from "./components/AboutPage";
@@ -37,9 +37,23 @@ function getCourseIdFromUrl(): number | null {
 }
 
 const SECTIONS = [
-  { id: "home", label: "Home" },
+  { id: "home", label: "Home", subItems: [
+    { id: "services-overview", label: "What We Do" },
+    { id: "why-v79", label: "Why Choose V79" },
+    { id: "cost-of-downtime", label: "Cost of Downtime" },
+    { id: "testimonials", label: "Client Stories" },
+    { id: "free-assessment", label: "ICT Health Assessment" },
+  ]},
   { id: "about", label: "About" },
-  { id: "services", label: "Services" },
+  { id: "services", label: "Services", subItems: [
+    { id: "managed-it", label: "Managed IT Services" },
+    { id: "cloud", label: "Cloud Solutions" },
+    { id: "software", label: "Custom Software" },
+    { id: "ai-automation", label: "AI Automation" },
+    { id: "networking", label: "Network & VoIP" },
+    { id: "cybersecurity", label: "Cybersecurity" },
+    { id: "assessment", label: "ICT Health Assessment" },
+  ]},
   { id: "industries", label: "Industries" },
   { id: "solutions", label: "Solutions" },
   { id: "resources", label: "Resources" },
@@ -49,6 +63,11 @@ const SECTIONS = [
 export default function App() {
   const [activeSection, setActiveSection] = useState("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Which top-level nav item's sub-menu is currently open (desktop dropdown
+  // or mobile accordion) — null means none open. Only one at a time.
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
+  const navRef = useRef<HTMLElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     try { return (localStorage.getItem("vision79-theme") as "light" | "dark") || "dark"; }
     catch { return "dark"; }
@@ -180,15 +199,36 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollTo = (id: string) => {
-    setActiveSection(id);
+  // Close an open dropdown when clicking anywhere outside the nav
+  useEffect(() => {
+    if (!openDropdown) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openDropdown]);
+
+  // parentId: when scrolling to a sub-anchor (e.g. a specific service card),
+  // pass its top-level parent's id so the nav highlight stays glued to the
+  // right top-level item immediately, rather than briefly going blank until
+  // the scroll-spy above catches up once the smooth-scroll settles.
+  const scrollTo = (id: string, parentId?: string) => {
+    setActiveSection(parentId || id);
     setMobileNavOpen(false);
+    setOpenDropdown(null);
+    setMobileExpanded(null);
     const el = document.getElementById(id);
     if (el) {
       const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
       window.scrollTo({ top: topPos, behavior: "smooth" });
     }
   };
+
+  const isSectionActive = (sec: typeof SECTIONS[number]) =>
+    activeSection === sec.id || (sec.subItems?.some(si => si.id === activeSection) ?? false);
 
   return (
     <MotionConfig reducedMotion="user">
@@ -204,28 +244,76 @@ export default function App() {
         </button>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1.5">
-          {SECTIONS.map(sec => (
-            <button
-              key={sec.id}
-              onClick={() => scrollTo(sec.id)}
-              className={`relative px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
-                activeSection === sec.id ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text"
-              }`}
-            >
-              {activeSection === sec.id && (
-                <motion.div
-                  layoutId="nav-active-pill"
-                  className="absolute inset-0 bg-v79-teal/10 rounded-lg"
-                  transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                />
-              )}
-              {activeSection !== sec.id && (
-                <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 bg-app-aside-bg transition-opacity" />
-              )}
-              <span className="relative z-10">{sec.label}</span>
-            </button>
-          ))}
+        <nav ref={navRef} className="hidden md:flex items-center gap-1.5">
+          {SECTIONS.map(sec => {
+            const active = isSectionActive(sec);
+            const hasSubItems = !!sec.subItems?.length;
+            return (
+              <div key={sec.id} className="relative">
+                <div
+                  className={`relative flex items-center rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-v79-teal/50 ${
+                    active ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text"
+                  }`}
+                >
+                  {active && (
+                    <motion.div
+                      layoutId="nav-active-pill"
+                      className="absolute inset-0 bg-v79-teal/10 rounded-lg"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  {!active && (
+                    <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-100 bg-app-aside-bg transition-opacity" />
+                  )}
+                  <button
+                    onClick={() => scrollTo(sec.id)}
+                    className="relative z-10 pl-3.5 pr-1.5 py-1.5 text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none"
+                  >
+                    {sec.label}
+                  </button>
+                  {hasSubItems && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenDropdown(p => (p === sec.id ? null : sec.id));
+                      }}
+                      aria-label={`${sec.label} sub-sections`}
+                      aria-expanded={openDropdown === sec.id}
+                      className="relative z-10 pl-0.5 pr-2.5 py-1.5 cursor-pointer focus-visible:outline-none"
+                    >
+                      <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === sec.id ? "rotate-180" : ""}`} />
+                    </button>
+                  )}
+                </div>
+
+                <AnimatePresence>
+                  {hasSubItems && openDropdown === sec.id && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full left-0 mt-1.5 min-w-[210px] bg-app-header-bg border border-app-border rounded-xl shadow-2xl p-1.5 z-50"
+                    >
+                      {sec.subItems!.map(sub => (
+                        <button
+                          key={sub.id}
+                          onClick={() => scrollTo(sub.id, sec.id)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold tracking-wide cursor-pointer transition-colors ${
+                            activeSection === sub.id
+                              ? "text-v79-teal bg-v79-teal/10"
+                              : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg"
+                          }`}
+                        >
+                          {sub.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
           <button
             onClick={() => setTheme(p => p === "dark" ? "light" : "dark")}
             className="ml-3 p-2 rounded-lg border border-app-border bg-app-btn-sec text-app-text hover:bg-app-btn-sec/80 transition-all cursor-pointer"
@@ -240,7 +328,7 @@ export default function App() {
           <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
           </button>
-          <button onClick={() => setMobileNavOpen(p => !p)} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
+          <button onClick={() => { setMobileNavOpen(p => !p); setMobileExpanded(null); }} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
             <AnimatePresence mode="wait" initial={false}>
               {mobileNavOpen ? (
                 <motion.span
@@ -277,26 +365,71 @@ export default function App() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="md:hidden fixed top-16 left-0 right-0 z-40 bg-app-header-bg/95 backdrop-blur-2xl border-b border-app-border p-5 flex flex-col gap-2 shadow-2xl"
+            className="md:hidden fixed top-16 left-0 right-0 z-40 bg-app-header-bg/95 backdrop-blur-2xl border-b border-app-border p-5 flex flex-col gap-2 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto"
           >
-            {SECTIONS.map(sec => (
-              <button
-                key={sec.id}
-                onClick={() => scrollTo(sec.id)}
-                className={`relative px-4 py-3 rounded-xl text-sm font-semibold text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
-                  activeSection === sec.id ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg transition-colors"
-                }`}
-              >
-                {activeSection === sec.id && (
-                  <motion.div
-                    layoutId="nav-active-pill-mobile"
-                    className="absolute inset-0 bg-v79-teal/15 rounded-xl"
-                    transition={{ type: "spring", stiffness: 380, damping: 32 }}
-                  />
-                )}
-                <span className="relative z-10">{sec.label}</span>
-              </button>
-            ))}
+            {SECTIONS.map(sec => {
+              const active = isSectionActive(sec);
+              const hasSubItems = !!sec.subItems?.length;
+              const expanded = mobileExpanded === sec.id;
+              return (
+                <div key={sec.id}>
+                  <div
+                    className={`relative flex items-center rounded-xl ${
+                      active ? "text-v79-teal font-bold" : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg transition-colors"
+                    }`}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="nav-active-pill-mobile"
+                        className="absolute inset-0 bg-v79-teal/15 rounded-xl"
+                        transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      />
+                    )}
+                    <button
+                      onClick={() => scrollTo(sec.id)}
+                      className="relative z-10 flex-1 px-4 py-3 text-sm font-semibold text-left cursor-pointer focus-visible:outline-none"
+                    >
+                      {sec.label}
+                    </button>
+                    {hasSubItems && (
+                      <button
+                        onClick={() => setMobileExpanded(p => (p === sec.id ? null : sec.id))}
+                        aria-label={`${sec.label} sub-sections`}
+                        aria-expanded={expanded}
+                        className="relative z-10 px-4 py-3 cursor-pointer focus-visible:outline-none"
+                      >
+                        <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                      </button>
+                    )}
+                  </div>
+                  <AnimatePresence>
+                    {hasSubItems && expanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden pl-3"
+                      >
+                        {sec.subItems!.map(sub => (
+                          <button
+                            key={sub.id}
+                            onClick={() => scrollTo(sub.id, sec.id)}
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm cursor-pointer transition-colors ${
+                              activeSection === sub.id
+                                ? "text-v79-teal font-semibold"
+                                : "text-app-text-muted hover:text-app-text hover:bg-app-aside-bg"
+                            }`}
+                          >
+                            {sub.label}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

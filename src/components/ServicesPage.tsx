@@ -166,12 +166,13 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
           const isOpen = openId === s.id;
           return (
             <motion.div
+              id={s.id}
               key={s.id}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06 }}
-              className={`glass rounded-2xl border overflow-hidden transition-colors duration-300 ${isOpen ? s.border : "border-app-border hover:border-app-text/15"}`}
+              className={`glass rounded-2xl border overflow-hidden transition-colors duration-300 scroll-mt-24 ${isOpen ? s.border : "border-app-border hover:border-app-text/15"}`}
             >
               <button
                 onClick={() => setOpenId(isOpen ? null : s.id)}
@@ -233,7 +234,7 @@ export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) =
            NOTE: this is a paid entry-point diagnostic ($1,500 XCD one-time), distinct
            from the "free assessment" wording used elsewhere on this page —
            worth reconciling the messaging site-wide. */}
-      <section className="px-6 lg:px-8 max-w-7xl mx-auto">
+      <section id="assessment" className="px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
