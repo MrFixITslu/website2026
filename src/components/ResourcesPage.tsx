@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import type { BlogArticle } from "../types";
 import { ArticleCardSkeleton } from "./ui/Skeleton";
 import { Button } from "./ui/Button";
+import { animateScrollTo } from "../utils/scroll";
 
 interface ResourcesPageProps {
   onNavigate?: (v: string) => void;
@@ -34,7 +35,7 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
       const r = await fetch(`/api/articles/${slug}`);
       const data = await r.json();
       setSelectedArticle(data);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      animateScrollTo(0);
     } catch {
       setError("Could not load article.");
     } finally {

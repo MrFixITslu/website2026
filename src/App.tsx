@@ -13,6 +13,7 @@ import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
+import { animateScrollTo } from "./utils/scroll";
 
 // Lazy-loaded: only needed once a user actually opens a course or tool
 // feedback flow, not on initial marketing-site paint. CourseDetailPage
@@ -199,7 +200,7 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
-  // Close an open dropdown when clicking anywhere outside the nav
+  // Close an open dropdown when clicking outside it, or pressing Escape
   useEffect(() => {
     if (!openDropdown) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -207,8 +208,15 @@ export default function App() {
         setOpenDropdown(null);
       }
     };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenDropdown(null);
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [openDropdown]);
 
   // parentId: when scrolling to a sub-anchor (e.g. a specific service card),
@@ -223,7 +231,7 @@ export default function App() {
     const el = document.getElementById(id);
     if (el) {
       const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
-      window.scrollTo({ top: topPos, behavior: "smooth" });
+      animateScrollTo(topPos);
     }
   };
 
@@ -267,7 +275,7 @@ export default function App() {
                   )}
                   <button
                     onClick={() => scrollTo(sec.id)}
-                    className="relative z-10 pl-3.5 pr-1.5 py-1.5 text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none"
+                    className="relative z-10 pl-3.5 pr-1.5 py-1.5 text-xs font-semibold tracking-wide cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-lg"
                   >
                     {sec.label}
                   </button>
@@ -279,7 +287,7 @@ export default function App() {
                       }}
                       aria-label={`${sec.label} sub-sections`}
                       aria-expanded={openDropdown === sec.id}
-                      className="relative z-10 pl-0.5 pr-2.5 py-1.5 cursor-pointer focus-visible:outline-none"
+                      className="relative z-10 pl-0.5 pr-2.5 py-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-lg"
                     >
                       <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === sec.id ? "rotate-180" : ""}`} />
                     </button>
@@ -299,7 +307,7 @@ export default function App() {
                         <button
                           key={sub.id}
                           onClick={() => scrollTo(sub.id, sec.id)}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold tracking-wide cursor-pointer transition-colors ${
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold tracking-wide cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
                             activeSection === sub.id
                               ? "text-v79-teal bg-v79-teal/10"
                               : "text-app-text-sec hover:text-app-text hover:bg-app-aside-bg"
@@ -387,7 +395,7 @@ export default function App() {
                     )}
                     <button
                       onClick={() => scrollTo(sec.id)}
-                      className="relative z-10 flex-1 px-4 py-3 text-sm font-semibold text-left cursor-pointer focus-visible:outline-none"
+                      className="relative z-10 flex-1 px-4 py-3 text-sm font-semibold text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-xl"
                     >
                       {sec.label}
                     </button>
@@ -396,7 +404,7 @@ export default function App() {
                         onClick={() => setMobileExpanded(p => (p === sec.id ? null : sec.id))}
                         aria-label={`${sec.label} sub-sections`}
                         aria-expanded={expanded}
-                        className="relative z-10 px-4 py-3 cursor-pointer focus-visible:outline-none"
+                        className="relative z-10 px-4 py-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-xl"
                       >
                         <ChevronDown className={`w-4 h-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
                       </button>
@@ -415,7 +423,7 @@ export default function App() {
                           <button
                             key={sub.id}
                             onClick={() => scrollTo(sub.id, sec.id)}
-                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm cursor-pointer transition-colors ${
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 ${
                               activeSection === sub.id
                                 ? "text-v79-teal font-semibold"
                                 : "text-app-text-muted hover:text-app-text hover:bg-app-aside-bg"
