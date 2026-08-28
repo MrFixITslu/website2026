@@ -13,7 +13,6 @@ import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
-import { animateScrollTo } from "./utils/scroll";
 
 // Lazy-loaded: only needed once a user actually opens a course or tool
 // feedback flow, not on initial marketing-site paint. CourseDetailPage
@@ -69,6 +68,13 @@ export default function App() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
+  // Nav-triggered jumps use a brief fade-to-background / fade-in instead of
+  // a visible scroll: the jump itself happens instantly while the overlay
+  // is fully opaque, so fast-moving content never flashes past on screen —
+  // eased scroll animation still shows that motion no matter how it's
+  // tuned, since it's still a real scroll the eye has to track. This isn't,
+  // it's a clean dissolve from one section straight to the next.
+  const [navTransitioning, setNavTransitioning] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     try { return (localStorage.getItem("vision79-theme") as "light" | "dark") || "dark"; }
     catch { return "dark"; }
@@ -223,16 +229,49 @@ export default function App() {
   // pass its top-level parent's id so the nav highlight stays glued to the
   // right top-level item immediately, rather than briefly going blank until
   // the scroll-spy above catches up once the smooth-scroll settles.
+  const NAV_FADE_IN_MS = 200;
+  const NAV_FADE_OUT_MS = 260;
+
+  const navTransitionSeq = useRef(0);
+
   const scrollTo = (id: string, parentId?: string) => {
     setActiveSection(parentId || id);
     setMobileNavOpen(false);
     setOpenDropdown(null);
     setMobileExpanded(null);
-    const el = document.getElementById(id);
-    if (el) {
-      const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
-      animateScrollTo(topPos);
+
+    // If a nav item is clicked again before a prior transition finished
+    // (e.g. clicking two different sections in quick succession), only the
+    // LAST click should actually jump/fade-out — otherwise the first
+    // click's queued jump can land and flash briefly before the second
+    // click's jump overwrites it.
+    const requestId = ++navTransitionSeq.current;
+
+    const jump = () => {
+      const el = document.getElementById(id);
+      if (el) {
+        const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
+        window.scrollTo(0, topPos); // instant — hidden behind the fade overlay
+      }
+    };
+
+    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) {
+      jump();
+      return;
     }
+
+    setNavTransitioning(true);
+    window.setTimeout(() => {
+      if (navTransitionSeq.current !== requestId) return; // superseded by a newer click
+      jump();
+      // Give the browser a frame to actually paint the new scroll position
+      // before starting the fade-out, or the reveal can catch the tail end
+      // of the jump rather than a clean, already-settled destination.
+      requestAnimationFrame(() => {
+        if (navTransitionSeq.current === requestId) setNavTransitioning(false);
+      });
+    }, NAV_FADE_IN_MS);
   };
 
   const isSectionActive = (sec: typeof SECTIONS[number]) =>
@@ -241,6 +280,16 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
+      {/* Nav transition overlay: fades to the page background, jumps the
+          scroll position instantly while fully opaque, then fades back in
+          — so a nav click never shows content flying past mid-scroll. */}
+      <motion.div
+        aria-hidden="true"
+        initial={false}
+        animate={{ opacity: navTransitioning ? 1 : 0 }}
+        transition={{ duration: (navTransitioning ? NAV_FADE_IN_MS : NAV_FADE_OUT_MS) / 1000, ease: "easeInOut" }}
+        className="fixed inset-0 z-[100] bg-app-bg pointer-events-none"
+      />
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
         <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">
