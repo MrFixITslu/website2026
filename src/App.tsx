@@ -282,13 +282,17 @@ export default function App() {
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
       {/* Nav transition overlay: fades to the page background, jumps the
           scroll position instantly while fully opaque, then fades back in
-          — so a nav click never shows content flying past mid-scroll. */}
+          — so a nav click never shows content flying past mid-scroll.
+          Starts below the header (top-16 matches the header's h-16) so the
+          sticky header itself never gets covered/flickers during a
+          transition — it should feel like a fixed anchor, not something
+          that disappears every time you click a nav link. */}
       <motion.div
         aria-hidden="true"
         initial={false}
         animate={{ opacity: navTransitioning ? 1 : 0 }}
         transition={{ duration: (navTransitioning ? NAV_FADE_IN_MS : NAV_FADE_OUT_MS) / 1000, ease: "easeInOut" }}
-        className="fixed inset-0 z-[100] bg-app-bg pointer-events-none"
+        className="fixed top-16 inset-x-0 bottom-0 z-[45] bg-app-bg pointer-events-none"
       />
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
