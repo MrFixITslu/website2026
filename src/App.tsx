@@ -295,7 +295,7 @@ export default function App() {
         className="fixed top-16 inset-x-0 bottom-0 z-[45] bg-app-bg pointer-events-none"
       />
       {/* Apple-inspired Sticky Header */}
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl sticky top-0 z-50">
+      <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50">
         <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs tracking-tighter bg-v79-coral text-white shadow-md shadow-v79-coral/20 group-hover:scale-105 transition-transform">V79</div>
           <span className="font-display tracking-tight text-app-text uppercase">
@@ -496,7 +496,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Continuous One-Page Apple-Inspired Flow */}
-      <main className="flex-1 space-y-32 pb-24">
+      <main className="flex-1 space-y-32 pb-24 pt-16">
         <section id="home" className="scroll-mt-20">
           <HomePage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")} />
         </section>
