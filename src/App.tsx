@@ -60,6 +60,12 @@ const SECTIONS = [
   { id: "contact", label: "Contact" },
 ];
 
+// The subset of Services sub-items that are actual accordion cards in
+// ServicesPage (as opposed to "assessment", which is always-visible
+// content with nothing to expand). Clicking one of these in the nav should
+// open its card automatically, not just scroll to its still-collapsed header.
+const SERVICE_ACCORDION_IDS = ["managed-it", "cloud", "software", "ai-automation", "networking", "cybersecurity"];
+
 export default function App() {
   const [activeSection, setActiveSection] = useState("home");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -71,10 +77,16 @@ export default function App() {
   // Nav-triggered jumps use a brief fade-to-background / fade-in instead of
   // a visible scroll: the jump itself happens instantly while the overlay
   // is fully opaque, so fast-moving content never flashes past on screen —
-  // eased scroll animation still shows that motion no matter how it's
-  // tuned, since it's still a real scroll the eye has to track. This isn't,
-  // it's a clean dissolve from one section straight to the next.
+  // an eased scroll animation still shows that motion no matter how it's
+  // tuned, since it's still a real scroll the eye has to track. This is a
+  // clean dissolve from one section straight to the next instead.
   const [navTransitioning, setNavTransitioning] = useState(false);
+  // Which service accordion card in ServicesPage is expanded. Lifted up
+  // here (rather than local state inside ServicesPage) so clicking a
+  // specific service in the Services dropdown — e.g. "Cloud Solutions" —
+  // can open that exact card automatically, instead of just scrolling to
+  // its (still collapsed) header and making the user click it again.
+  const [openServiceId, setOpenServiceId] = useState<string | null>("managed-it");
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     try { return (localStorage.getItem("vision79-theme") as "light" | "dark") || "dark"; }
     catch { return "dark"; }
@@ -239,6 +251,14 @@ export default function App() {
     setMobileNavOpen(false);
     setOpenDropdown(null);
     setMobileExpanded(null);
+
+    // Jumping straight to a specific service (e.g. "Cloud Solutions" from
+    // the Services dropdown) should land with that card already open —
+    // otherwise the user has to click it again after arriving, which
+    // defeats the point of a direct link to it.
+    if (SERVICE_ACCORDION_IDS.includes(id)) {
+      setOpenServiceId(id);
+    }
 
     // If a nav item is clicked again before a prior transition finished
     // (e.g. clicking two different sections in quick succession), only the
@@ -510,7 +530,11 @@ export default function App() {
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
         <section id="services" className="scroll-mt-20">
-          <ServicesPage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")} />
+          <ServicesPage
+            onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")}
+            openId={openServiceId}
+            setOpenId={setOpenServiceId}
+          />
         </section>
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
@@ -546,8 +570,8 @@ export default function App() {
                 {/* Solutions Quick Links */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[
-                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => setSelectedCategory("courses"), classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
-                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => setSelectedCategory("all"), classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
+                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { window.location.href = "https://v79academy.v79sl.duckdns.org/academy"; }, classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
+                    { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => { setSelectedCategory("all"); scrollTo("app-marketplace-grid"); }, classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
                   ].map(s => (
                     <button key={s.label} onClick={s.action} className={`glass p-5 rounded-2xl border border-app-border text-left space-y-1.5 transition-all cursor-pointer group ${s.classes}`}>
                       <div className={`text-xs font-bold font-display text-app-text dark:text-white transition ${s.textClasses}`}>{s.label}</div>
@@ -594,7 +618,7 @@ export default function App() {
                   {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-4 text-app-text-muted hover:text-app-text text-xs font-mono font-bold cursor-pointer">CLEAR</button>}
                 </div>
 
-                <div>
+                <div id="app-marketplace-grid" className="scroll-mt-24">
                   {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {[1, 2, 3].map(n => <AppCardSkeleton key={n} />)}

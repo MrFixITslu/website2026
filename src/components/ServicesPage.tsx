@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ChevronDown, CheckCircle, ArrowRight, Phone,
@@ -138,9 +137,18 @@ const SERVICES = [
   },
 ];
 
-export default function ServicesPage({ onNavigate }: { onNavigate: (v: string) => void }) {
-  const [openId, setOpenId] = useState<string | null>("managed-it");
-
+export default function ServicesPage({
+  onNavigate,
+  openId,
+  setOpenId,
+}: {
+  onNavigate: (v: string) => void;
+  // Lifted up to App.tsx so the nav's Services dropdown can open a specific
+  // card directly (e.g. clicking "Cloud Solutions" arrives with that card
+  // already expanded, not just scrolled to its collapsed header).
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+}) {
   return (
     <div className="space-y-16 pb-16">
       {/* Hero */}
