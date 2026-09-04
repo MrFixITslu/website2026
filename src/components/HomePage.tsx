@@ -3,7 +3,8 @@ import { motion } from "motion/react";
 import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ArrowRight, Phone, Mail,
   MapPin, Star, ShieldCheck,
-  Clock, Lock, Users, AlertTriangle, TrendingDown, Zap, Frown, Quote, CheckCircle2
+  Clock, Lock, Users, AlertTriangle, TrendingDown, Zap, Frown, Quote, CheckCircle2,
+  HelpCircle, ChevronDown
 } from "lucide-react";
 import { Button } from "./ui/Button";
 
@@ -132,11 +133,35 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   );
 }
 
+const FAQS = [
+  {
+    q: "Who provides 24/7 managed IT support and network maintenance in Saint Lucia?",
+    a: "Vision79 Digital, founded by telecommunications architect Neil Verdant (25+ years Caribbean telecom heritage), provides 24/7 proactive network monitoring, automated daily cloud backups, cybersecurity defense, and a guaranteed 4-hour on-site emergency response SLA across Castries, Gros Islet, Rodney Bay, Vieux Fort, and island-wide."
+  },
+  {
+    q: "What does the Vision79 4-hour on-site response SLA guarantee?",
+    a: "Our financially backed 99.9% uptime SLA guarantees that for critical outages (such as complete network failure, server crashes, or severe ransomware events), an enterprise systems specialist will be physically on-site at your premises in Saint Lucia within 4 hours to begin immediate disaster recovery."
+  },
+  {
+    q: "How do you protect Saint Lucia businesses against hurricane and power-surge data loss?",
+    a: "We architect resilient hybrid-cloud systems specifically engineered for Caribbean realities. This includes commercial uninterruptible power supplies (UPS), automated voltage regulation, air-gapped immutable cloud backups, and automated multi-zone failovers so your operations resume seamlessly even if local power or fiber lines are disrupted."
+  },
+  {
+    q: "What is included in the Free 30-Minute ICT Health Assessment?",
+    a: "The initial 30-minute discovery consultation is 100% free with no obligation. Neil Verdant personally reviews your primary technology pain points, inspects firewall exposure, verifies your backup integrity, and identifies immediate vulnerabilities. For organizations needing a formal corporate audit, we offer a comprehensive 40-point diagnostic and written 90-day remediation plan for EC$1,500."
+  },
+  {
+    q: "Do you support Microsoft 365, Google Workspace, and POS systems for local resorts and clinics?",
+    a: "Yes. We manage tenant migrations, security hardening (MFA, conditional access), email deliverability, and endpoint protection for Microsoft 365 and Google Workspace, as well as PMS, EHR, and retail POS systems across Saint Lucia hospitality, medical, retail, and financial verticals."
+  }
+];
+
 interface HomePageProps {
   onNavigate: (view: string) => void;
 }
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
     <div className="space-y-20 pb-16">
@@ -216,13 +241,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             className="space-y-4"
           >
             <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-display tracking-tight leading-tight text-app-text dark:text-white">
-              Enterprise Technology<br />
+              Managed IT Services &amp; Cybersecurity<br />
               <span className="bg-gradient-to-r from-v79-teal via-v79-teal-light to-v79-teal bg-clip-text text-transparent">
-                Built for Caribbean Realities.
+                Built for the Caribbean.
               </span>
             </h1>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
-              V79 builds custom software, managed IT solutions, cloud services, AI automation, and digital platforms designed for Caribbean businesses, governments, schools, and entrepreneurs.
+              Protect your business with 24/7 proactive network monitoring, automated daily cloud backups, and a guaranteed 4-hour on-site emergency SLA across Castries, Rodney Bay, and island-wide.
             </p>
           </motion.div>
 
@@ -240,11 +265,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               className="group"
               icon={<ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
             >
-              Book a Free ICT Consultation
+              Book Free ICT Consultation
             </Button>
-            <Button onClick={() => onNavigate("contact")} variant="secondary" size="lg">
-              Request Affordable ICT Support
-            </Button>
+            <a
+              href="tel:+17587260035"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-app-border bg-app-card hover:bg-app-card-hover text-app-text dark:text-white text-sm font-semibold transition-all shadow-sm"
+            >
+              <Phone className="w-4 h-4 text-v79-teal" />
+              Emergency Support: (758) 726-0035
+            </a>
           </motion.div>
 
           {/* Contact quick bar */}
@@ -514,23 +543,33 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2">
             {/* Left: product + price */}
             <div className="p-8 sm:p-10 lg:p-12 space-y-5 flex flex-col justify-center">
-              <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">ICT Business Health Assessment</span>
+              <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">ICT Business Health Diagnostic</span>
               <h2 className="text-2xl sm:text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight leading-tight">
                 Know exactly where your<br />technology stands.
               </h2>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-extrabold font-mono text-app-text dark:text-white">EC$1,500</span>
-                <span className="text-sm text-app-text-muted font-mono">one-time fee</span>
+              <div className="space-y-3 bg-app-card p-4 rounded-2xl border border-app-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-v79-teal uppercase">Step 1: Diagnostic Discovery</span>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">100% Free</span>
+                </div>
+                <p className="text-xs text-app-text-sec leading-relaxed">
+                  A 30-minute risk review with Neil Verdant. We inspect your firewall, backups, and internet failovers at zero cost.
+                </p>
               </div>
-              <span className="inline-flex w-fit items-center gap-1.5 text-xs font-bold text-v79-teal bg-v79-teal/10 border border-v79-teal/25 px-3 py-1.5 rounded-full">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Free Consultation Included
-              </span>
-              <p className="text-sm text-app-text-sec font-light leading-relaxed">
-                Your initial consultation is free, with no obligation. The full three-part assessment below is a one-time EC$1,500 engagement.
-              </p>
-              <div>
+
+              <div className="space-y-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl sm:text-4xl font-extrabold font-mono text-app-text dark:text-white">EC$1,500</span>
+                  <span className="text-xs text-app-text-muted font-mono">Step 2: Full 40-Point Audit &amp; Remediation Plan</span>
+                </div>
+                <p className="text-xs text-app-text-sec font-light leading-relaxed">
+                  Includes in-depth on-site hardware testing, credential leak scans, and a written 90-day stabilization roadmap for your leadership team.
+                </p>
+              </div>
+
+              <div className="pt-2">
                 <Button onClick={() => onNavigate("contact")} variant="primary" size="lg" icon={<ArrowRight className="w-4 h-4" />}>
-                  Book a Free ICT Consultation
+                  Book Free 30-Min Diagnostic Call
                 </Button>
               </div>
             </div>
@@ -564,6 +603,57 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </div>
         </motion.div>
+      </section>
+
+      {/* ── Semantic AI Search & Commercial FAQs (AEO/GEO Optimized) ── */}
+      <section className="max-w-4xl mx-auto px-6 lg:px-8 space-y-8">
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-v79-teal/10 border border-v79-teal/20 text-v79-teal text-xs font-mono font-semibold">
+            <HelpCircle className="w-3.5 h-3.5" /> Frequent Questions &amp; SLA Details
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
+            Enterprise IT Support in Saint Lucia: What You Need to Know
+          </h2>
+          <p className="text-sm text-app-text-sec font-light max-w-xl mx-auto">
+            Direct answers regarding our 4-hour on-site response SLA, Caribbean disaster recovery, and managed technology contracts.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {FAQS.map((faq, idx) => {
+            const isOpen = openFaq === idx;
+            return (
+              <div
+                key={faq.q}
+                className="rounded-2xl border border-app-border bg-app-card overflow-hidden transition-colors"
+              >
+                <button
+                  onClick={() => setOpenFaq(isOpen ? null : idx)}
+                  className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-app-card-hover transition-colors cursor-pointer"
+                  aria-expanded={isOpen}
+                >
+                  <span className="text-sm sm:text-base font-bold text-app-text dark:text-white font-display">
+                    {faq.q}
+                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-v79-teal shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="px-5 pb-5 pt-1 text-xs sm:text-sm text-app-text-sec font-light leading-relaxed border-t border-app-border/50"
+                  >
+                    {faq.a}
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* ── CTA Banner ────────────────────────────────────────────── */}

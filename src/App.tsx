@@ -3,6 +3,7 @@ import { motion, AnimatePresence, MotionConfig } from "motion/react";
 import {
   Sun, Moon, Menu, X, Search, Package, AlertTriangle,
   ChevronLeft, ChevronRight, ChevronDown, Megaphone, Star,
+  Phone, MessageSquare,
 } from "lucide-react";
 import HomePage from "./components/HomePage";
 import AboutPage from "./components/AboutPage";
@@ -712,7 +713,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-app-border bg-v79-navy dark:bg-v79-navy-dark py-12 px-6 lg:px-12 mt-auto">
+      <footer className="border-t border-app-border bg-v79-navy dark:bg-v79-navy-dark pt-12 pb-24 sm:pb-12 px-6 lg:px-12 mt-auto">
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-white/10">
           <div className="space-y-3 col-span-2">
             <div className="flex items-center gap-3">
@@ -773,6 +774,47 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Quick Action Button (Desktop Viewports) */}
+      <aside aria-label="Quick contact" className="hidden sm:block fixed bottom-6 right-6 z-50">
+        <a
+          id="floating-whatsapp-btn"
+          href="https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20inquire%20about%20Vision79%20ICT%20support%20services."
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Chat with Neil Verdant on WhatsApp"
+          className="flex items-center gap-2.5 px-4 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xl shadow-emerald-900/30 hover:scale-105 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 group"
+        >
+          <div className="relative">
+            <MessageSquare className="w-5 h-5 text-white" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-300 rounded-full animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-300 rounded-full" />
+          </div>
+          <span className="tracking-tight">Chat on WhatsApp</span>
+        </a>
+      </aside>
+
+      {/* Sticky Mobile Quick-Action Bar (Mobile Viewports < 768px) */}
+      <nav aria-label="Mobile quick contact" className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-app-bg/95 backdrop-blur-md border-t border-app-border px-3 py-2.5 shadow-2xl flex items-center gap-2">
+        <a
+          id="mobile-call-btn"
+          href="tel:+17587260035"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-v79-navy dark:bg-v79-navy-light text-white text-xs font-bold shadow transition active:scale-95"
+        >
+          <Phone className="w-4 h-4 text-v79-teal-light" />
+          <span>Call Office</span>
+        </a>
+        <a
+          id="mobile-whatsapp-btn"
+          href="https://wa.me/17587260035?text=Hello%20Neil,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95"
+        >
+          <MessageSquare className="w-4 h-4 text-white" />
+          <span>WhatsApp</span>
+        </a>
+      </nav>
     </div>
     </MotionConfig>
   );

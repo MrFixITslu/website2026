@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users, Lock } from "lucide-react";
+import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users, Lock, MessageSquare } from "lucide-react";
 import { FieldError } from "./ui/FieldError";
 
 const CHALLENGES = [
@@ -54,15 +54,24 @@ export default function ContactPage() {
 
     try {
       const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-      const token = await new Promise<string>((resolve, reject) => {
-        // @ts-expect-error grecaptcha loaded via script tag in index.html
-        if (!window.grecaptcha) { reject(new Error("reCAPTCHA not loaded")); return; }
-        // @ts-expect-error
-        window.grecaptcha.ready(() => {
-          // @ts-expect-error
-          window.grecaptcha.execute(siteKey, { action: "submit" }).then(resolve).catch(reject);
+      let token = "";
+      if (siteKey) {
+        token = await new Promise<string>((resolve) => {
+          try {
+            // @ts-expect-error grecaptcha loaded via script tag in index.html
+            if (!window.grecaptcha) { resolve(""); return; }
+            // @ts-expect-error
+            window.grecaptcha.ready(() => {
+              // @ts-expect-error
+              window.grecaptcha.execute(siteKey, { action: "submit" }).then(resolve).catch(() => resolve(""));
+            });
+            // 3-second safety timeout so slow scripts never hang form submission
+            setTimeout(() => resolve(""), 3000);
+          } catch {
+            resolve("");
+          }
         });
-      });
+      }
 
       const res = await fetch("/api/leads", {
         method: "POST",
@@ -116,7 +125,8 @@ export default function ContactPage() {
           <div className="space-y-5">
             <h2 className="text-base font-extrabold font-display text-app-text dark:text-white">Contact Information</h2>
             {[
-              { icon: Phone, label: "Phone", value: "+1 758 726 0035", href: "tel:+17587260035" },
+              { icon: Phone, label: "Direct Phone", value: "+1 758 726 0035", href: "tel:+17587260035" },
+              { icon: MessageSquare, label: "WhatsApp Direct", value: "+1 758 726 0035 (Chat Now)", href: "https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20request%20an%20ICT%20consultation%20with%20Vision79." },
               { icon: Mail, label: "Email", value: "vision79slu@gmail.com", href: "mailto:vision79slu@gmail.com" },
               { icon: MapPin, label: "Location", value: "Castries, Saint Lucia", href: null },
             ].map((c, i) => {
@@ -294,24 +304,42 @@ export default function ContactPage() {
                     )}
                   </AnimatePresence>
 
-                  <button
-                    id="contact-submit"
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-v79-coral hover:bg-v79-coral-dark disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-v79-coral/20 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" />
-                        Send My Request
-                      </>
-                    )}
-                  </button>
+                  <div className="space-y-3 pt-1">
+                    <button
+                      id="contact-submit"
+                      type="submit"
+                      disabled={submitting}
+                      className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-v79-coral hover:bg-v79-coral-dark disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-v79-coral/20 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg"
+                    >
+                      {submitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4" />
+                          Send Consultation Request
+                        </>
+                      )}
+                    </button>
+
+                    <div className="relative flex items-center justify-center">
+                      <div className="border-t border-app-border w-full" />
+                      <span className="bg-app-bg px-3 text-[10px] font-mono text-app-text-muted uppercase tracking-widest absolute">Or need an immediate response?</span>
+                    </div>
+
+                    <a
+                      id="contact-whatsapp-chat"
+                      href="https://wa.me/17587260035?text=Hello%20Neil,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      Chat with Neil Verdant on WhatsApp (+1 758 726 0035)
+                    </a>
+                  </div>
 
                   <p className="flex items-center justify-center gap-1.5 text-[10px] text-app-text-muted text-center font-mono">
                     <Lock className="w-3 h-3 shrink-0" />

@@ -1707,7 +1707,7 @@ async function startServer() {
   await initDb();
 
   const app = express();
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = 3000;
   // Trust the first proxy hop (e.g. Nginx Proxy Manager) so req.ip reflects
   // the real client address for rate limiting and logging.
   app.set("trust proxy", 1);
@@ -1731,6 +1731,7 @@ async function startServer() {
   // Middleware
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
@@ -3074,15 +3075,20 @@ async function startServer() {
   });
 
   // --- Dynamic SEO Sitemaps and Robots.txt ---
+  const PRIMARY_CANONICAL_DOMAIN = process.env.CANONICAL_DOMAIN || "https://v79sl.com";
+
   app.get("/robots.txt", (req, res) => {
     res.type("text/plain");
+    const domain = PRIMARY_CANONICAL_DOMAIN;
     res.send(
-      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/admin\n\nSitemap: https://v79sl.duckdns.org/sitemap.xml`
+      `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/admin\n\nSitemap: ${domain}/sitemap.xml\nHost: ${domain.replace(/^https?:\/\//, '')}`
     );
   });
 
   app.get("/sitemap.xml", (req, res) => {
     res.type("application/xml");
+    const domain = PRIMARY_CANONICAL_DOMAIN;
+    const nowIso = new Date().toISOString().split("T")[0];
     
     let articlesXml = "";
     try {
@@ -3090,8 +3096,13 @@ async function startServer() {
         const files = fs.readdirSync(ARTICLES_DIR).filter(f => f.endsWith(".md"));
         files.forEach(file => {
           const slug = file.replace(".md", "");
-          // Each article has its section anchor route
-          articlesXml += `  <url>\n    <loc>https://v79sl.duckdns.org/resources?article=${slug}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+          const filePath = path.join(ARTICLES_DIR, file);
+          let fileDate = nowIso;
+          try {
+            const stat = fs.statSync(filePath);
+            fileDate = stat.mtime.toISOString().split("T")[0];
+          } catch {}
+          articlesXml += `  <url>\n    <loc>${domain}/resources?article=${slug}</loc>\n    <lastmod>${fileDate}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
         });
       }
     } catch (err) {
@@ -3101,37 +3112,44 @@ async function startServer() {
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://v79sl.duckdns.org/</loc>
+    <loc>${domain}/</loc>
+    <lastmod>${nowIso}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://v79sl.duckdns.org/#about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://v79sl.duckdns.org/#services</loc>
+    <loc>${domain}/services</loc>
+    <lastmod>${nowIso}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://v79sl.duckdns.org/#industries</loc>
+    <loc>${domain}/about</loc>
+    <lastmod>${nowIso}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://v79sl.duckdns.org/#solutions</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <loc>${domain}/industries</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://v79sl.duckdns.org/#resources</loc>
+    <loc>${domain}/solutions</loc>
+    <lastmod>${nowIso}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://v79sl.duckdns.org/#contact</loc>
+    <loc>${domain}/resources</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${domain}/contact</loc>
+    <lastmod>${nowIso}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>

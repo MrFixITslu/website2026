@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { Linkedin, Mail, ArrowRight, CheckCircle2, AlertTriangle, Zap, ShieldCheck, Compass, Heart } from "lucide-react";
+import { Linkedin, Mail, ArrowRight, CheckCircle2, AlertTriangle, Zap, ShieldCheck, Compass, Heart, Phone, MessageSquare, Award, Server, Network } from "lucide-react";
 import { Button } from "./ui/Button";
 
 const TEAM = [
@@ -136,15 +136,57 @@ export default function AboutPage() {
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="relative aspect-square rounded-2xl bg-gradient-to-br from-v79-navy to-v79-navy-light overflow-hidden flex items-center justify-center border border-v79-teal/20"
+            className="relative rounded-3xl bg-gradient-to-br from-v79-navy via-v79-navy-light to-v79-navy p-6 sm:p-8 overflow-hidden border border-v79-teal/30 shadow-2xl text-white space-y-6"
           >
-            <div className="absolute inset-0 fiber-texture" />
-            <div className="relative z-10 text-center space-y-2">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-extrabold text-3xl font-display">
+            <div className="absolute inset-0 fiber-texture opacity-20 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-v79-teal/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-v79-teal to-v79-teal-dark border-2 border-white/20 flex items-center justify-center text-white font-extrabold text-2xl font-display shadow-lg shrink-0">
                 NV
               </div>
-              <p className="text-white font-bold text-sm font-display">Neil Verdant</p>
-              <p className="text-white/50 text-xs font-mono">Founder & Lead Systems Architect</p>
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-extrabold font-display tracking-tight text-white">Neil Verdant</h2>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Active on-island executive lead" />
+                </div>
+                <p className="text-xs text-v79-teal font-mono">Founder &amp; Lead Systems Architect</p>
+                <p className="text-[11px] text-white/60 font-mono">25+ Years Caribbean Telecoms &amp; Enterprise IT</p>
+              </div>
+            </div>
+
+            <div className="relative z-10 space-y-2.5 pt-2 border-t border-white/10 text-xs">
+              <div className="flex items-start gap-2.5 text-white/90">
+                <Network className="w-4 h-4 text-v79-teal mt-0.5 shrink-0" />
+                <span>Architected carrier-grade fiber optics, microwave backhauls, and corporate networks across Saint Lucia.</span>
+              </div>
+              <div className="flex items-start gap-2.5 text-white/90">
+                <ShieldCheck className="w-4 h-4 text-v79-teal mt-0.5 shrink-0" />
+                <span>Specialist in hurricane disaster recovery, air-gapped backups, and business continuity systems.</span>
+              </div>
+              <div className="flex items-start gap-2.5 text-white/90">
+                <Award className="w-4 h-4 text-v79-teal mt-0.5 shrink-0" />
+                <span>Direct client oversight: 4-hour on-site SLA with bilingual (English &amp; Kwéyòl) technical communications.</span>
+              </div>
+            </div>
+
+            <div className="relative z-10 pt-2 border-t border-white/10 flex flex-wrap items-center gap-2">
+              <a
+                href="https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20discuss%20an%20ICT%20consultation%20with%20Vision79."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                WhatsApp Neil
+              </a>
+              <a
+                href="tel:+17587260035"
+                className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-semibold transition"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                Call (758) 726-0035
+              </a>
             </div>
           </motion.div>
         </div>
