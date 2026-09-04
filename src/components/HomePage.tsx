@@ -4,41 +4,50 @@ import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ArrowRight, Phone, Mail,
   MapPin, Star, ShieldCheck,
   Clock, Lock, Users, AlertTriangle, TrendingDown, Zap, Frown, Quote, CheckCircle2,
-  HelpCircle, ChevronDown
+  HelpCircle, ChevronDown, Activity, Sparkles
 } from "lucide-react";
 import { Button } from "./ui/Button";
+import { LiveNocTerminal } from "./interactive/LiveNocTerminal";
+import { StormFailoverSimulator } from "./interactive/StormFailoverSimulator";
+import { DowntimeRiskCalculator } from "./interactive/DowntimeRiskCalculator";
 
 const SERVICES = [
   {
     icon: Shield,
     title: "Cybersecurity & Threat Defense",
     desc: "Advanced endpoint protection, network audits, and vulnerability assessments.",
+    badge: "Ransomware & Zero-Day Shield",
   },
   {
     icon: Cloud,
     title: "Cloud Infrastructure & Backup",
     desc: "Redundant cloud backup, hot-site disaster recovery, and cloud migration.",
+    badge: "Air-Gapped RPO < 1hr",
   },
   {
     icon: Monitor,
     title: "Managed IT Support",
     desc: "24/7 monitoring, remote helpdesk, and on-site diagnostics with SLA response.",
+    badge: "Guaranteed 4-Hour SLA",
     highlight: true,
   },
   {
     icon: Network,
     title: "Network Architecture & VoIP",
     desc: "Enterprise LAN/WAN design, firewall configuration, and hosted VoIP systems.",
+    badge: "Dual-WAN & Subsea Ring",
   },
   {
     icon: Cpu,
     title: "Microsoft 365 & Productivity",
     desc: "Licensing, deployment, migration, and ongoing management for your team.",
+    badge: "Tenant Hardening & MFA",
   },
   {
     icon: BarChart3,
     title: "Custom Software & SaaS",
     desc: "Purpose-built web apps, desktop software, and databases for your business.",
+    badge: "Caribbean Database Architecture",
   },
 ];
 
@@ -295,6 +304,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <MapPin className="w-3.5 h-3.5" /> Castries, Saint Lucia
             </span>
           </motion.div>
+
+          {/* Interactive Caribbean Live NOC Terminal */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="pt-4"
+          >
+            <LiveNocTerminal onConsultClick={() => onNavigate("contact")} />
+          </motion.div>
         </div>
       </section>
 
@@ -360,10 +379,17 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     Most Popular
                   </span>
                 )}
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
-                  s.highlight ? "bg-v79-coral/10 border-v79-coral/25 text-v79-coral" : "bg-v79-teal/10 border-v79-teal/20 text-v79-teal"
-                }`}>
-                  <Icon className="w-5 h-5" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${
+                    s.highlight ? "bg-v79-coral/10 border-v79-coral/25 text-v79-coral" : "bg-v79-teal/10 border-v79-teal/20 text-v79-teal"
+                  }`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  {s.badge && (
+                    <span className="text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-app-bg border border-app-border text-app-text-sec">
+                      {s.badge}
+                    </span>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <h3 className="font-bold text-sm text-app-text dark:text-white font-display">{s.title}</h3>
@@ -415,6 +441,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 </motion.div>
               );
             })}
+          </div>
+
+          {/* Interactive Caribbean Storm & Grid Outage Simulator */}
+          <div className="pt-6">
+            <StormFailoverSimulator onConsultClick={() => onNavigate("contact")} />
           </div>
         </div>
       </section>
@@ -478,6 +509,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   </motion.div>
                 );
               })}
+            </div>
+
+            {/* Interactive Caribbean Downtime Cost Calculator (EC$) */}
+            <div className="pt-12 text-left">
+              <DowntimeRiskCalculator onConsultClick={() => onNavigate("contact")} />
             </div>
           </div>
         </div>
