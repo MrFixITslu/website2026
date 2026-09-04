@@ -1,0 +1,22 @@
+services:
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vision79-website
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CANONICAL_DOMAIN=${CANONICAL_DOMAIN:-https://v79sl.com}
+      # Optional: set an explicit admin password, or check container logs on startup
+      # - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
+      # - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+    volumes:
+      # Persist dynamic database JSONs (articles, courses, leads) and uploaded media
+      - ./data:/app/data
+      - ./uploads:/app/uploads
