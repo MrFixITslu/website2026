@@ -1784,24 +1784,9 @@ async function startServer() {
   }
 
   // Middleware
-  // Redirect legacy domain (v79sl.duckdns.org) to canonical v79sl.com (301 Moved Permanently).
-  // IMPORTANT: this must never fire for API calls or non-GET requests. A 301 on a
-  // POST (e.g. /api/admin/login) gets replayed by fetch/XHR as a GET, silently
-  // dropping the request body, and — since it also hops to a different origin —
-  // gets blocked as a cross-origin request with no CORS headers configured. That
-  // combination was breaking admin login (and any other API call) whenever the
-  // app was accessed via the duckdns.org host. Only redirect actual page
-  // navigations, and leave every /api/* request alone regardless of host.
-  app.use((req, res, next) => {
-    const host = (req.headers.host || "").toLowerCase();
-    const isApiRequest = req.path.startsWith("/api/");
-    const isNavigation = req.method === "GET" || req.method === "HEAD";
-    if (!isApiRequest && isNavigation && host.includes("duckdns.org")) {
-      const canonicalTarget = (process.env.CANONICAL_DOMAIN || "https://v79sl.com").replace(/\/$/, "");
-      return res.redirect(301, `${canonicalTarget}${req.originalUrl}`);
-    }
-    next();
-  });
+  // NOTE: the site has fully migrated to v79sl.com — there is no duckdns.org
+  // host to redirect from anymore, so the legacy-domain redirect middleware
+  // that used to live here has been removed entirely.
 
   // Enable gzip / deflate compression for all eligible textual and JSON payloads
   app.use(compression({ threshold: 1024 }));
