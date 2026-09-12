@@ -5,18 +5,28 @@ services:
       dockerfile: Dockerfile
     container_name: V79website
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
       - CANONICAL_DOMAIN=${CANONICAL_DOMAIN:-https://v79sl.com}
-      # Optional: set an explicit admin password, or check container logs on startup
-      # - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      # - GEMINI_API_KEY=${GEMINI_API_KEY}
-      # - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
-      # - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-vision79slu@gmail.com}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-%^Y&U*sw44%X}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
+      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
+      - V79TIQUET_INTAKE_URL=${V79TIQUET_INTAKE_URL:-http://v79-tiquet-manager:3050/api/public/intake}
+      - V79TIQUET_INTAKE_SECRET=${V79TIQUET_INTAKE_SECRET}
     volumes:
       # Persist dynamic database JSONs (articles, courses, leads) and uploaded media
       - ./data:/app/data
       - ./uploads:/app/uploads
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true
+
