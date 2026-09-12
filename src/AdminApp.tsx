@@ -27,13 +27,15 @@ import {
   Loader2,
   Bell,
   Copy,
-  Mail
+  Mail,
+  Users
 } from "lucide-react";
 import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
 import { AppLogo, PRESET_ICONS } from "./components/AppLogo";
 import { ExamModule } from "./components/ExamModule";
 import CourseBuilderPanel from "./components/CourseBuilder/CourseBuilderPanel";
+import { CrmManager } from "./components/crm/CrmManager";
 import {
   ResponsiveContainer,
   LineChart,
@@ -307,6 +309,7 @@ export function LectureItemRow({ lecture, chapIdx, lecIdx, onUpdate, onDelete, a
 }
 
 export default function AdminApp() {
+  const [adminSection, setAdminSection] = useState<"crm" | "marketplace">("crm");
   const [apps, setApps] = useState<SaaSApp[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -1421,6 +1424,61 @@ V79 ICT Solutions`;
                   transition={{ duration: 0.15 }}
                   className="space-y-8 animate-fade-in-once"
                 >
+                  {/* PRIMARY WORKSPACE SWITCHER */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-app-aside-bg/60 p-2.5 rounded-2xl border border-app-border">
+                    <div className="flex items-center gap-2">
+                      <button
+                        id="btn-workspace-crm"
+                        onClick={() => setAdminSection("crm")}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          adminSection === "crm"
+                            ? "bg-sky-600 text-white shadow-md shadow-sky-600/20"
+                            : "text-app-text-sec hover:text-app-text hover:bg-app-btn-sec"
+                        }`}
+                      >
+                        <Users className="w-4 h-4" />
+                        <span>V79 CRM & Lead Engine</span>
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500/20 text-white font-mono">
+                          Saint Lucia
+                        </span>
+                      </button>
+
+                      <button
+                        id="btn-workspace-marketplace"
+                        onClick={() => setAdminSection("marketplace")}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          adminSection === "marketplace"
+                            ? "bg-app-text text-app-bg shadow-md"
+                            : "text-app-text-sec hover:text-app-text hover:bg-app-btn-sec"
+                        }`}
+                      >
+                        <Package className="w-4 h-4" />
+                        <span>SaaS Tools & Marketplace Registrar</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 px-1">
+                      <a
+                        href="/"
+                        className="text-xs font-semibold bg-app-btn-sec border border-app-border hover:bg-app-btn-sec/80 px-3.5 py-2 rounded-xl text-app-text transition cursor-pointer"
+                      >
+                        Back to Explorer
+                      </a>
+                      <button
+                        onClick={handleLogout}
+                        className="text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 px-3.5 py-2 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 transition cursor-pointer flex items-center gap-1.5"
+                        title="Destroy admin session"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        Log Out
+                      </button>
+                    </div>
+                  </div>
+
+                  {adminSection === "crm" ? (
+                    <CrmManager adminToken={adminToken} />
+                  ) : (
+                    <>
                   {/* Top Stats Box */}
                   <section className="glass rounded-2xl p-6 bg-app-aside-bg/50">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -2925,6 +2983,8 @@ V79 ICT Solutions`;
                       </div>
                     </div>
                   </div>
+                    </>
+                  )}
 
                 </motion.div>
               )}

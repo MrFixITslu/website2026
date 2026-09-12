@@ -7,6 +7,8 @@ import dotenv from "dotenv";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
+import { crmStorage } from "./server/crm_storage";
+import { pingOllama, analyzeBusinessWithAI } from "./server/crm_engine";
 
 // Configure environment variable definitions
 dotenv.config();
@@ -2950,7 +2952,7 @@ async function startServer() {
 
   // --- Leads API Endpoints ---
   app.post("/api/leads", leadsLimiter, async (req, res) => {
-    const { name, company, email, phone, employees, biggestChallenge, message, recaptchaToken } = req.body;
+    const { name, company, email, phone, employees, biggestChallenge, serviceRequested, message, pageOrigin, leadSource, location, recaptchaToken } = req.body;
     
     // Server-side validation
     if (!name || !name.trim() || !company || !company.trim() || !email || !email.trim() || !phone || !phone.trim()) {
@@ -2978,20 +2980,32 @@ async function startServer() {
       };
       const newLead = await db.addLead(leadData);
 
-      // Mark as pending BEFORE attempting delivery — so even if this
-      // process crashes mid-delivery, the lead is still a durable,
-      // retryable record for the periodic sweep to pick up. Respond to the
-      // visitor immediately after — do NOT await the Tiquet delivery here.
-      // It has its own inline retries with backoff (see sendLeadToTiquet),
-      // and if V79Tiquet is unreachable in a way that hangs rather than
-      // instantly refusing (a network partition, an overloaded container),
-      // awaiting it here could make a visitor wait upwards of 30 seconds
-      // for a response to their own form submission — the entire point of
-      // this being resilient to V79Tiquet being unavailable is defeated if
-      // its unavailability is what the visitor has to sit through.
+      // Durable CRM capture with duplicate detection & AI scoring
+      const crmCaptureResult = await crmStorage.addLead({
+        name: name.trim(),
+        company: company.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        whatsapp: phone.trim(),
+        employees: employees || "",
+        biggestChallenge: biggestChallenge || "",
+        serviceRequested: serviceRequested || biggestChallenge || "Website Inquiry",
+        message: message || "",
+        leadSource: leadSource || "Website Contact Form",
+        pageOrigin: pageOrigin || "/contact",
+        stage: "New",
+        location: location || "Castries"
+      }, "Website Contact Form");
+
       const eventId = crypto.randomUUID();
       await db.updateLeadTiquetSync(newLead.id, eventId, "pending");
-      res.status(201).json(newLead);
+      
+      res.status(201).json({
+        ...newLead,
+        crmLeadId: crmCaptureResult.lead.id,
+        isDuplicate: crmCaptureResult.isDuplicate,
+        duplicateOf: crmCaptureResult.duplicateOf?.id
+      });
 
       sendLeadToTiquet(leadData, eventId)
         .then((delivered) => {
@@ -3025,6 +3039,333 @@ async function startServer() {
     } catch (e) {
       console.error("[API] Error updating lead:", e);
       res.status(500).json({ error: "Failed to update lead status." });
+    }
+  });
+
+  // =========================================================================
+  // --- V79 DIGITAL CRM & PROSPECTING API ENDPOINTS ---
+  // =========================================================================
+
+  app.get("/api/admin/crm/metrics", requireAdmin, (req, res) => {
+    try {
+      const metrics = crmStorage.getMetrics();
+      res.json(metrics);
+    } catch (e) {
+      console.error("[CRM API] Error getting metrics:", e);
+      res.status(500).json({ error: "Failed to load CRM metrics." });
+    }
+  });
+
+  app.get("/api/admin/crm/leads", requireAdmin, (req, res) => {
+    try {
+      const { stage, status, search, priority, includeArchived } = req.query;
+      const leads = crmStorage.getLeads({
+        stage: stage as any,
+        status: status as any,
+        search: search as string,
+        priority: priority as any,
+        includeArchived: includeArchived === "true"
+      });
+      res.json(leads);
+    } catch (e) {
+      console.error("[CRM API] Error fetching leads:", e);
+      res.status(500).json({ error: "Failed to load CRM leads." });
+    }
+  });
+
+  app.get("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
+    try {
+      const lead = crmStorage.getLeadById(Number(req.params.id));
+      if (!lead) return res.status(404).json({ error: "Lead not found" });
+      const activities = crmStorage.getActivities(lead.id);
+      const calls = crmStorage.getCalls(lead.id);
+      const tasks = crmStorage.getTasks(lead.id);
+      res.json({ ...lead, lead, activities, calls, tasks });
+    } catch (e) {
+      console.error("[CRM API] Error fetching lead detail:", e);
+      res.status(500).json({ error: "Failed to load lead details." });
+    }
+  });
+
+  app.post("/api/admin/crm/leads", requireAdmin, async (req, res) => {
+    try {
+      const result = await crmStorage.addLead(req.body, "Admin");
+      res.status(201).json({ ...result.lead, ...result });
+    } catch (e) {
+      console.error("[CRM API] Error adding lead manually:", e);
+      res.status(500).json({ error: "Failed to create lead." });
+    }
+  });
+
+  app.put("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
+    try {
+      const updated = crmStorage.updateLead(Number(req.params.id), req.body, "Admin");
+      res.json(updated);
+    } catch (e) {
+      console.error("[CRM API] Error updating CRM lead:", e);
+      res.status(500).json({ error: (e as any)?.message || "Failed to update lead." });
+    }
+  });
+
+  app.put("/api/admin/crm/leads/:id/stage", requireAdmin, (req, res) => {
+    try {
+      const stage = req.body.stage;
+      if (!stage) return res.status(400).json({ error: "stage is required in request body" });
+      const updated = crmStorage.updateLeadStage(Number(req.params.id), stage, "Admin");
+      res.json(updated);
+    } catch (e) {
+      console.error("[CRM API] Error updating lead stage:", e);
+      res.status(500).json({ error: (e as any)?.message || "Failed to update lead stage." });
+    }
+  });
+
+  app.post("/api/admin/crm/leads/:id/convert", requireAdmin, (req, res) => {
+    try {
+      const converted = crmStorage.convertLeadToClient(Number(req.params.id), req.body, "Admin");
+      res.json(converted);
+    } catch (e) {
+      console.error("[CRM API] Error converting lead:", e);
+      res.status(500).json({ error: (e as any)?.message || "Failed to convert lead." });
+    }
+  });
+
+  app.post("/api/admin/crm/leads/:id/archive", requireAdmin, (req, res) => {
+    try {
+      const archived = crmStorage.archiveLead(Number(req.params.id), "Admin");
+      res.json(archived);
+    } catch (e) {
+      console.error("[CRM API] Error archiving lead:", e);
+      res.status(500).json({ error: "Failed to archive lead." });
+    }
+  });
+
+  app.post(["/api/admin/crm/leads/merge", "/api/admin/crm/leads/:id/merge"], requireAdmin, (req, res) => {
+    try {
+      const primaryId = req.params.id ? Number(req.params.id) : Number(req.body.primaryLeadId || req.body.primaryId);
+      const duplicateId = Number(req.body.duplicateLeadId || req.body.duplicateId);
+      if (!primaryId || !duplicateId) {
+        return res.status(400).json({ error: "Both primary and duplicate lead IDs are required for merge." });
+      }
+      const merged = crmStorage.mergeLeads(primaryId, duplicateId, "Admin");
+      res.json(merged);
+    } catch (e) {
+      console.error("[CRM API] Error merging leads:", e);
+      res.status(500).json({ error: (e as any)?.message || "Failed to merge leads." });
+    }
+  });
+
+  app.delete("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
+    try {
+      const ok = crmStorage.deleteLead(Number(req.params.id));
+      res.json({ success: ok });
+    } catch (e) {
+      console.error("[CRM API] Error deleting lead:", e);
+      res.status(500).json({ error: "Failed to delete lead." });
+    }
+  });
+
+  app.get("/api/admin/crm/leads/:id/activities", requireAdmin, (req, res) => {
+    try {
+      const list = crmStorage.getActivities(Number(req.params.id));
+      res.json(list);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to load activities." });
+    }
+  });
+
+  app.post("/api/admin/crm/leads/:id/activities", requireAdmin, (req, res) => {
+    try {
+      const act = crmStorage.addActivity({
+        leadId: Number(req.params.id),
+        type: req.body.type || "note",
+        title: req.body.title || "Note Added",
+        description: req.body.description || "",
+        metadata: req.body.metadata,
+        author: "Admin"
+      });
+      res.status(201).json(act);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to add activity." });
+    }
+  });
+
+  app.get("/api/admin/crm/leads/:id/calls", requireAdmin, (req, res) => {
+    try {
+      const list = crmStorage.getCalls(Number(req.params.id));
+      res.json(list);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to load calls." });
+    }
+  });
+
+  app.post("/api/admin/crm/leads/:id/calls", requireAdmin, (req, res) => {
+    try {
+      const call = crmStorage.addCall({
+        leadId: Number(req.params.id),
+        outcome: req.body.outcome || "Called",
+        durationSecs: req.body.durationSecs || 0,
+        notes: req.body.notes || "",
+        nextFollowUpAt: req.body.nextFollowUpAt,
+        caller: "V79 Admin"
+      });
+      res.status(201).json(call);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to record call." });
+    }
+  });
+
+  app.get("/api/admin/crm/tasks", requireAdmin, (req, res) => {
+    try {
+      const list = crmStorage.getTasks(req.query.leadId ? Number(req.query.leadId) : undefined);
+      res.json(list);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to load tasks." });
+    }
+  });
+
+  app.post("/api/admin/crm/tasks", requireAdmin, (req, res) => {
+    try {
+      const task = crmStorage.addTask({
+        leadId: Number(req.body.leadId),
+        title: req.body.title,
+        dueAt: req.body.dueAt || new Date(Date.now() + 86400000).toISOString(),
+        priority: req.body.priority || "Medium",
+        status: "pending",
+        assignedTo: req.body.assignedTo || "Admin"
+      });
+      res.status(201).json(task);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to create task." });
+    }
+  });
+
+  app.put(["/api/admin/crm/tasks/:id", "/api/admin/crm/tasks/:id/status"], requireAdmin, (req, res) => {
+    try {
+      const status = req.body.status;
+      if (status) {
+        const updated = crmStorage.updateTaskStatus(req.params.id, status);
+        return res.json(updated);
+      }
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to update task." });
+    }
+  });
+
+  app.get("/api/admin/crm/prospects", requireAdmin, (req, res) => {
+    try {
+      const { status, location, category, search } = req.query;
+      const prospects = crmStorage.getProspects({
+        status: status as string,
+        location: location as string,
+        category: category as string,
+        search: search as string
+      });
+      res.json(prospects);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to load prospects." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/search", requireAdmin, async (req, res) => {
+    try {
+      const result = await crmStorage.runProspectSearch({
+        location: req.body.location,
+        category: req.body.category,
+        query: req.body.query,
+        searchProviderKey: process.env.SEARCH_PROVIDER_API_KEY,
+        limit: req.body.limit || 10
+      });
+      res.json(result);
+    } catch (e) {
+      console.error("[CRM Prospect Search Error]:", e);
+      res.status(500).json({ error: "Prospect search failed." });
+    }
+  });
+
+  app.get("/api/admin/crm/prospects/history", requireAdmin, (req, res) => {
+    try {
+      const history = crmStorage.getSearchHistory();
+      res.json(history);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to load search history." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/:id/analyze", requireAdmin, async (req, res) => {
+    try {
+      const updated = await crmStorage.analyzeProspect(
+        req.params.id,
+        req.body.ollamaUrl || process.env.OLLAMA_BASE_URL,
+        req.body.model || process.env.OLLAMA_MODEL
+      );
+      res.json(updated);
+    } catch (e) {
+      console.error("[CRM Analyze Error]:", e);
+      res.status(500).json({ error: (e as any)?.message || "Failed to analyze prospect." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/:id/approve", requireAdmin, (req, res) => {
+    try {
+      const lead = crmStorage.approveProspectToLead(req.params.id, "Admin");
+      res.json({ ...lead, lead });
+    } catch (e) {
+      res.status(500).json({ error: (e as any)?.message || "Failed to approve prospect." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/bulk-approve", requireAdmin, (req, res) => {
+    try {
+      const ids: string[] = req.body.prospectIds || req.body.ids || [];
+      const leads = crmStorage.bulkApproveProspects(ids, "Admin");
+      res.json({ approvedCount: leads.length, leads });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to bulk approve." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/:id/reject", requireAdmin, (req, res) => {
+    try {
+      const ok = crmStorage.rejectProspect(req.params.id);
+      res.json({ success: ok });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to reject prospect." });
+    }
+  });
+
+  app.post("/api/admin/crm/prospects/bulk-reject", requireAdmin, (req, res) => {
+    try {
+      const ids: string[] = req.body.prospectIds || req.body.ids || [];
+      const rejectedCount = crmStorage.bulkRejectProspects(ids);
+      res.json({ rejectedCount });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to bulk reject." });
+    }
+  });
+
+  app.post("/api/admin/crm/ai/prepare-call", requireAdmin, async (req, res) => {
+    try {
+      const businessData = req.body;
+      const analysis = await analyzeBusinessWithAI(
+        businessData,
+        req.body.ollamaUrl || process.env.OLLAMA_BASE_URL,
+        req.body.model || process.env.OLLAMA_MODEL
+      );
+      res.json(analysis);
+    } catch (e) {
+      console.error("[CRM AI Call Prep Error]:", e);
+      res.status(500).json({ error: "Failed to prepare call card." });
+    }
+  });
+
+  app.get("/api/admin/crm/ai/status", requireAdmin, async (req, res) => {
+    try {
+      const baseUrl = (req.query.baseUrl as string) || process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+      const status = await pingOllama(baseUrl);
+      res.json(status);
+    } catch (e) {
+      res.json({ connected: false, models: [], url: "http://localhost:11434" });
     }
   });
 

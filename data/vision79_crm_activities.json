@@ -1,0 +1,56 @@
+[
+  {
+    "leadId": 5,
+    "type": "note",
+    "title": "Duplicate Detected",
+    "description": "System flagged possible duplicate match with existing Lead #4 (Marcus Alexander - St Lucia Caribbean Logistics).",
+    "author": "CRM System",
+    "id": "85b0279b-6fe8-4236-97a1-03591cad5395",
+    "createdAt": "2026-09-12T01:21:23.093Z"
+  },
+  {
+    "leadId": 5,
+    "type": "status_change",
+    "title": "Lead Captured",
+    "description": "New lead created from Website Contact Form. Priority: Medium, Score: 65 (High Potential).",
+    "author": "Website Contact Form",
+    "id": "9cb5a184-dbe6-4a71-96a0-da40b9ab6114",
+    "createdAt": "2026-09-12T01:21:23.093Z"
+  },
+  {
+    "leadId": 4,
+    "type": "status_change",
+    "title": "Lead Captured",
+    "description": "New lead created from Website Contact Form. Priority: Medium, Score: 65 (High Potential).",
+    "author": "Website Contact Form",
+    "id": "dcdc4d94-cacb-4d90-9879-b7944e9e5861",
+    "createdAt": "2026-09-12T01:21:12.032Z"
+  },
+  {
+    "id": "11e2afe4-4006-46bb-8100-5b58dc682265",
+    "leadId": 1,
+    "type": "proposal",
+    "title": "Proposal Sent",
+    "description": "Sent enterprise IT & cybersecurity roadmap quote ($12,500 XCD) via email.",
+    "createdAt": "2026-09-10T01:10:06.693Z",
+    "author": "V79 Admin"
+  },
+  {
+    "id": "33936af4-57b7-4c45-b18f-1b05f4026b2d",
+    "leadId": 2,
+    "type": "meeting",
+    "title": "Site Survey Scheduled",
+    "description": "Scheduled on-site RF spectrum analysis and cable survey at Soufrière villa complex.",
+    "createdAt": "2026-09-11T01:10:06.693Z",
+    "author": "V79 Admin"
+  },
+  {
+    "id": "11fe04b0-cf7e-4445-b459-5b821e94a80f",
+    "leadId": 3,
+    "type": "conversion",
+    "title": "Lead Won & Converted",
+    "description": "Contract finalized. Onboarding initialized for 14 Microsoft 365 Business Premium seats.",
+    "createdAt": "2026-09-09T01:10:06.693Z",
+    "author": "V79 Admin"
+  }
+]

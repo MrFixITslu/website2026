@@ -100,7 +100,13 @@ export default function ContactPage() {
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recaptchaToken: token }),
+        body: JSON.stringify({
+          ...form,
+          serviceRequested: form.requestedAction || form.biggestChallenge || "General Inquiry",
+          pageOrigin: typeof window !== "undefined" ? window.location.pathname : "/contact",
+          leadSource: "Website Contact Form",
+          recaptchaToken: token
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setServerError(data.error || "Submission failed."); }
