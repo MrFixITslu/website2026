@@ -12,6 +12,7 @@ export default defineConfig(() => {
       },
     },
     build: {
+      emptyOutDir: true,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),
