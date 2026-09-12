@@ -302,6 +302,20 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
+      {/* Skip to Content for Accessibility / Screen Readers */}
+      <a
+        href="#home"
+        onClick={(e) => {
+          e.preventDefault();
+          scrollTo("home");
+          const homeEl = document.getElementById("home");
+          homeEl?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2.5 focus:bg-v79-coral focus:text-white focus:rounded-xl focus:font-bold focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
       {/* Nav transition overlay: fades to the page background, jumps the
           scroll position instantly while fully opaque, then fades back in
           — so a nav click never shows content flying past mid-scroll.
@@ -327,7 +341,7 @@ export default function App() {
         </button>
 
         {/* Desktop Nav */}
-        <nav ref={navRef} className="hidden md:flex items-center gap-1.5">
+        <nav ref={navRef} aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
           {SECTIONS.map(sec => {
             const active = isSectionActive(sec);
             const hasSubItems = !!sec.subItems?.length;
@@ -399,7 +413,7 @@ export default function App() {
           })}
           <button
             onClick={() => setTheme(p => p === "dark" ? "light" : "dark")}
-            className="ml-3 p-2 rounded-lg border border-app-border bg-app-btn-sec text-app-text hover:bg-app-btn-sec/80 transition-all cursor-pointer"
+            className="ml-3 p-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-lg border border-app-border bg-app-btn-sec text-app-text hover:bg-app-btn-sec/80 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50"
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
@@ -408,10 +422,18 @@ export default function App() {
 
         {/* Mobile controls */}
         <div className="flex md:hidden items-center gap-2">
-          <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} aria-label="Toggle theme" className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
+          <button
+            onClick={() => setTheme(p => p === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-app-border bg-app-btn-sec cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50"
+          >
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
           </button>
-          <button onClick={() => { setMobileNavOpen(p => !p); setMobileExpanded(null); }} aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
+          <button
+            onClick={() => { setMobileNavOpen(p => !p); setMobileExpanded(null); }}
+            aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="relative p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50"
+          >
             <AnimatePresence mode="wait" initial={false}>
               {mobileNavOpen ? (
                 <motion.span
@@ -799,11 +821,12 @@ export default function App() {
       </aside>
 
       {/* Sticky Mobile Quick-Action Bar (Mobile Viewports < 768px) */}
-      <nav aria-label="Mobile quick contact" className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-app-bg/95 backdrop-blur-md border-t border-app-border px-3 py-2.5 shadow-2xl flex items-center gap-2">
+      <nav aria-label="Mobile quick contact" className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-app-bg/95 backdrop-blur-md border-t border-app-border px-3 py-2 shadow-2xl flex items-center gap-2">
         <a
           id="mobile-call-btn"
           href="tel:+17587260035"
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-v79-navy dark:bg-v79-navy-light text-white text-xs font-bold shadow transition active:scale-95"
+          aria-label="Call Vision79 Digital at +1 758 726 0035"
+          className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-v79-navy dark:bg-v79-navy-light text-white text-xs font-bold shadow transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50"
         >
           <Phone className="w-4 h-4 text-v79-teal-light" />
           <span>Call Office</span>
@@ -813,7 +836,8 @@ export default function App() {
           href="https://wa.me/17587260035?text=Hello%20Neil,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95"
+          aria-label="Chat with Neil Verdant on WhatsApp (opens in new tab)"
+          className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
         >
           <MessageSquare className="w-4 h-4 text-white" />
           <span>WhatsApp</span>

@@ -6,11 +6,12 @@ import { AlertCircle } from "lucide-react";
  * message the moment it mounts, without needing a persistent aria-live
  * container. Renders nothing when `message` is falsy.
  */
-export function FieldError({ message }: { message?: string }) {
+export function FieldError({ message, id }: { message?: string; id?: string }) {
   return (
     <AnimatePresence>
       {message && (
         <motion.p
+          id={id}
           initial={{ opacity: 0, height: 0, marginTop: 0 }}
           animate={{ opacity: 1, height: "auto", marginTop: 4 }}
           exit={{ opacity: 0, height: 0, marginTop: 0 }}

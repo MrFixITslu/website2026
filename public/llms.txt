@@ -1,0 +1,33 @@
+# Vision79 Digital (v79sl.com)
+
+> Enterprise Managed IT Services, 24/7 Network Monitoring, Cloud Infrastructure, and Cybersecurity in Saint Lucia and the Eastern Caribbean.
+
+## Overview
+Vision79 Digital is an enterprise Information and Communications Technology (ICT) partner headquartered in Castries, Saint Lucia. Founded and led by Lead Systems Architect Neil Verdant (25+ years of Caribbean telecommunications and enterprise networking heritage), Vision79 Digital provides turnkey technology operations, preventative maintenance, hurricane disaster recovery failovers, and custom software engineering.
+
+## Key Facts & SLA
+- **Location**: Castries, Saint Lucia (serving Castries, Gros Islet, Rodney Bay, Vieux Fort, Soufriere, Dennery, and regional Caribbean businesses)
+- **Primary Contact / Founder**: Neil Verdant
+- **Phone & Emergency Support**: +1 (758) 726-0035
+- **Email**: vision79slu@gmail.com
+- **WhatsApp**: https://wa.me/17587260035
+- **On-Site Response SLA**: Guaranteed 4-hour on-site emergency response across Saint Lucia
+- **Uptime SLA**: Financially backed 99.9% uptime guarantee for managed clients
+- **Languages**: English and Saint Lucian Kwéyòl (Creole)
+
+## Core Services
+1. **Managed IT Support (MSP)**: 24/7 proactive network monitoring, remote helpdesk, preventative on-site maintenance, hardware provisioning.
+2. **Cybersecurity & Threat Defense**: Vulnerability assessments, endpoint detection & response (EDR), firewall audits, ransomware protection, zero-trust policies.
+3. **Cloud Infrastructure & Disaster Recovery**: Microsoft 365 migrations, Google Workspace, immutable air-gapped cloud backups (RPO < 1hr, RTO < 4hr), hurricane failover architecture.
+4. **Network Architecture & Hosted VoIP**: Enterprise LAN/WAN design, dual-WAN subsea failovers, structured fiber cabling, cloud-hosted PBX.
+5. **Custom Software & Automation**: Purpose-built Caribbean databases, automated workflows, AI integrations, SaaS development.
+6. **ICT Health Assessment**: Comprehensive 40-point infrastructure review and written 90-day remediation roadmap (EC$1,500 / 30-min discovery consultation free).
+
+## Key URLs
+- Home: https://v79sl.com/
+- Services: https://v79sl.com/services
+- About: https://v79sl.com/about
+- Solutions & Marketplace: https://v79sl.com/solutions
+- Resources & Insights: https://v79sl.com/resources
+- Contact & Booking: https://v79sl.com/contact
+- Direct WhatsApp: https://wa.me/17587260035

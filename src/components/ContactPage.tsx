@@ -240,53 +240,117 @@ export default function ContactPage() {
                 >
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Full Name *</label>
-                      <input id="contact-name" name="name" value={form.name} onChange={handleChange} placeholder="Neil Verdant" className={inputClass("name")} />
-                      <FieldError message={errors.name} />
+                      <label htmlFor="contact-name" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Full Name *</label>
+                      <input
+                        id="contact-name"
+                        name="name"
+                        type="text"
+                        autoComplete="name"
+                        required
+                        aria-required="true"
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? "name-error" : undefined}
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Neil Verdant"
+                        className={inputClass("name")}
+                      />
+                      <FieldError id="name-error" message={errors.name} />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Company *</label>
+                      <label htmlFor="contact-company" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Company *</label>
                       <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-                        <input id="contact-company" name="company" value={form.company} onChange={handleChange} placeholder="Island Retail Ltd." className={inputClass("company") + " pl-9"} />
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted pointer-events-none" />
+                        <input
+                          id="contact-company"
+                          name="company"
+                          type="text"
+                          autoComplete="organization"
+                          required
+                          aria-required="true"
+                          aria-invalid={!!errors.company}
+                          aria-describedby={errors.company ? "company-error" : undefined}
+                          value={form.company}
+                          onChange={handleChange}
+                          placeholder="Island Retail Ltd."
+                          className={inputClass("company") + " pl-9"}
+                        />
                       </div>
-                      <FieldError message={errors.company} />
+                      <FieldError id="company-error" message={errors.company} />
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Email Address *</label>
+                      <label htmlFor="contact-email" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Email Address *</label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-                        <input id="contact-email" type="email" name="email" value={form.email} onChange={handleChange} placeholder="you@company.com" className={inputClass("email") + " pl-9"} />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted pointer-events-none" />
+                        <input
+                          id="contact-email"
+                          type="email"
+                          name="email"
+                          autoComplete="email"
+                          required
+                          aria-required="true"
+                          aria-invalid={!!errors.email}
+                          aria-describedby={errors.email ? "email-error" : undefined}
+                          value={form.email}
+                          onChange={handleChange}
+                          placeholder="you@company.com"
+                          className={inputClass("email") + " pl-9"}
+                        />
                       </div>
-                      <FieldError message={errors.email} />
+                      <FieldError id="email-error" message={errors.email} />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Phone Number *</label>
+                      <label htmlFor="contact-phone" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Phone Number *</label>
                       <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-                        <input id="contact-phone" type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 758 000 0000" className={inputClass("phone") + " pl-9"} />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted pointer-events-none" />
+                        <input
+                          id="contact-phone"
+                          type="tel"
+                          name="phone"
+                          autoComplete="tel"
+                          required
+                          aria-required="true"
+                          aria-invalid={!!errors.phone}
+                          aria-describedby={errors.phone ? "phone-error" : undefined}
+                          value={form.phone}
+                          onChange={handleChange}
+                          placeholder="+1 758 000 0000"
+                          className={inputClass("phone") + " pl-9"}
+                        />
                       </div>
-                      <FieldError message={errors.phone} />
+                      <FieldError id="phone-error" message={errors.phone} />
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Team Size</label>
+                      <label htmlFor="contact-employees" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Team Size</label>
                       <div className="relative">
                         <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted pointer-events-none" />
-                        <select id="contact-employees" name="employees" value={form.employees} onChange={handleChange} className={inputClass("employees") + " pl-9 appearance-none cursor-pointer"}>
+                        <select
+                          id="contact-employees"
+                          name="employees"
+                          value={form.employees}
+                          onChange={handleChange}
+                          className={inputClass("employees") + " pl-9 appearance-none cursor-pointer"}
+                        >
                           <option value="">Select employees...</option>
                           {EMPLOYEE_RANGES.map(r => <option key={r} value={r}>{r} employees</option>)}
                         </select>
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Biggest ICT Challenge</label>
-                      <select id="contact-challenge" name="biggestChallenge" value={form.biggestChallenge} onChange={handleChange} className={inputClass("biggestChallenge") + " appearance-none cursor-pointer"}>
+                      <label htmlFor="contact-challenge" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Biggest ICT Challenge</label>
+                      <select
+                        id="contact-challenge"
+                        name="biggestChallenge"
+                        value={form.biggestChallenge}
+                        onChange={handleChange}
+                        className={inputClass("biggestChallenge") + " appearance-none cursor-pointer"}
+                      >
                         <option value="">Select challenge...</option>
                         {CHALLENGES.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
@@ -294,8 +358,18 @@ export default function ContactPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Primary Request / Goal *</label>
-                    <select id="contact-action" name="requestedAction" value={form.requestedAction} onChange={handleChange} className={inputClass("requestedAction") + " appearance-none cursor-pointer"}>
+                    <label htmlFor="contact-action" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Primary Request / Goal *</label>
+                    <select
+                      id="contact-action"
+                      name="requestedAction"
+                      required
+                      aria-required="true"
+                      aria-invalid={!!errors.requestedAction}
+                      aria-describedby={errors.requestedAction ? "action-error" : undefined}
+                      value={form.requestedAction}
+                      onChange={handleChange}
+                      className={inputClass("requestedAction") + " appearance-none cursor-pointer"}
+                    >
                       <option value="">Select your objective...</option>
                       <option value="Book a Free ICT Consultation">Book a Free ICT Consultation (Primary CTA)</option>
                       <option value="Request Affordable ICT Support">Request Affordable ICT Support (Secondary CTA)</option>
@@ -303,11 +377,11 @@ export default function ContactPage() {
                       <option value="Cybersecurity Audit Request">Request a Cybersecurity Vulnerability Audit</option>
                       <option value="Custom Software / AI Automation">Request Custom Software or AI Workflows</option>
                     </select>
-                    <FieldError message={errors.requestedAction} />
+                    <FieldError id="action-error" message={errors.requestedAction} />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Additional Details</label>
+                    <label htmlFor="contact-message" className="text-[11px] font-mono font-bold uppercase tracking-wider text-app-text-sec">Additional Details</label>
                     <textarea
                       id="contact-message"
                       name="message"

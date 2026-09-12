@@ -37,10 +37,14 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
 
-    <!-- Google Fonts Preconnect & Stylesheet -->
+    <!-- Google Fonts Preconnect & Optimized Non-Blocking Stylesheet -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+    </noscript>
 
     <!-- ── Structured Data Schema.org (JSON-LD Graph) ── -->
     <script type="application/ld+json">
@@ -234,6 +238,17 @@
               }
             }
           ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://v79sl.com/#website",
+          "url": "https://v79sl.com/",
+          "name": "Vision79 Digital",
+          "description": "Enterprise managed IT support, 24/7 network monitoring, and cybersecurity in Saint Lucia.",
+          "publisher": {
+            "@id": "https://v79sl.com/#organization"
+          },
+          "inLanguage": "en-US"
         }
       ]
     }
