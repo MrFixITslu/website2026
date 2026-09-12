@@ -133,34 +133,27 @@ function hashAdminPassword(password: string, salt?: string): { salt: string; has
 }
 
 function verifyAdminPassword(password: string, record: AdminAuthRecord): boolean {
+  // NOTE: the only valid credential is the persisted scrypt hash. There are
+  // intentionally no hardcoded fallback passwords here anymore — they were a
+  // permanent backdoor that worked no matter what the admin set as their
+  // real password. The ADMIN_PASSWORD env var is only ever consulted by
+  // loadOrCreateAdminAuth() to seed the *initial* credential on first run.
   if (!password) return false;
   const p = password.trim();
-  if (
-    p === "%^Y&U*sw44%X" ||
-    password === "%^Y&U*sw44%X" ||
-    p === "play123" ||
-    password === "play123" ||
-    p === "Vision79@Admin2026" ||
-    password === "Vision79@Admin2026"
-  ) {
-    return true;
-  }
-  const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  if (envPassword && (p === envPassword || password === envPassword)) {
-    return true;
-  }
   try {
     const { hash } = hashAdminPassword(p, record.salt);
     const a = Buffer.from(hash, "hex");
     const b = Buffer.from(record.hash, "hex");
     if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
   } catch {}
-  try {
-    const { hash } = hashAdminPassword(password, record.salt);
-    const a = Buffer.from(hash, "hex");
-    const b = Buffer.from(record.hash, "hex");
-    if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
-  } catch {}
+  if (password !== p) {
+    try {
+      const { hash } = hashAdminPassword(password, record.salt);
+      const a = Buffer.from(hash, "hex");
+      const b = Buffer.from(record.hash, "hex");
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) return true;
+    } catch {}
+  }
   return false;
 }
 
@@ -170,23 +163,27 @@ function saveAdminAuth(record: AdminAuthRecord) {
 }
 
 function loadOrCreateAdminAuth(): AdminAuthRecord {
-  const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  const initialPassword = (envPassword && envPassword !== "play123") ? envPassword : DEFAULT_INITIAL_ADMIN_PASSWORD;
-
+  // IMPORTANT: any valid persisted credential record is authoritative and
+  // must be trusted as-is. Previously this function recomputed a hash from
+  // the current env/default password and silently REGENERATED (overwriting)
+  // the persisted record whenever that didn't match — which meant any
+  // password set via the "change password" flow was reverted back to the
+  // default/env password on every container restart. Only ever create a
+  // fresh record when no valid one exists on disk yet (first run).
   try {
     if (fs.existsSync(ADMIN_AUTH_PATH)) {
       const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
       if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
-        const { hash } = hashAdminPassword(initialPassword, parsed.salt);
-        if (hash === parsed.hash) {
-          return parsed as AdminAuthRecord;
-        }
+        return parsed as AdminAuthRecord;
       }
+      console.error("[Authentication] Persisted admin credential file is malformed, regenerating.");
     }
   } catch (e) {
     console.error("[Authentication] Failed to read persisted admin credential, regenerating:", e);
   }
 
+  const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
+  const initialPassword = (envPassword && envPassword !== "play123") ? envPassword : DEFAULT_INITIAL_ADMIN_PASSWORD;
   const { salt, hash } = hashAdminPassword(initialPassword);
   const record: AdminAuthRecord = { salt, hash, mustChangePassword: false, updatedAt: new Date().toISOString() };
   saveAdminAuth(record);
@@ -1798,6 +1795,13 @@ async function startServer() {
   });
 
   app.use(express.json({ limit: "5mb" }));
+
+  // Lightweight healthcheck endpoint - the Dockerfile's HEALTHCHECK curls
+  // this exact path. It was previously missing entirely, so every
+  // healthcheck 404'd and the container was silently reporting unhealthy.
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({ status: "ok", uptime: process.uptime() });
+  });
 
   // Static serving for uploaded course materials (audio, video, documents)
   const uploadsDir = path.join(process.cwd(), "uploads");
