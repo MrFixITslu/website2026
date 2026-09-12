@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: vision79-website
+    container_name: V79website
     restart: unless-stopped
     ports:
       - "3000:3000"
