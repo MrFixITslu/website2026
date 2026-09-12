@@ -9,11 +9,12 @@ import HomePage from "./components/HomePage";
 import AboutPage from "./components/AboutPage";
 import ServicesPage from "./components/ServicesPage";
 import IndustriesPage from "./components/IndustriesPage";
-import ResourcesPage from "./components/ResourcesPage";
 import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
+
+const ResourcesPage = lazy(() => import("./components/ResourcesPage"));
 
 // Lazy-loaded: only needed once a user actually opens a course or tool
 // feedback flow, not on initial marketing-site paint. CourseDetailPage
@@ -317,7 +318,7 @@ export default function App() {
       />
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50">
-        <button onClick={() => scrollTo("home")} className="flex items-center gap-3 cursor-pointer group">
+        <button onClick={() => scrollTo("home")} aria-label="Vision79 Digital Home" className="flex items-center gap-3 cursor-pointer group">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs tracking-tighter bg-v79-coral text-white shadow-md shadow-v79-coral/20 group-hover:scale-105 transition-transform">V79</div>
           <span className="font-display tracking-tight text-app-text uppercase">
             <span className="font-bold text-sm sm:text-base">VISION79 DIGITAL</span>
@@ -407,10 +408,10 @@ export default function App() {
 
         {/* Mobile controls */}
         <div className="flex md:hidden items-center gap-2">
-          <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
+          <button onClick={() => setTheme(p => p === "dark" ? "light" : "dark")} aria-label="Toggle theme" className="p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer">
             {theme === "dark" ? <Sun className="w-4 h-4 text-v79-coral-light" /> : <Moon className="w-4 h-4 text-v79-teal" />}
           </button>
-          <button onClick={() => { setMobileNavOpen(p => !p); setMobileExpanded(null); }} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
+          <button onClick={() => { setMobileNavOpen(p => !p); setMobileExpanded(null); }} aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"} className="relative p-2 rounded-lg border border-app-border bg-app-btn-sec cursor-pointer overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50">
             <AnimatePresence mode="wait" initial={false}>
               {mobileNavOpen ? (
                 <motion.span
@@ -571,7 +572,7 @@ export default function App() {
                 {/* Solutions Quick Links */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   {[
-                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { window.location.href = "https://v79academy.v79sl.duckdns.org/academy"; }, classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
+                    { label: "V79 Academy", desc: "Courses, certifications, masterclasses", action: () => { window.location.href = "https://v79academy.v79sl.com/academy"; }, classes: "hover:border-violet-500/30 hover:bg-violet-500/[0.02]", textClasses: "group-hover:text-violet-400" },
                     { label: "V79 App Marketplace", desc: "Web apps, desktop tools, and games", action: () => { setSelectedCategory("all"); scrollTo("app-marketplace-grid"); }, classes: "hover:border-indigo-500/30 hover:bg-indigo-500/[0.02]", textClasses: "group-hover:text-indigo-400" },
                   ].map(s => (
                     <button key={s.label} onClick={s.action} className={`glass p-5 rounded-2xl border border-app-border text-left space-y-1.5 transition-all cursor-pointer group ${s.classes}`}>
@@ -589,7 +590,7 @@ export default function App() {
                           onClick={() => { const link = ads[currentAdIndex]?.linkUrl; if (link?.includes("service") || link === "/services-pricing") scrollTo("services"); else if (link) window.open(link, "_blank", "noopener,noreferrer"); }}
                           className="absolute inset-0 flex flex-col sm:flex-row items-stretch cursor-pointer">
                           <div className="relative w-full sm:w-2/5 h-32 sm:h-full bg-zinc-800 overflow-hidden shrink-0">
-                            <img src={ads[currentAdIndex].imageUrl} alt={ads[currentAdIndex].title} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" referrerPolicy="no-referrer" />
+                            <img src={ads[currentAdIndex].imageUrl} alt={ads[currentAdIndex].title} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-700" referrerPolicy="no-referrer" />
                             <div className="absolute top-3 left-3 px-2 py-0.5 bg-black/70 backdrop-blur-md rounded border border-white/20 text-[8px] font-mono font-bold tracking-widest text-emerald-400 uppercase flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Spotlight
                             </div>
@@ -604,8 +605,8 @@ export default function App() {
                     </div>
                     {ads.length > 1 && (
                       <>
-                        <button onClick={e => { e.stopPropagation(); setCurrentAdIndex(p => (p - 1 + ads.length) % ads.length); }} className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg border border-app-border bg-app-bg/80 text-app-text backdrop-blur-md opacity-0 group-hover:opacity-100 transition cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
-                        <button onClick={e => { e.stopPropagation(); setCurrentAdIndex(p => (p + 1) % ads.length); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg border border-app-border bg-app-bg/80 text-app-text backdrop-blur-md opacity-0 group-hover:opacity-100 transition cursor-pointer"><ChevronRight className="w-4 h-4" /></button>
+                        <button onClick={e => { e.stopPropagation(); setCurrentAdIndex(p => (p - 1 + ads.length) % ads.length); }} aria-label="Previous advertisement" className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg border border-app-border bg-app-bg/80 text-app-text backdrop-blur-md opacity-0 group-hover:opacity-100 transition cursor-pointer"><ChevronLeft className="w-4 h-4" /></button>
+                        <button onClick={e => { e.stopPropagation(); setCurrentAdIndex(p => (p + 1) % ads.length); }} aria-label="Next advertisement" className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg border border-app-border bg-app-bg/80 text-app-text backdrop-blur-md opacity-0 group-hover:opacity-100 transition cursor-pointer"><ChevronRight className="w-4 h-4" /></button>
                       </>
                     )}
                   </div>
@@ -615,8 +616,9 @@ export default function App() {
                   <Search className="absolute left-4 text-app-text-muted w-5 h-5" />
                   <input id="search-input" type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value.toLowerCase())}
                     placeholder="Search tools, databases, frameworks, extensions..."
+                    aria-label="Search software and courses"
                     className="w-full bg-app-input border border-app-input-border rounded-full py-3 pl-12 pr-6 text-sm focus:outline-none focus:ring-1 focus:ring-app-border transition-all text-app-text placeholder:text-app-text-muted/60" />
-                  {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-4 text-app-text-muted hover:text-app-text text-xs font-mono font-bold cursor-pointer">CLEAR</button>}
+                  {searchQuery && <button onClick={() => setSearchQuery("")} aria-label="Clear search" className="absolute right-4 text-app-text-muted hover:text-app-text text-xs font-mono font-bold cursor-pointer">CLEAR</button>}
                 </div>
 
                 <div id="app-marketplace-grid" className="scroll-mt-24">
@@ -702,7 +704,9 @@ export default function App() {
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
         <section id="resources" className="scroll-mt-20">
-          <ResourcesPage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "resources")} />
+          <Suspense fallback={<SectionLoadingFallback />}>
+            <ResourcesPage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "resources")} />
+          </Suspense>
         </section>
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>

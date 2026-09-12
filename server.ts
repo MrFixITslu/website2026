@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
+import compression from "compression";
 
 // Configure environment variable definitions
 dotenv.config();
@@ -1729,6 +1730,19 @@ async function startServer() {
   }
 
   // Middleware
+  // Redirect legacy domain (v79sl.duckdns.org) to canonical v79sl.com (301 Moved Permanently)
+  app.use((req, res, next) => {
+    const host = (req.headers.host || "").toLowerCase();
+    if (host.includes("duckdns.org")) {
+      const canonicalTarget = (process.env.CANONICAL_DOMAIN || "https://v79sl.com").replace(/\/$/, "");
+      return res.redirect(301, `${canonicalTarget}${req.originalUrl}`);
+    }
+    next();
+  });
+
+  // Enable gzip / deflate compression for all eligible textual and JSON payloads
+  app.use(compression({ threshold: 1024 }));
+
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
@@ -3190,9 +3204,25 @@ ${articlesXml}</urlset>`;
     console.log("[Production] Serving static distribution assets.");
     const distPath = path.join(process.cwd(), "dist");
     
-    app.use(express.static(distPath, { index: false }));
+    // Dist hashed assets get 1-year immutable cache
+    app.use("/assets", express.static(path.join(distPath, "assets"), {
+      maxAge: "365d",
+      immutable: true,
+    }));
+
+    // Other static files (favicon, icons, etc.) get 1-day cache, with HTML always revalidating
+    app.use(express.static(distPath, {
+      index: false,
+      maxAge: "1d",
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith(".html")) {
+          res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+        }
+      }
+    }));
 
     app.get("*", (req, res) => {
+      res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

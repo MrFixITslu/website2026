@@ -63,6 +63,8 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
               <img
                 src={selectedArticle.coverImage}
                 alt={selectedArticle.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -146,6 +148,8 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
                     <img
                       src={article.coverImage}
                       alt={article.title}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>

@@ -61,6 +61,10 @@ export function AppLogo({ logoUrl }: { logoUrl?: string }) {
       <img 
         src={safeLogoUrl} 
         alt="SaaS Logo" 
+        width={40}
+        height={40}
+        loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover"
         referrerPolicy="no-referrer"
         onError={() => setHasError(true)}

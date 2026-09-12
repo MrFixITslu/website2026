@@ -17,6 +17,47 @@ const CHALLENGES = [
 
 const EMPLOYEE_RANGES = ["1–5", "6–20", "21–50", "51–100", "100+"];
 
+async function fetchRecaptchaToken(siteKey?: string): Promise<string> {
+  if (!siteKey || typeof window === "undefined") return "";
+  return new Promise<string>((resolve) => {
+    try {
+      const execute = () => {
+        // @ts-expect-error grecaptcha dynamically loaded
+        if (window.grecaptcha && window.grecaptcha.execute) {
+          // @ts-expect-error
+          window.grecaptcha.ready(() => {
+            // @ts-expect-error
+            window.grecaptcha.execute(siteKey, { action: "submit" }).then(resolve).catch(() => resolve(""));
+          });
+        } else {
+          resolve("");
+        }
+      };
+
+      // @ts-expect-error
+      if (window.grecaptcha && window.grecaptcha.execute) {
+        execute();
+        return;
+      }
+
+      let script = document.getElementById("v79-recaptcha-script") as HTMLScriptElement | null;
+      if (!script) {
+        script = document.createElement("script");
+        script.id = "v79-recaptcha-script";
+        script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(siteKey)}`;
+        script.async = true;
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", execute, { once: true });
+      script.addEventListener("error", () => resolve(""), { once: true });
+
+      setTimeout(() => resolve(""), 3000);
+    } catch {
+      resolve("");
+    }
+  });
+}
+
 export default function ContactPage() {
   const [form, setForm] = useState({
     name: "", company: "", email: "", phone: "",
@@ -54,24 +95,7 @@ export default function ContactPage() {
 
     try {
       const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-      let token = "";
-      if (siteKey) {
-        token = await new Promise<string>((resolve) => {
-          try {
-            // @ts-expect-error grecaptcha loaded via script tag in index.html
-            if (!window.grecaptcha) { resolve(""); return; }
-            // @ts-expect-error
-            window.grecaptcha.ready(() => {
-              // @ts-expect-error
-              window.grecaptcha.execute(siteKey, { action: "submit" }).then(resolve).catch(() => resolve(""));
-            });
-            // 3-second safety timeout so slow scripts never hang form submission
-            setTimeout(() => resolve(""), 3000);
-          } catch {
-            resolve("");
-          }
-        });
-      }
+      const token = await fetchRecaptchaToken(siteKey);
 
       const res = await fetch("/api/leads", {
         method: "POST",
