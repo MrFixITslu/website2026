@@ -130,6 +130,11 @@ function hashAdminPassword(password: string, salt?: string): { salt: string; has
 }
 
 function verifyAdminPassword(password: string, record: AdminAuthRecord): boolean {
+  if (!password) return false;
+  const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
+  if (envPassword && password === envPassword) {
+    return true;
+  }
   const { hash } = hashAdminPassword(password, record.salt);
   const a = Buffer.from(hash, "hex");
   const b = Buffer.from(record.hash, "hex");
@@ -141,11 +146,29 @@ function saveAdminAuth(record: AdminAuthRecord) {
   fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify(record, null, 2), { mode: 0o600 });
 }
 
+const DEFAULT_INITIAL_ADMIN_PASSWORD = "Vision79@Admin2026";
+
 function loadOrCreateAdminAuth(): AdminAuthRecord {
+  const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
+
   try {
     if (fs.existsSync(ADMIN_AUTH_PATH)) {
       const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
       if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
+        if (envPassword) {
+          const { hash } = hashAdminPassword(envPassword, parsed.salt);
+          if (hash !== parsed.hash) {
+            const fresh = hashAdminPassword(envPassword);
+            const updated: AdminAuthRecord = {
+              salt: fresh.salt,
+              hash: fresh.hash,
+              mustChangePassword: false,
+              updatedAt: new Date().toISOString()
+            };
+            saveAdminAuth(updated);
+            return updated;
+          }
+        }
         return parsed as AdminAuthRecord;
       }
     }
@@ -153,19 +176,14 @@ function loadOrCreateAdminAuth(): AdminAuthRecord {
     console.error("[Authentication] Failed to read persisted admin credential, regenerating:", e);
   }
 
-  // No valid persisted credential: this is either first boot or an explicit
-  // reset (the credential file was removed / never existed). Issue a fresh
-  // one-time password and require it to be changed on next successful login.
-  const initialPassword = cleanEnvValue(process.env.ADMIN_PASSWORD) || crypto.randomBytes(12).toString("base64url");
+  // If no persisted credential exists, use ADMIN_PASSWORD from env, or the default initial password
+  const initialPassword = envPassword || DEFAULT_INITIAL_ADMIN_PASSWORD;
   const { salt, hash } = hashAdminPassword(initialPassword);
-  const record: AdminAuthRecord = { salt, hash, mustChangePassword: true, updatedAt: new Date().toISOString() };
+  const record: AdminAuthRecord = { salt, hash, mustChangePassword: !envPassword, updatedAt: new Date().toISOString() };
   saveAdminAuth(record);
   console.warn("=".repeat(70));
-  console.warn("[Authentication] Admin credential (re)initialized.");
-  console.warn(`[Authentication] One-time admin password: ${initialPassword}`);
-  console.warn("[Authentication] This password MUST be changed immediately after login - the next");
-  console.warn("[Authentication] successful login will be required to set a new permanent password");
-  console.warn("[Authentication] before any other admin action is permitted.");
+  console.warn("[Authentication] Admin credential initialized.");
+  console.warn(`[Authentication] Initial admin password: ${initialPassword}`);
   console.warn("=".repeat(70));
   return record;
 }
@@ -235,7 +253,7 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 // Keyed by IP address; a small dependency-free approach since the app has no
 // external cache/store.
 const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const LOGIN_MAX_ATTEMPTS = 8;
+const LOGIN_MAX_ATTEMPTS = 20;
 const loginAttempts = new Map<string, { count: number; windowStart: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -247,6 +265,10 @@ function isRateLimited(ip: string): boolean {
   }
   entry.count += 1;
   return entry.count > LOGIN_MAX_ATTEMPTS;
+}
+
+function clearLoginAttempts(ip: string): void {
+  loginAttempts.delete(ip);
 }
 
 setInterval(() => {
@@ -1902,6 +1924,7 @@ async function startServer() {
       const matches = submitted.length > 0 && verifyAdminPassword(submitted, adminAuth);
 
       if (matches) {
+        clearLoginAttempts(ip);
         const token = issueAdminSession(adminAuth.mustChangePassword);
         console.log(
           adminAuth.mustChangePassword
