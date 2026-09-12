@@ -796,6 +796,10 @@ export default function App() {
             <span>System Operational · 99.9% Uptime SLA</span>
           </div>
           <div className="flex items-center gap-4">
+            <a href="/admin" className="text-white/60 hover:text-white transition-colors flex items-center gap-1">
+              <span>Admin Portal</span>
+            </a>
+            <span className="text-white/20">·</span>
             <span>© 2026 VISION79 DIGITAL INC. All rights reserved.</span>
           </div>
         </div>

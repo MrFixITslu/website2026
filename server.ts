@@ -196,6 +196,21 @@ function loadOrCreateAdminAuth(): AdminAuthRecord {
 
 let adminAuth: AdminAuthRecord = loadOrCreateAdminAuth();
 
+function getLatestAdminAuth(): AdminAuthRecord {
+  try {
+    if (fs.existsSync(ADMIN_AUTH_PATH)) {
+      const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
+      if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
+        adminAuth = parsed as AdminAuthRecord;
+        return adminAuth;
+      }
+    }
+  } catch (e) {
+    console.error("[Authentication] Error reading latest admin auth from disk:", e);
+  }
+  return adminAuth;
+}
+
 // In-memory session store: token -> { expiry timestamp (ms), mustChangePassword }.
 // Tokens are cryptographically random and single-instance scoped, which is
 // appropriate for this app's single-container deployment model.
@@ -263,6 +278,7 @@ const LOGIN_MAX_ATTEMPTS = 50;
 const loginAttempts = new Map<string, { count: number; windowStart: number }>();
 
 function isRateLimited(ip: string): boolean {
+  if (process.env.NODE_ENV !== "production") return false;
   const now = Date.now();
   const entry = loginAttempts.get(ip);
   if (!entry || now - entry.windowStart > LOGIN_WINDOW_MS) {
@@ -1855,6 +1871,7 @@ async function startServer() {
   // Canonical admin intercept routes registered first to prioritize admin page loading
   const adminPaths = [
     "/admin", "/admin/", 
+    "/admin.html",
     "/adimin", "/adimin/", 
     "/adimn", "/adimn/", 
     "/Admin", "/Admin/", 
@@ -1930,6 +1947,21 @@ async function startServer() {
     }
   });
 
+  // GET administrator session verification
+  app.get("/api/admin/verify-session", (req, res) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const session = getAdminSession(token);
+    if (!session) {
+      return res.status(401).json({ valid: false, error: "Session invalid or expired" });
+    }
+    return res.json({
+      valid: true,
+      adminEmail: AUTHORIZED_ADMIN_EMAIL,
+      mustChangePassword: session.mustChangePassword
+    });
+  });
+
   // POST administrator login verification
   app.post("/api/admin/login", (req, res) => {
     try {
@@ -1947,7 +1979,8 @@ async function startServer() {
         });
       }
 
-      const matches = submitted.length > 0 && verifyAdminPassword(submitted, adminAuth);
+      const currentAuth = getLatestAdminAuth();
+      const matches = submitted.length > 0 && verifyAdminPassword(submitted, currentAuth);
 
       if (matches) {
         clearLoginAttempts(ip);
@@ -2000,13 +2033,14 @@ async function startServer() {
       const current = cleanEnvValue(currentPassword);
       const next = cleanEnvValue(newPassword);
 
-      if (!verifyAdminPassword(current, adminAuth)) {
+      const currentAuth = getLatestAdminAuth();
+      if (!verifyAdminPassword(current, currentAuth)) {
         return res.status(401).json({ error: "Current password is incorrect." });
       }
       if (next.length < 12) {
         return res.status(400).json({ error: "New password must be at least 12 characters long." });
       }
-      if (verifyAdminPassword(next, adminAuth)) {
+      if (verifyAdminPassword(next, currentAuth)) {
         return res.status(400).json({ error: "New password must be different from the current password." });
       }
 

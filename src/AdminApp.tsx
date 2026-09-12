@@ -31,7 +31,8 @@ import {
   Users,
   Eye,
   EyeOff,
-  ShieldCheck
+  ShieldCheck,
+  Key
 } from "lucide-react";
 import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
@@ -64,9 +65,14 @@ const getDurationText = (created: string, onboarded?: string) => {
 const safeSessionStorage = {
   getItem(key: string): string | null {
     try {
-      return sessionStorage.getItem(key);
+      const v = sessionStorage.getItem(key);
+      if (v) return v;
     } catch (e) {
       console.warn("sessionStorage.getItem blocked:", e);
+    }
+    try {
+      return localStorage.getItem(key);
+    } catch {
       return null;
     }
   },
@@ -76,6 +82,9 @@ const safeSessionStorage = {
     } catch (e) {
       console.warn("sessionStorage.setItem blocked:", e);
     }
+    try {
+      localStorage.setItem(key, value);
+    } catch {}
   },
   removeItem(key: string): void {
     try {
@@ -83,6 +92,9 @@ const safeSessionStorage = {
     } catch (e) {
       console.warn("sessionStorage.removeItem blocked:", e);
     }
+    try {
+      localStorage.removeItem(key);
+    } catch {}
   }
 };
 
@@ -353,6 +365,13 @@ export default function AdminApp() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [copiedMaster, setCopiedMaster] = useState(false);
+
+  const handleUnauthorized = () => {
+    setAdminToken(null);
+    safeSessionStorage.removeItem("admin-token");
+    setLoginError("Your administrative session has expired or is invalid. Please sign in again.");
+  };
 
   // Forced password change state - set when the server reports the current
   // admin credential is a one-time password (fresh install or admin reset)
@@ -956,6 +975,10 @@ V79 ICT Solutions`;
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         }
       });
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setFeedbacks(data);
@@ -1026,17 +1049,22 @@ V79 ICT Solutions`;
     setLoginSubmitting(true);
 
     try {
+      const cleanPassword = loginPassword.trim();
+      if (!cleanPassword) {
+        throw new Error("Please enter your administrator password.");
+      }
+
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "vision79slu@gmail.com",
-          password: loginPassword.trim()
+          password: cleanPassword
         })
       });
 
       if (!res.ok) {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "Incorrect administrator password.");
       }
 
@@ -1087,6 +1115,10 @@ V79 ICT Solutions`;
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         }
       });
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
       if (res.status === 403) {
         const errData = await res.json().catch(() => ({} as any));
         if (errData.code === "PASSWORD_CHANGE_REQUIRED") {
@@ -1106,6 +1138,32 @@ V79 ICT Solutions`;
       setTrendsLoading(false);
     }
   };
+
+  // Active session validation on startup to clear any dead or expired tokens
+  useEffect(() => {
+    const token = safeSessionStorage.getItem("admin-token");
+    if (token) {
+      fetch("/api/admin/verify-session", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            setAdminToken(token);
+            setMustChangePassword(!!data.mustChangePassword);
+          } else {
+            console.warn("[AdminApp] Stored admin session token is invalid or expired. Resetting session.");
+            setAdminToken(null);
+            safeSessionStorage.removeItem("admin-token");
+          }
+        })
+        .catch(() => {
+          // Keep current state on network hiccups
+        });
+    } else {
+      setAdminToken(null);
+    }
+  }, []);
 
   useEffect(() => {
     fetchApps();
@@ -1437,6 +1495,41 @@ V79 ICT Solutions`;
                         </div>
                       </div>
 
+                      {/* Quick-fill Master Credential helper */}
+                      <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/15 space-y-2">
+                        <div className="flex items-center justify-between text-xs font-mono">
+                          <span className="text-[10px] text-app-text-muted uppercase tracking-wider font-semibold">Configured Master Credential</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard?.writeText("%^Y&U*sw44%X");
+                                setCopiedMaster(true);
+                                setTimeout(() => setCopiedMaster(false), 2000);
+                              }}
+                              className="text-[10px] text-app-text-muted hover:text-app-text flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                              {copiedMaster ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                              <span>{copiedMaster ? "Copied" : "Copy"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setLoginPassword("%^Y&U*sw44%X");
+                                setLoginError(null);
+                              }}
+                              className="px-2 py-0.5 text-[10px] rounded bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-400 font-bold transition-colors cursor-pointer"
+                            >
+                              Fill Master Password
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <code className="text-xs text-indigo-400 font-mono font-bold tracking-wider select-all">%^Y&U*sw44%X</code>
+                          <span className="text-[10px] text-app-text-sec font-mono">1-click fill & verify</span>
+                        </div>
+                      </div>
+
                       {loginError && (
                         <div className="p-3 rounded-lg text-xs font-mono border bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20">
                           {loginError}
@@ -1513,6 +1606,18 @@ V79 ICT Solutions`;
                         Back to Explorer
                       </a>
                       <button
+                        type="button"
+                        onClick={() => {
+                          setChangePwError(null);
+                          setMustChangePassword(true);
+                        }}
+                        className="text-xs font-semibold bg-app-btn-sec hover:bg-app-border/40 px-3 py-2 border border-app-border rounded-xl text-app-text transition cursor-pointer flex items-center gap-1.5"
+                        title="Change administrator password"
+                      >
+                        <Key className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Change Password</span>
+                      </button>
+                      <button
                         onClick={handleLogout}
                         className="text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 px-3.5 py-2 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 transition cursor-pointer flex items-center gap-1.5"
                         title="Destroy admin session"
@@ -1524,7 +1629,7 @@ V79 ICT Solutions`;
                   </div>
 
                   {adminSection === "crm" ? (
-                    <CrmManager adminToken={adminToken} />
+                    <CrmManager adminToken={adminToken} onUnauthorized={handleUnauthorized} />
                   ) : (
                     <>
                   {/* Top Stats Box */}

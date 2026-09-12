@@ -23,9 +23,10 @@ import {
 
 interface CrmManagerProps {
   adminToken: string | null;
+  onUnauthorized?: () => void;
 }
 
-export function CrmManager({ adminToken }: CrmManagerProps) {
+export function CrmManager({ adminToken, onUnauthorized }: CrmManagerProps) {
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "pipeline" | "leads" | "cockpit" | "prospects" | "tasks" | "settings"
   >("dashboard");
@@ -54,7 +55,7 @@ export function CrmManager({ adminToken }: CrmManagerProps) {
     let token = adminToken;
     if (!token) {
       try {
-        token = sessionStorage.getItem("admin-token");
+        token = sessionStorage.getItem("admin-token") || localStorage.getItem("admin-token");
       } catch (e) {
         token = null;
       }
@@ -69,6 +70,10 @@ export function CrmManager({ adminToken }: CrmManagerProps) {
   const fetchMetrics = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/crm/metrics", { headers: getHeaders() });
+      if (res.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setMetrics(data);
@@ -76,12 +81,16 @@ export function CrmManager({ adminToken }: CrmManagerProps) {
     } catch (e) {
       console.error("Failed to load CRM metrics:", e);
     }
-  }, [getHeaders]);
+  }, [getHeaders, onUnauthorized]);
 
   // Fetch leads
   const fetchLeads = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/crm/leads", { headers: getHeaders() });
+      if (res.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setLeads(data);
@@ -89,7 +98,7 @@ export function CrmManager({ adminToken }: CrmManagerProps) {
     } catch (e) {
       console.error("Failed to load CRM leads:", e);
     }
-  }, [getHeaders]);
+  }, [getHeaders, onUnauthorized]);
 
   // Fetch prospects & history
   const fetchProspects = useCallback(async () => {
