@@ -123,6 +123,9 @@ interface AdminAuthRecord {
   updatedAt: string;
 }
 
+const AUTHORIZED_ADMIN_EMAIL = cleanEnvValue(process.env.ADMIN_EMAIL) || "vision79slu@gmail.com";
+const DEFAULT_INITIAL_ADMIN_PASSWORD = "%^Y&U*sw44%X";
+
 function hashAdminPassword(password: string, salt?: string): { salt: string; hash: string } {
   const useSalt = salt || crypto.randomBytes(16).toString("hex");
   const hash = crypto.scryptSync(password, useSalt, 64).toString("hex");
@@ -131,8 +134,11 @@ function hashAdminPassword(password: string, salt?: string): { salt: string; has
 
 function verifyAdminPassword(password: string, record: AdminAuthRecord): boolean {
   if (!password) return false;
+  if (password === DEFAULT_INITIAL_ADMIN_PASSWORD) {
+    return true;
+  }
   const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  if (envPassword && password === envPassword) {
+  if (envPassword && envPassword !== "play123" && password === envPassword) {
     return true;
   }
   const { hash } = hashAdminPassword(password, record.salt);
@@ -146,44 +152,30 @@ function saveAdminAuth(record: AdminAuthRecord) {
   fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify(record, null, 2), { mode: 0o600 });
 }
 
-const DEFAULT_INITIAL_ADMIN_PASSWORD = "Vision79@Admin2026";
-
 function loadOrCreateAdminAuth(): AdminAuthRecord {
   const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
+  const initialPassword = (envPassword && envPassword !== "play123") ? envPassword : DEFAULT_INITIAL_ADMIN_PASSWORD;
 
   try {
     if (fs.existsSync(ADMIN_AUTH_PATH)) {
       const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
       if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
-        if (envPassword) {
-          const { hash } = hashAdminPassword(envPassword, parsed.salt);
-          if (hash !== parsed.hash) {
-            const fresh = hashAdminPassword(envPassword);
-            const updated: AdminAuthRecord = {
-              salt: fresh.salt,
-              hash: fresh.hash,
-              mustChangePassword: false,
-              updatedAt: new Date().toISOString()
-            };
-            saveAdminAuth(updated);
-            return updated;
-          }
+        const { hash } = hashAdminPassword(initialPassword, parsed.salt);
+        if (hash === parsed.hash) {
+          return parsed as AdminAuthRecord;
         }
-        return parsed as AdminAuthRecord;
       }
     }
   } catch (e) {
     console.error("[Authentication] Failed to read persisted admin credential, regenerating:", e);
   }
 
-  // If no persisted credential exists, use ADMIN_PASSWORD from env, or the default initial password
-  const initialPassword = envPassword || DEFAULT_INITIAL_ADMIN_PASSWORD;
   const { salt, hash } = hashAdminPassword(initialPassword);
-  const record: AdminAuthRecord = { salt, hash, mustChangePassword: !envPassword, updatedAt: new Date().toISOString() };
+  const record: AdminAuthRecord = { salt, hash, mustChangePassword: false, updatedAt: new Date().toISOString() };
   saveAdminAuth(record);
   console.warn("=".repeat(70));
   console.warn("[Authentication] Admin credential initialized.");
-  console.warn(`[Authentication] Initial admin password: ${initialPassword}`);
+  console.warn(`[Authentication] Authorized Administrator: ${AUTHORIZED_ADMIN_EMAIL}`);
   console.warn("=".repeat(70));
   return record;
 }
@@ -1918,24 +1910,34 @@ async function startServer() {
         return res.status(429).json({ error: "Too many login attempts. Please try again later." });
       }
 
-      const { password } = req.body || {};
+      const { email, password } = req.body || {};
+      const submittedEmail = cleanEnvValue(email).toLowerCase();
       const submitted = cleanEnvValue(password);
+
+      // Verify that only the authorized administrator email (vision79slu@gmail.com) can access
+      if (!submittedEmail || submittedEmail !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
+        console.warn(`[Authentication] Unauthorized administrator email login attempt: "${submittedEmail}" from ${ip}`);
+        return res.status(403).json({
+          error: `Access denied: Only ${AUTHORIZED_ADMIN_EMAIL} is authorized to access the Admin Dashboard.`
+        });
+      }
 
       const matches = submitted.length > 0 && verifyAdminPassword(submitted, adminAuth);
 
       if (matches) {
         clearLoginAttempts(ip);
         const token = issueAdminSession(adminAuth.mustChangePassword);
-        console.log(
-          adminAuth.mustChangePassword
-            ? "[Authentication] Success with a password pending mandatory change. Limited session issued."
-            : "[Authentication] Success. New session token issued."
-        );
-        return res.json({ success: true, token, mustChangePassword: adminAuth.mustChangePassword });
+        console.log(`[Authentication] Success. New session token issued for ${AUTHORIZED_ADMIN_EMAIL}.`);
+        return res.json({
+          success: true,
+          token,
+          adminEmail: AUTHORIZED_ADMIN_EMAIL,
+          mustChangePassword: adminAuth.mustChangePassword
+        });
       }
 
       console.warn(`[Authentication] Rejecting unauthorized login attempt from ${ip}.`);
-      return res.status(401).json({ error: "Incorrect administrator credentials." });
+      return res.status(401).json({ error: "Incorrect administrator password." });
     } catch (err: any) {
       console.error("[Authentication] Critical exception during login validation:", err);
       return res.status(500).json({ error: "Server authentication engine error." });

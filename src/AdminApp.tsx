@@ -345,6 +345,7 @@ export default function AdminApp() {
   const [adminToken, setAdminToken] = useState<string | null>(() => {
     return safeSessionStorage.getItem("admin-token");
   });
+  const [loginEmail, setLoginEmail] = useState("vision79slu@gmail.com");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
@@ -1020,16 +1021,26 @@ V79 ICT Solutions`;
     setLoginError(null);
     setLoginSubmitting(true);
 
+    const emailToVerify = loginEmail.trim().toLowerCase();
+    if (emailToVerify !== "vision79slu@gmail.com") {
+      setLoginError("Access denied: Only vision79slu@gmail.com is authorized to access the Admin Dashboard.");
+      setLoginSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: loginPassword.trim() })
+        body: JSON.stringify({
+          email: emailToVerify,
+          password: loginPassword.trim()
+        })
       });
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "Incorrect password entered.");
+        throw new Error(errData.error || "Incorrect credentials entered.");
       }
 
       const data = await res.json();
@@ -1380,6 +1391,25 @@ V79 ICT Solutions`;
 
                     <form onSubmit={handleAdminLogin} className="space-y-4">
                       <div className="space-y-1.5">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec flex items-center justify-between">
+                          <span>Authorized Administrator Email</span>
+                          <span className="text-emerald-500 font-bold text-[9px] lowercase">Restricted</span>
+                        </label>
+                        <input
+                          id="login-email-field"
+                          type="email"
+                          required
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="vision79slu@gmail.com"
+                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80 font-mono"
+                        />
+                        <p className="text-[11px] text-app-text-muted">
+                          Only <span className="font-semibold text-app-text">vision79slu@gmail.com</span> can access the admin dashboard.
+                        </p>
+                      </div>
+
+                      <div className="space-y-1.5">
                         <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">Administration Password</label>
                         <input
                           id="login-password-field"
@@ -1410,7 +1440,7 @@ V79 ICT Solutions`;
                     </form>
 
                     <div className="pt-4 border-t border-app-border/40 text-center text-[10px] text-app-text-muted font-mono leading-relaxed">
-                      <span>Access is restricted to authorized administrators. All modifications undergo server-side session verification.</span>
+                      <span>Access strictly restricted to vision79slu@gmail.com. All modifications undergo server-side session verification.</span>
                     </div>
                   </div>
                 </motion.div>
@@ -1458,6 +1488,10 @@ V79 ICT Solutions`;
                     </div>
 
                     <div className="flex items-center gap-2 px-1">
+                      <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>vision79slu@gmail.com</span>
+                      </div>
                       <a
                         href="/"
                         className="text-xs font-semibold bg-app-btn-sec border border-app-border hover:bg-app-btn-sec/80 px-3.5 py-2 rounded-xl text-app-text transition cursor-pointer"
