@@ -121,6 +121,10 @@ interface AdminAuthRecord {
   hash: string;
   mustChangePassword: boolean;
   updatedAt: string;
+  // Tracks the last ADMIN_RESET_TOKEN value that was already applied, so a
+  // one-time reset (see applyAdminResetIfRequested below) doesn't re-fire on
+  // every container restart if the operator forgets to clear the env var.
+  resetTokenConsumed?: string;
 }
 
 const AUTHORIZED_ADMIN_EMAIL = cleanEnvValue(process.env.ADMIN_EMAIL) || "vision79slu@gmail.com";
@@ -185,16 +189,70 @@ function loadOrCreateAdminAuth(): AdminAuthRecord {
   const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
   const initialPassword = (envPassword && envPassword !== "play123") ? envPassword : DEFAULT_INITIAL_ADMIN_PASSWORD;
   const { salt, hash } = hashAdminPassword(initialPassword);
-  const record: AdminAuthRecord = { salt, hash, mustChangePassword: false, updatedAt: new Date().toISOString() };
+  // mustChangePassword is true here on purpose: a brand-new deployment must
+  // not be left running indefinitely on the auto-generated/default password.
+  const record: AdminAuthRecord = { salt, hash, mustChangePassword: true, updatedAt: new Date().toISOString() };
   saveAdminAuth(record);
   console.warn("=".repeat(70));
   console.warn("[Authentication] Admin credential initialized.");
   console.warn(`[Authentication] Authorized Administrator: ${AUTHORIZED_ADMIN_EMAIL}`);
+  console.warn("[Authentication] You will be required to set a new password on first login.");
   console.warn("=".repeat(70));
   return record;
 }
 
-let adminAuth: AdminAuthRecord = loadOrCreateAdminAuth();
+// ---------------------------------------------------------------------------
+// One-time admin password reset (operator-triggered, for when you're locked
+// out and don't know/remember the current persisted password)
+// ---------------------------------------------------------------------------
+// To use: set ADMIN_RESET_TOKEN to any new value (e.g. `openssl rand -hex 8`,
+// or just today's date) in your environment/.env and restart the container.
+// On startup this overwrites the persisted admin credential with a fresh
+// one-time password, forces a password change on next login, and — unless
+// you also set ADMIN_PASSWORD to choose the new password yourself — prints
+// the generated one-time password to the container logs exactly once.
+//
+// The reset only fires when ADMIN_RESET_TOKEN differs from the token value
+// already recorded as consumed in the persisted credential file, so it is
+// safe to leave the variable set after a restart: it will NOT regenerate the
+// password again on every reboot. To force another reset later, just change
+// ADMIN_RESET_TOKEN to a different value.
+function applyAdminResetIfRequested(record: AdminAuthRecord): AdminAuthRecord {
+  const resetToken = cleanEnvValue(process.env.ADMIN_RESET_TOKEN);
+  if (!resetToken) return record;
+  if (record.resetTokenConsumed && record.resetTokenConsumed === resetToken) {
+    return record;
+  }
+
+  const suppliedPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
+  const oneTimePassword = suppliedPassword || crypto.randomBytes(9).toString("base64url");
+  const { salt, hash } = hashAdminPassword(oneTimePassword);
+  const newRecord: AdminAuthRecord = {
+    salt,
+    hash,
+    mustChangePassword: true,
+    updatedAt: new Date().toISOString(),
+    resetTokenConsumed: resetToken
+  };
+  saveAdminAuth(newRecord);
+
+  console.warn("=".repeat(70));
+  console.warn("[Authentication] ADMIN PASSWORD RESET APPLIED (ADMIN_RESET_TOKEN).");
+  console.warn(`[Authentication] Authorized Administrator: ${AUTHORIZED_ADMIN_EMAIL}`);
+  if (suppliedPassword) {
+    console.warn("[Authentication] Admin password was reset to the value you supplied via ADMIN_PASSWORD.");
+  } else {
+    console.warn(`[Authentication] One-time password: ${oneTimePassword}`);
+    console.warn("[Authentication] This is shown ONLY here, ONCE. It will not be logged again.");
+  }
+  console.warn("[Authentication] You will be required to set a new password immediately after logging in.");
+  console.warn("[Authentication] Safe to leave ADMIN_RESET_TOKEN set — it will not reset again until you change its value.");
+  console.warn("=".repeat(70));
+
+  return newRecord;
+}
+
+let adminAuth: AdminAuthRecord = applyAdminResetIfRequested(loadOrCreateAdminAuth());
 
 function getLatestAdminAuth(): AdminAuthRecord {
   try {
@@ -1762,7 +1820,7 @@ async function startServer() {
   await initDb();
 
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(cleanEnvValue(process.env.PORT)) || 3000;
   // Trust the first proxy hop (e.g. Nginx Proxy Manager) so req.ip reflects
   // the real client address for rate limiting and logging.
   app.set("trust proxy", 1);
@@ -2010,13 +2068,13 @@ async function startServer() {
 
       if (matches) {
         clearLoginAttempts(ip);
-        const token = issueAdminSession(false);
+        const token = issueAdminSession(currentAuth.mustChangePassword);
         console.log(`[Authentication] Success. New session token issued for ${AUTHORIZED_ADMIN_EMAIL}.`);
         return res.json({
           success: true,
           token,
           adminEmail: AUTHORIZED_ADMIN_EMAIL,
-          mustChangePassword: false
+          mustChangePassword: currentAuth.mustChangePassword
         });
       }
 
@@ -2071,7 +2129,13 @@ async function startServer() {
       }
 
       const { salt, hash } = hashAdminPassword(next);
-      adminAuth = { salt, hash, mustChangePassword: false, updatedAt: new Date().toISOString() };
+      adminAuth = {
+        salt,
+        hash,
+        mustChangePassword: false,
+        updatedAt: new Date().toISOString(),
+        resetTokenConsumed: currentAuth.resetTokenConsumed
+      };
       saveAdminAuth(adminAuth);
 
       // Rotate every session, including this one, and issue a fresh full

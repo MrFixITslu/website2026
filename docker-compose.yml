@@ -7,14 +7,21 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
-    ports:
-      - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
       - CANONICAL_DOMAIN=${CANONICAL_DOMAIN:-https://v79sl.com}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-vision79slu@gmail.com}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-%^Y&U*sw44%X}
+      # Leave ADMIN_PASSWORD unset for normal operation — the server seeds a
+      # secure initial credential itself on first run and forces a password
+      # change on first login. Set it in your .env only when you also set
+      # ADMIN_RESET_TOKEN below to force a specific new password.
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      # One-time admin password reset: set this to any new value + restart to
+      # force a password reset if you're locked out. See server.ts comments
+      # near applyAdminResetIfRequested() for how it behaves. Leave blank
+      # during normal operation.
+      - ADMIN_RESET_TOKEN=${ADMIN_RESET_TOKEN:-}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
