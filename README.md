@@ -17,24 +17,37 @@ View your app in AI Studio: https://ai.studio/apps/18f30f03-e9f4-4915-aafc-1da76
 2. Run the app:
    `npm run dev`
 
-## Deployment & Verifying Freshness
+## Deployment with Docker & Nginx Proxy Manager
 
-### 1. Verify Currently Running Version
-You can check if your live server is running the newest code at any time by calling:
-```bash
-curl https://<your-domain>/api/version
-```
-This returns the current active build version, server start timestamp, and uptime.
+### 1. External Network (`proxy_network`)
+The `docker-compose.yml` is configured to join the existing external Docker bridge network named `proxy_network`:
 
-### 2. Docker / Docker Compose Deployment
-When updating your server via Docker, **always use the `--build` flag** so Docker rebuilds the images rather than reusing stale cached layers:
 ```bash
-docker compose up -d --build
+# If proxy_network does not already exist on your Docker host, create it once:
+docker network create proxy_network
 ```
-Or to force a completely clean build:
+
+### 2. Deploy or Update the Container
+To deploy the latest code without stale cache layers:
+
 ```bash
+# Force rebuild without cache and restart container attached to proxy_network
 docker compose build --no-cache && docker compose up -d
 ```
 
-### 3. Client & Proxy Cache Busting
-All HTML endpoints (`index.html` and `admin.html`) send strict HTTP anti-caching headers (`no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0`), guaranteeing that browsers and reverse proxies (such as Nginx or Cloudflare) never serve stale cached HTML. Vite assets are built with content hashes (`/assets/*-[hash].js`) ensuring automatic cache invalidation on new deployments.
+### 3. Nginx Proxy Manager / Reverse Proxy Configuration
+In your Nginx Proxy Manager (or reverse proxy) dashboard:
+- **Domain Names**: `v79sl.com`, `www.v79sl.com`
+- **Scheme**: `http`
+- **Forward Hostname / IP**: `V79website` (or container IP on `proxy_network`)
+- **Forward Port**: `3000`
+- **Block Common Exploits**: ON
+- **Websockets Support**: ON
+- **SSL**: Force SSL / HTTP to HTTPS redirect
+
+### 4. Verify Active Deployment
+Check that your server is running the newest build:
+```bash
+curl -i https://v79sl.com/api/version
+```
+
