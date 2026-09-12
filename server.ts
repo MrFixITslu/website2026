@@ -1784,10 +1784,19 @@ async function startServer() {
   }
 
   // Middleware
-  // Redirect legacy domain (v79sl.duckdns.org) to canonical v79sl.com (301 Moved Permanently)
+  // Redirect legacy domain (v79sl.duckdns.org) to canonical v79sl.com (301 Moved Permanently).
+  // IMPORTANT: this must never fire for API calls or non-GET requests. A 301 on a
+  // POST (e.g. /api/admin/login) gets replayed by fetch/XHR as a GET, silently
+  // dropping the request body, and — since it also hops to a different origin —
+  // gets blocked as a cross-origin request with no CORS headers configured. That
+  // combination was breaking admin login (and any other API call) whenever the
+  // app was accessed via the duckdns.org host. Only redirect actual page
+  // navigations, and leave every /api/* request alone regardless of host.
   app.use((req, res, next) => {
     const host = (req.headers.host || "").toLowerCase();
-    if (host.includes("duckdns.org")) {
+    const isApiRequest = req.path.startsWith("/api/");
+    const isNavigation = req.method === "GET" || req.method === "HEAD";
+    if (!isApiRequest && isNavigation && host.includes("duckdns.org")) {
       const canonicalTarget = (process.env.CANONICAL_DOMAIN || "https://v79sl.com").replace(/\/$/, "");
       return res.redirect(301, `${canonicalTarget}${req.originalUrl}`);
     }
@@ -1812,11 +1821,32 @@ async function startServer() {
 
   app.use(express.json({ limit: "5mb" }));
 
+  const BUILD_VERSION = "2026.09.12-v2";
+  const SERVER_START_TIME = new Date().toISOString();
+
   // Lightweight healthcheck endpoint - the Dockerfile's HEALTHCHECK curls
   // this exact path. It was previously missing entirely, so every
   // healthcheck 404'd and the container was silently reporting unhealthy.
   app.get("/api/health", (req, res) => {
-    res.status(200).json({ status: "ok", uptime: process.uptime() });
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.status(200).json({
+      status: "ok",
+      version: BUILD_VERSION,
+      uptime: Math.floor(process.uptime()),
+      startedAt: SERVER_START_TIME
+    });
+  });
+
+  // Version status endpoint so deployments can verify freshness
+  app.get("/api/version", (req, res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    res.status(200).json({
+      name: "Vision79 Digital",
+      version: BUILD_VERSION,
+      uptime: Math.floor(process.uptime()),
+      startedAt: SERVER_START_TIME,
+      nodeEnv: process.env.NODE_ENV || "development"
+    });
   });
 
   // Static serving for uploaded course materials (audio, video, documents)
@@ -1887,7 +1917,12 @@ async function startServer() {
         if (fs.existsSync(htmlPath)) {
           const html = fs.readFileSync(htmlPath, "utf-8");
           const transformedHtml = await viteInstance.transformIndexHtml(url, html);
-          return res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
+          return res.status(200).set({
+            "Content-Type": "text/html",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          }).end(transformedHtml);
         } else {
           return res.status(404).end("admin.html file not found");
         }
@@ -1896,7 +1931,13 @@ async function startServer() {
         return next(e);
       }
     } else {
-      const distPath = path.join(process.cwd(), "dist");
+      const distPath = fs.existsSync(path.join(process.cwd(), "dist"))
+        ? path.join(process.cwd(), "dist")
+        : (typeof __dirname !== "undefined" ? __dirname : path.resolve(process.cwd(), "dist"));
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Surrogate-Control", "no-store");
       return res.sendFile(path.join(distPath, "admin.html"));
     }
   });
@@ -3620,7 +3661,12 @@ ${articlesXml}</urlset>`;
           const transformedHtml = viteInstance 
             ? await viteInstance.transformIndexHtml(url, html)
             : html;
-          res.status(200).set({ "Content-Type": "text/html" }).end(transformedHtml);
+          res.status(200).set({
+            "Content-Type": "text/html",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+          }).end(transformedHtml);
         } else {
           res.status(404).end("index.html file not found");
         }
@@ -3633,7 +3679,9 @@ ${articlesXml}</urlset>`;
     });
   } else {
     console.log("[Production] Serving static distribution assets.");
-    const distPath = path.join(process.cwd(), "dist");
+    const distPath = fs.existsSync(path.join(process.cwd(), "dist"))
+      ? path.join(process.cwd(), "dist")
+      : (typeof __dirname !== "undefined" ? __dirname : path.resolve(process.cwd(), "dist"));
     
     // Dist hashed assets get 1-year immutable cache
     app.use("/assets", express.static(path.join(distPath, "assets"), {
@@ -3641,19 +3689,30 @@ ${articlesXml}</urlset>`;
       immutable: true,
     }));
 
-    // Other static files (favicon, icons, etc.) get 1-day cache, with HTML always revalidating
+    // Other static files (favicon, icons, etc.) get 1-day cache, with HTML ALWAYS revalidating
     app.use(express.static(distPath, {
       index: false,
       maxAge: "1d",
       setHeaders: (res, filePath) => {
         if (filePath.endsWith(".html")) {
-          res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+          res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
+          res.setHeader("Surrogate-Control", "no-store");
         }
       }
     }));
 
     app.get("*", (req, res) => {
-      res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Surrogate-Control", "no-store");
+
+      const reqPath = (req.path || "").toLowerCase();
+      if (reqPath.startsWith("/admin") || reqPath.startsWith("/adimin") || reqPath.startsWith("/adimn")) {
+        return res.sendFile(path.join(distPath, "admin.html"));
+      }
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

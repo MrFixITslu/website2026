@@ -11,10 +11,10 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependency manifests
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json* ./
 
 # Clean install all dependencies (including devDependencies required for vite & esbuild)
-RUN npm ci
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 # Copy project source
 COPY . .
@@ -37,8 +37,8 @@ ENV PORT=3000
 RUN apk add --no-cache curl
 
 # Copy dependency manifests and install production-only dependencies
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+COPY package.json package-lock.json* ./
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi && npm cache clean --force
 
 # Copy compiled bundles from builder stage
 COPY --from=builder /app/dist ./dist
