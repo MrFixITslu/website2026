@@ -28,7 +28,10 @@ import {
   Bell,
   Copy,
   Mail,
-  Users
+  Users,
+  Eye,
+  EyeOff,
+  ShieldCheck
 } from "lucide-react";
 import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
@@ -347,6 +350,7 @@ export default function AdminApp() {
   });
   const [loginEmail, setLoginEmail] = useState("vision79slu@gmail.com");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginSubmitting, setLoginSubmitting] = useState(false);
 
@@ -1021,26 +1025,19 @@ V79 ICT Solutions`;
     setLoginError(null);
     setLoginSubmitting(true);
 
-    const emailToVerify = loginEmail.trim().toLowerCase();
-    if (emailToVerify !== "vision79slu@gmail.com") {
-      setLoginError("Access denied: Only vision79slu@gmail.com is authorized to access the Admin Dashboard.");
-      setLoginSubmitting(false);
-      return;
-    }
-
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: emailToVerify,
+          email: "vision79slu@gmail.com",
           password: loginPassword.trim()
         })
       });
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || "Incorrect credentials entered.");
+        throw new Error(errData.error || "Incorrect administrator password.");
       }
 
       const data = await res.json();
@@ -1050,7 +1047,7 @@ V79 ICT Solutions`;
       setLoginPassword("");
     } catch (err: any) {
       console.error(err);
-      setLoginError(err.message || "Credential authentication failed.");
+      setLoginError(err.message || "Incorrect administrator password.");
     } finally {
       setLoginSubmitting(false);
     }
@@ -1390,37 +1387,54 @@ V79 ICT Solutions`;
                     </div>
 
                     <form onSubmit={handleAdminLogin} className="space-y-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec flex items-center justify-between">
-                          <span>Authorized Administrator Email</span>
-                          <span className="text-emerald-500 font-bold text-[9px] lowercase">Restricted</span>
-                        </label>
-                        <input
-                          id="login-email-field"
-                          type="email"
-                          required
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          placeholder="vision79slu@gmail.com"
-                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80 font-mono"
-                        />
-                        <p className="text-[11px] text-app-text-muted">
-                          Only <span className="font-semibold text-app-text">vision79slu@gmail.com</span> can access the admin dashboard.
-                        </p>
+                      <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-emerald-500/5 border border-emerald-500/15 text-xs text-app-text-sec font-mono">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                          <span>Admin: <strong className="text-app-text font-semibold">vision79slu@gmail.com</strong></span>
+                        </div>
+                        <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Authorized</span>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">Administration Password</label>
-                        <input
-                          id="login-password-field"
-                          type="password"
-                          required
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          placeholder="••••••••••••••"
-                          className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 text-sm focus:outline-none focus:border-app-border/80"
-                          autoFocus
-                        />
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-app-text-sec">Administration Password</label>
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="text-[11px] text-app-text-muted hover:text-app-text flex items-center gap-1 cursor-pointer transition-colors"
+                          >
+                            {showLoginPassword ? (
+                              <>
+                                <EyeOff className="w-3 h-3" />
+                                <span>Hide</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3 h-3" />
+                                <span>Show</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <input
+                            id="login-password-field"
+                            type={showLoginPassword ? "text" : "password"}
+                            required
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder="Enter administration password"
+                            className="w-full bg-app-input border border-app-input-border text-app-text rounded-lg p-3 pr-10 text-sm focus:outline-none focus:border-app-border/80 font-mono"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text cursor-pointer transition-colors"
+                          >
+                            {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
 
                       {loginError && (
@@ -1432,7 +1446,7 @@ V79 ICT Solutions`;
                       <button
                         type="submit"
                         disabled={loginSubmitting}
-                        className="w-full py-2.5 text-xs rounded-lg bg-app-text text-app-bg font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                        className="w-full py-2.5 text-xs rounded-lg bg-app-text text-app-bg font-bold cursor-pointer hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-sm"
                       >
                         {loginSubmitting ? "Verifying..." : "Verify Credentials"}
                         <ArrowRight className="w-3.5 h-3.5" />
