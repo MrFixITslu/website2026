@@ -30,12 +30,8 @@ export function CrmHeader({
       {/* Top Banner with Brand Logo and System Status */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white p-1.5 shadow-sm border border-app-border flex items-center justify-center shrink-0">
-            <img
-              src="/v79-digital-logo.svg"
-              alt="V79 Digital Logo"
-              className="w-full h-full object-contain"
-            />
+          <div className="w-11 h-11 rounded-xl bg-sky-500/10 dark:bg-sky-500/20 text-sky-500 font-display font-black text-sm border border-sky-500/30 flex items-center justify-center shrink-0 shadow-xs select-none">
+            V79
           </div>
           <div>
             <div className="flex items-center gap-2">

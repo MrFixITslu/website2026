@@ -144,6 +144,9 @@ export default function ResourcesPage({ onNavigate, onSelectArticle }: Resources
               <ShareButtons
                 title={selectedArticle.title}
                 slug={selectedArticle.slug}
+                imageUrl={selectedArticle.coverImage}
+                coverImage={selectedArticle.coverImage}
+                description={selectedArticle.description}
                 category={selectedArticle.category}
                 variant="inline"
               />
@@ -159,6 +162,9 @@ export default function ResourcesPage({ onNavigate, onSelectArticle }: Resources
             <ShareButtons
               title={selectedArticle.title}
               slug={selectedArticle.slug}
+              imageUrl={selectedArticle.coverImage}
+              coverImage={selectedArticle.coverImage}
+              description={selectedArticle.description}
               category={selectedArticle.category}
               variant="block"
             />

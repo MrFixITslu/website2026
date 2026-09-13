@@ -51,6 +51,23 @@ export function ArticleDetailPage({
         if (data.title) {
           document.title = `${data.title} | Vision79 Digital`;
         }
+        if (data.coverImage) {
+          let ogImageTag = document.querySelector('meta[property="og:image"]');
+          if (!ogImageTag) {
+            ogImageTag = document.createElement("meta");
+            ogImageTag.setAttribute("property", "og:image");
+            document.head.appendChild(ogImageTag);
+          }
+          ogImageTag.setAttribute("content", data.coverImage);
+
+          let twitterImageTag = document.querySelector('meta[name="twitter:image"]');
+          if (!twitterImageTag) {
+            twitterImageTag = document.createElement("meta");
+            twitterImageTag.setAttribute("name", "twitter:image");
+            document.head.appendChild(twitterImageTag);
+          }
+          twitterImageTag.setAttribute("content", data.coverImage);
+        }
       })
       .catch((err) => {
         console.error("Error fetching article:", err);
@@ -183,6 +200,9 @@ export function ArticleDetailPage({
           <ShareButtons
             title={article.title}
             slug={article.slug}
+            imageUrl={article.coverImage}
+            coverImage={article.coverImage}
+            description={article.description}
             category={article.category}
             variant="inline"
           />
@@ -212,6 +232,9 @@ export function ArticleDetailPage({
         <ShareButtons
           title={article.title}
           slug={article.slug}
+          imageUrl={article.coverImage}
+          coverImage={article.coverImage}
+          description={article.description}
           category={article.category}
           variant="block"
         />

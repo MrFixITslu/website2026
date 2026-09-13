@@ -12,6 +12,7 @@ import IndustriesPage from "./components/IndustriesPage";
 import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
+import { V79OfficialLogo, V79FooterLogo } from "./components/V79OfficialLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
 import { CLIENT_STORIES } from "./data/testimonials";
 
@@ -369,12 +370,12 @@ export default function App() {
       />
       {/* Apple-inspired Sticky Header */}
       <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50">
-        <button onClick={() => scrollTo("home")} aria-label="Vision79 Digital Home" className="flex items-center gap-3 cursor-pointer group">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs tracking-tighter bg-v79-coral text-white shadow-md shadow-v79-coral/20 group-hover:scale-105 transition-transform">V79</div>
-          <span className="font-display tracking-tight text-app-text uppercase">
-            <span className="font-bold text-sm sm:text-base">VISION79 DIGITAL</span>
-            <span className="font-normal text-xs sm:text-sm text-app-text-sec"> | ICT SOLUTIONS</span>
-          </span>
+        <button
+          onClick={() => scrollTo("home")}
+          aria-label="Vision79 Digital Home"
+          className="flex items-center cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-xl py-1 px-1 -ml-1 transition-opacity hover:opacity-90"
+        >
+          <V79OfficialLogo showMark={false} showTagline={false} size="md" />
         </button>
 
         {/* Desktop Nav */}
@@ -816,44 +817,43 @@ export default function App() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-app-border bg-v79-navy dark:bg-v79-navy-dark pt-12 pb-24 sm:pb-12 px-6 lg:px-12 mt-auto">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-white/10">
-          <div className="space-y-3 col-span-2">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs bg-v79-coral text-white">V79</div>
-              <span className="font-bold text-base font-display text-white tracking-tight uppercase">VISION79 DIGITAL | ICT SOLUTIONS</span>
+      <footer className="border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-v79-navy-dark pt-12 pb-24 sm:pb-12 px-6 lg:px-12 mt-auto transition-colors duration-200">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-slate-200 dark:border-white/10">
+          <div className="space-y-4 col-span-2">
+            <div className="flex items-center">
+              <V79OfficialLogo showMark={false} showTagline={true} size="lg" />
             </div>
-            <p className="text-xs text-white/60 font-light max-w-sm leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-white/70 font-light max-w-sm leading-relaxed">
               World-class managed IT, cybersecurity, cloud infrastructure, and software development for businesses across Saint Lucia and the Eastern Caribbean.
             </p>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="font-bold text-white uppercase tracking-wider font-mono text-[11px]">Services</div>
-            <ul className="space-y-1.5 text-white/60 font-light">
-              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Cybersecurity</button></li>
-              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Cloud & Backup</button></li>
-              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Managed IT Support</button></li>
-              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Custom Software</button></li>
+            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono text-[11px]">Services</div>
+            <ul className="space-y-1.5 text-slate-600 dark:text-white/60 font-light">
+              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Cybersecurity</button></li>
+              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Cloud &amp; Backup</button></li>
+              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Managed IT Support</button></li>
+              <li><button onClick={() => scrollTo("services")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Custom Software</button></li>
             </ul>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="font-bold text-white uppercase tracking-wider font-mono text-[11px]">Industries</div>
-            <ul className="space-y-1.5 text-white/60 font-light">
-              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Small Business</button></li>
-              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Government</button></li>
-              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Healthcare</button></li>
-              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Hospitality</button></li>
+            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono text-[11px]">Industries</div>
+            <ul className="space-y-1.5 text-slate-600 dark:text-white/60 font-light">
+              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Small Business</button></li>
+              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Government</button></li>
+              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Healthcare</button></li>
+              <li><button onClick={() => scrollTo("industries")} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Hospitality</button></li>
             </ul>
           </div>
 
           <div className="space-y-2 text-xs">
-            <div className="font-bold text-white uppercase tracking-wider font-mono text-[11px]">Company</div>
-            <ul className="space-y-1.5 text-white/60 font-light">
+            <div className="font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono text-[11px]">Company</div>
+            <ul className="space-y-1.5 text-slate-600 dark:text-white/60 font-light">
               {SECTIONS.filter(s => ["about", "resources", "contact"].includes(s.id)).map(s => (
                 <li key={s.id}>
-                  <button onClick={() => scrollTo(s.id)} className="hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">{s.label}</button>
+                  <button onClick={() => scrollTo(s.id)} className="hover:text-v79-teal dark:hover:text-v79-teal-light transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">{s.label}</button>
                 </li>
               ))}
               <li>Castries, Saint Lucia</li>
@@ -861,22 +861,22 @@ export default function App() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto pt-6 pb-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-white/60 font-light border-b border-white/10">
-          <div>Phone: <a href="tel:+17587260035" className="text-v79-teal-light hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">+1 758 726 0035</a></div>
-          <span className="hidden sm:block text-white/20">|</span>
-          <div>Email: <a href="mailto:vision79slu@gmail.com" className="text-v79-teal-light hover:underline font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">vision79slu@gmail.com</a></div>
+        <div className="max-w-7xl mx-auto pt-6 pb-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-slate-600 dark:text-white/60 font-light border-b border-slate-200 dark:border-white/10">
+          <div>Phone: <a href="tel:+17587260035" className="text-v79-teal dark:text-v79-teal-light hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">+1 758 726 0035</a></div>
+          <span className="hidden sm:block text-slate-300 dark:text-white/20">|</span>
+          <div>Email: <a href="mailto:vision79slu@gmail.com" className="text-v79-teal dark:text-v79-teal-light hover:underline font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">vision79slu@gmail.com</a></div>
         </div>
 
-        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50 font-mono">
+        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-white/50 font-mono">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-v79-teal-light animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-v79-teal-light animate-pulse" />
             <span>System Operational · 99.9% Uptime SLA</span>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/admin" className="text-white/60 hover:text-white transition-colors flex items-center gap-1">
+            <a href="/admin" className="text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1">
               <span>Admin Portal</span>
             </a>
-            <span className="text-white/20">·</span>
+            <span className="text-slate-300 dark:text-white/20">·</span>
             <span>© 2026 VISION79 DIGITAL INC. All rights reserved.</span>
           </div>
         </div>

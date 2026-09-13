@@ -3541,6 +3541,102 @@ async function startServer() {
   });
 
   // --- Articles / Blog API Endpoints ---
+  function getArticleData(slug: string) {
+    if (!slug || typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) return null;
+    try {
+      const fullPath = path.resolve(ARTICLES_DIR, `${slug}.md`);
+      const resolvedArticlesDir = path.resolve(ARTICLES_DIR);
+      if (!fullPath.startsWith(resolvedArticlesDir) || !fs.existsSync(fullPath)) return null;
+      const rawContent = fs.readFileSync(fullPath, "utf-8");
+      const { metadata, content } = parseFrontMatter(rawContent);
+      return {
+        slug,
+        title: metadata.title || slug,
+        description: metadata.description || "Expert managed IT, cybersecurity, and cloud guidance from Vision79 Digital.",
+        category: metadata.category || "Technology",
+        date: metadata.date || "",
+        author: metadata.author || "Vision79 Digital Expert",
+        coverImage: metadata.coverImage || "https://v79sl.com/og-image.png",
+        content
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function injectDynamicMeta(html: string, req: express.Request): string {
+    try {
+      const articleSlug = (req.query.article as string) || (req.path.startsWith("/resources/") ? req.path.replace("/resources/", "") : "");
+      if (!articleSlug) return html;
+
+      const article = getArticleData(articleSlug);
+      if (!article) return html;
+
+      const host = req.get("host") || "v79sl.com";
+      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const canonicalUrl = `${protocol}://${host}/?article=${encodeURIComponent(article.slug)}`;
+      
+      let imageUrl = article.coverImage;
+      if (imageUrl && !imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
+        imageUrl = `${protocol}://${host}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+      }
+
+      const titleText = `${article.title} | Vision79 Digital`;
+      const descText = article.description;
+      const escapeAttr = (str: string) => str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+      let result = html;
+
+      result = result.replace(/<title>.*?<\/title>/gi, `<title>${escapeAttr(titleText)}</title>`);
+
+      if (result.includes('name="description"')) {
+        result = result.replace(/<meta\s+name="description"\s+content="[^"]*"/gi, `<meta name="description" content="${escapeAttr(descText)}"`);
+      } else {
+        result = result.replace("</head>", `  <meta name="description" content="${escapeAttr(descText)}" />\n</head>`);
+      }
+
+      const ogTags = [
+        { prop: "og:title", content: titleText },
+        { prop: "og:description", content: descText },
+        { prop: "og:image", content: imageUrl },
+        { prop: "og:image:alt", content: titleText },
+        { prop: "og:url", content: canonicalUrl },
+        { prop: "og:type", content: "article" },
+      ];
+
+      ogTags.forEach(({ prop, content }) => {
+        const regex = new RegExp(`<meta\\s+(?:property|name)="${prop}"\\s+content="[^"]*"\\s*\\/?>`, "gi");
+        if (regex.test(result)) {
+          result = result.replace(regex, `<meta property="${prop}" content="${escapeAttr(content)}" />`);
+        } else {
+          result = result.replace("</head>", `  <meta property="${prop}" content="${escapeAttr(content)}" />\n</head>`);
+        }
+      });
+
+      const twitterTags = [
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: titleText },
+        { name: "twitter:description", content: descText },
+        { name: "twitter:image", content: imageUrl },
+        { name: "twitter:image:alt", content: titleText },
+      ];
+
+      twitterTags.forEach(({ name, content }) => {
+        const regex = new RegExp(`<meta\\s+name="${name}"\\s+content="[^"]*"\\s*\\/?>`, "gi");
+        if (regex.test(result)) {
+          result = result.replace(regex, `<meta name="${name}" content="${escapeAttr(content)}" />`);
+        } else {
+          result = result.replace("</head>", `  <meta name="${name}" content="${escapeAttr(content)}" />\n</head>`);
+        }
+      });
+
+      return result;
+    } catch (err) {
+      console.error("[SEO Meta] Error injecting dynamic metadata:", err);
+      return html;
+    }
+  }
+
   app.get("/api/articles", (req, res) => {
     try {
       if (!fs.existsSync(ARTICLES_DIR)) {
@@ -3686,6 +3782,36 @@ ${articlesXml}</urlset>`;
 
   // Vite development vs production serving logic
   if (isDev) {
+    // Intercept HTML requests in dev mode to inject dynamic post Open Graph / Twitter image metadata
+    app.use(async (req, res, next) => {
+      const url = req.originalUrl || req.url;
+      const accept = req.headers.accept || "";
+      const isHtmlReq = req.method === "GET" && 
+        (accept.includes("text/html") || typeof req.query.article === "string" || url === "/" || url.startsWith("/resources")) &&
+        !url.startsWith("/src/") && !url.startsWith("/@") && !url.startsWith("/node_modules/") && !url.startsWith("/api/") && !url.includes(".");
+
+      if (isHtmlReq && viteInstance) {
+        try {
+          const htmlPath = path.resolve(process.cwd(), "index.html");
+          if (fs.existsSync(htmlPath)) {
+            let html = fs.readFileSync(htmlPath, "utf-8");
+            html = injectDynamicMeta(html, req);
+            const transformedHtml = await viteInstance.transformIndexHtml(url, html);
+            return res.status(200).set({
+              "Content-Type": "text/html; charset=utf-8",
+              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+              "Pragma": "no-cache",
+              "Expires": "0"
+            }).end(transformedHtml);
+          }
+        } catch (e) {
+          viteInstance.ssrFixStacktrace(e as Error);
+          return next(e);
+        }
+      }
+      next();
+    });
+
     if (viteInstance) {
       console.log("[Vite] Mounting Vite middleware in development mode.");
       app.use(viteInstance.middlewares);
@@ -3697,7 +3823,8 @@ ${articlesXml}</urlset>`;
         const url = req.originalUrl;
         const htmlPath = path.resolve(process.cwd(), "index.html");
         if (fs.existsSync(htmlPath)) {
-          const html = fs.readFileSync(htmlPath, "utf-8");
+          let html = fs.readFileSync(htmlPath, "utf-8");
+          html = injectDynamicMeta(html, req);
           const transformedHtml = viteInstance 
             ? await viteInstance.transformIndexHtml(url, html)
             : html;
@@ -3753,7 +3880,15 @@ ${articlesXml}</urlset>`;
       if (reqPath.startsWith("/admin") || reqPath.startsWith("/adimin") || reqPath.startsWith("/adimn")) {
         return res.sendFile(path.join(distPath, "admin.html"));
       }
-      res.sendFile(path.join(distPath, "index.html"));
+
+      const htmlPath = path.join(distPath, "index.html");
+      if (fs.existsSync(htmlPath)) {
+        let html = fs.readFileSync(htmlPath, "utf-8");
+        html = injectDynamicMeta(html, req);
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        return res.send(html);
+      }
+      res.sendFile(htmlPath);
     });
   }
 
