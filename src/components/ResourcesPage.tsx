@@ -6,6 +6,7 @@ import type { BlogArticle } from "../types";
 import { ArticleCardSkeleton } from "./ui/Skeleton";
 import { Button } from "./ui/Button";
 import { animateScrollTo } from "../utils/scroll";
+import { ShareButtons } from "./ShareButtons";
 
 interface ResourcesPageProps {
   onNavigate?: (v: string) => void;
@@ -15,48 +16,103 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
   const [articles, setArticles] = useState<BlogArticle[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<BlogArticle | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingArticle, setLoadingArticle] = useState(false);
+  const [loadingSlug, setLoadingSlug] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/articles")
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setArticles(data);
-        else setError("Failed to load articles.");
+        if (Array.isArray(data)) {
+          setArticles(data);
+          // Check if article slug was passed in URL (e.g. from shared link)
+          const params = new URLSearchParams(window.location.search);
+          const sharedSlug = params.get("article");
+          if (sharedSlug) {
+            const found = data.find((a: BlogArticle) => a.slug === sharedSlug);
+            if (found) {
+              openArticle(sharedSlug);
+            }
+          }
+        } else {
+          setError("Failed to load articles.");
+        }
       })
       .catch(() => setError("Could not connect to the server."))
       .finally(() => setLoading(false));
   }, []);
 
+  const scrollToResources = () => {
+    const el = document.getElementById("resources");
+    if (el) {
+      const targetY = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 80);
+      animateScrollTo(targetY);
+    }
+  };
+
   const openArticle = async (slug: string) => {
-    setLoadingArticle(true);
+    setLoadingSlug(slug);
+    setError(null);
     try {
       const r = await fetch(`/api/articles/${slug}`);
+      if (!r.ok) throw new Error("Failed to load article");
       const data = await r.json();
       setSelectedArticle(data);
-      animateScrollTo(0);
+
+      // Update URL query param quietly for easy link copying/sharing
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("article", slug);
+        window.history.replaceState({}, "", url.toString());
+      }
+
+      // Smoothly scroll to the article reader in the resources section
+      setTimeout(() => {
+        scrollToResources();
+      }, 50);
     } catch {
       setError("Could not load article.");
     } finally {
-      setLoadingArticle(false);
+      setLoadingSlug(null);
     }
   };
 
   const closeArticle = () => {
     setSelectedArticle(null);
+
+    // Clean up query param on closing article view
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("article");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    setTimeout(() => {
+      scrollToResources();
+    }, 50);
   };
 
   if (selectedArticle) {
     return (
-      <div className="pb-16">
+      <motion.div
+        id="article-reader"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="pb-16"
+      >
         <div className="max-w-3xl mx-auto px-6 lg:px-8 space-y-8">
-          <button
-            onClick={closeArticle}
-            className="flex items-center gap-2 text-sm text-app-text-muted hover:text-indigo-400 transition font-mono mt-6 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Resources
-          </button>
+          <div className="flex items-center justify-between pt-6">
+            <button
+              onClick={closeArticle}
+              className="flex items-center gap-2 text-sm text-app-text-muted hover:text-indigo-400 transition font-mono cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Resources
+            </button>
+            <span className="text-[11px] font-mono text-app-text-muted uppercase tracking-wider">
+              {selectedArticle.category}
+            </span>
+          </div>
 
           {selectedArticle.coverImage && (
             <div className="rounded-2xl overflow-hidden h-56 sm:h-72">
@@ -79,22 +135,47 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
             <h1 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white leading-tight">
               {selectedArticle.title}
             </h1>
+
+            {/* Quick Share Bar beneath title */}
+            <div className="pt-2 pb-1">
+              <ShareButtons
+                title={selectedArticle.title}
+                slug={selectedArticle.slug}
+                category={selectedArticle.category}
+                variant="inline"
+              />
+            </div>
           </div>
 
           <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-display prose-headings:text-app-text prose-p:text-app-text-sec prose-p:font-light prose-p:leading-relaxed prose-strong:text-app-text prose-li:text-app-text-sec prose-li:font-light prose-a:text-indigo-400 prose-code:text-indigo-400 prose-code:bg-indigo-500/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
             <ReactMarkdown>{selectedArticle.content || ""}</ReactMarkdown>
           </div>
 
+          {/* End-of-article Share Banner */}
           <div className="pt-6 border-t border-app-border">
+            <ShareButtons
+              title={selectedArticle.title}
+              slug={selectedArticle.slug}
+              category={selectedArticle.category}
+              variant="block"
+            />
+          </div>
+
+          <div className="pt-2 space-y-4">
             <div className="glass rounded-2xl p-6 text-center space-y-3 border border-indigo-500/20">
               <p className="text-sm text-app-text-sec font-light">Have questions? Our team is ready to help your business implement these best practices.</p>
-              <Button onClick={() => onNavigate?.("contact")} variant="primary" className="mx-auto" icon={<ArrowRight className="w-4 h-4" />}>
-                Talk to an Expert
-              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                <Button onClick={closeArticle} variant="secondary" icon={<ArrowLeft className="w-4 h-4" />}>
+                  Back to All Insights
+                </Button>
+                <Button onClick={() => onNavigate?.("contact")} variant="primary" icon={<ArrowRight className="w-4 h-4" />}>
+                  Talk to an Expert
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -167,9 +248,15 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
                     <div className="flex items-center gap-3 text-[10px] text-app-text-muted font-mono">
                       {article.date && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{article.date}</span>}
                     </div>
-                    <span className="text-[10px] font-mono text-indigo-400 flex items-center gap-1 group-hover:gap-2 transition-all">
-                      Read <ArrowRight className="w-3 h-3" />
-                    </span>
+                    {loadingSlug === article.slug ? (
+                      <span className="text-[10px] font-mono text-indigo-400 flex items-center gap-1.5 animate-pulse">
+                        Loading...
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono text-indigo-400 flex items-center gap-1 group-hover:gap-2 transition-all">
+                        Read <ArrowRight className="w-3 h-3" />
+                      </span>
+                    )}
                   </div>
                 </div>
               </motion.button>

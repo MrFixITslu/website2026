@@ -156,7 +156,7 @@ export default function ContactPage() {
             <h2 className="text-base font-extrabold font-display text-app-text dark:text-white">Contact Information</h2>
             {[
               { icon: Phone, label: "Direct Phone", value: "+1 758 726 0035", href: "tel:+17587260035" },
-              { icon: MessageSquare, label: "WhatsApp Direct", value: "+1 758 726 0035 (Chat Now)", href: "https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20request%20an%20ICT%20consultation%20with%20Vision79." },
+              { icon: MessageSquare, label: "WhatsApp Direct", value: "+1 758 726 0035 (Chat Now)", href: "https://wa.me/17587260035?text=Hello%20V79%20Digital,%20I'd%20like%20to%20request%20an%20ICT%20consultation%20with%20Vision79." },
               { icon: Mail, label: "Email", value: "vision79slu@gmail.com", href: "mailto:vision79slu@gmail.com" },
               { icon: MapPin, label: "Location", value: "Castries, Saint Lucia", href: null },
             ].map((c, i) => {
@@ -252,7 +252,7 @@ export default function ContactPage() {
                         aria-describedby={errors.name ? "name-error" : undefined}
                         value={form.name}
                         onChange={handleChange}
-                        placeholder="Neil Verdant"
+                        placeholder="e.g. John Smith"
                         className={inputClass("name")}
                       />
                       <FieldError id="name-error" message={errors.name} />
@@ -435,13 +435,13 @@ export default function ContactPage() {
 
                     <a
                       id="contact-whatsapp-chat"
-                      href="https://wa.me/17587260035?text=Hello%20Neil,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
+                      href="https://wa.me/17587260035?text=Hello%20V79%20Digital,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
                     >
                       <MessageSquare className="w-4 h-4" />
-                      Chat with Neil Verdant on WhatsApp (+1 758 726 0035)
+                      Chat with V79 Digital on WhatsApp (+1 758 726 0035)
                     </a>
                   </div>
 

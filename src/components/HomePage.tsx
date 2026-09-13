@@ -133,7 +133,7 @@ const FAQS = [
   },
   {
     q: "What is included in the Free 30-Minute ICT Health Assessment?",
-    a: "The initial 30-minute discovery consultation is 100% free with no obligation. Neil Verdant personally reviews your primary technology pain points, inspects firewall exposure, verifies your backup integrity, and identifies immediate vulnerabilities. For organizations needing a formal corporate audit, we offer a comprehensive 40-point diagnostic and written 90-day remediation plan for EC$1,500."
+    a: "The initial 30-minute discovery consultation is 100% free with no obligation. V79 Digital reviews your primary technology pain points, inspects firewall exposure, verifies your backup integrity, and identifies immediate vulnerabilities. For organizations needing a formal corporate audit, we offer a comprehensive 40-point diagnostic and written 90-day remediation plan for EC$1,500."
   },
   {
     q: "Do you support Microsoft 365, Google Workspace, and POS systems for local resorts and clinics?",
@@ -559,7 +559,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">100% Free</span>
                 </div>
                 <p className="text-xs text-app-text-sec leading-relaxed">
-                  A 30-minute risk review with Neil Verdant. We inspect your firewall, backups, and internet failovers at zero cost.
+                  A 30-minute risk review with V79 Digital. We inspect your firewall, backups, and internet failovers at zero cost.
                 </p>
               </div>
 

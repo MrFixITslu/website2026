@@ -810,10 +810,10 @@ export default function App() {
       <aside aria-label="Quick contact" className="hidden sm:block fixed bottom-6 right-6 z-50">
         <a
           id="floating-whatsapp-btn"
-          href="https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20inquire%20about%20Vision79%20ICT%20support%20services."
+          href="https://wa.me/17587260035?text=Hello%20V79%20Digital,%20I'd%20like%20to%20inquire%20about%20Vision79%20ICT%20support%20services."
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Chat with Neil Verdant on WhatsApp"
+          aria-label="Chat with V79 Digital on WhatsApp"
           className="flex items-center gap-2.5 px-4 py-3 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-xl shadow-emerald-900/30 hover:scale-105 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 group"
         >
           <div className="relative">
@@ -838,10 +838,10 @@ export default function App() {
         </a>
         <a
           id="mobile-whatsapp-btn"
-          href="https://wa.me/17587260035?text=Hello%20Neil,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
+          href="https://wa.me/17587260035?text=Hello%20V79%20Digital,%20I%20need%20urgent%20ICT%20support%20for%20my%20business%20in%20Saint%20Lucia."
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Chat with Neil Verdant on WhatsApp (opens in new tab)"
+          aria-label="Chat with V79 Digital on WhatsApp (opens in new tab)"
           className="flex-1 min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
         >
           <MessageSquare className="w-4 h-4 text-white" />

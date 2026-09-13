@@ -172,13 +172,13 @@ export default function AboutPage() {
 
             <div className="relative z-10 pt-2 border-t border-white/10 flex flex-wrap items-center gap-2">
               <a
-                href="https://wa.me/17587260035?text=Hello%20Neil,%20I'd%20like%20to%20discuss%20an%20ICT%20consultation%20with%20Vision79."
+                href="https://wa.me/17587260035?text=Hello%20V79%20Digital,%20I'd%20like%20to%20discuss%20an%20ICT%20consultation%20with%20Vision79."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md transition"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                WhatsApp Neil
+                WhatsApp V79 Digital
               </a>
               <a
                 href="tel:+17587260035"
