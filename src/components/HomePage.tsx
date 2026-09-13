@@ -7,7 +7,6 @@ import {
   HelpCircle, ChevronDown, Activity, Sparkles
 } from "lucide-react";
 import { Button } from "./ui/Button";
-import { LiveNocTerminal } from "./interactive/LiveNocTerminal";
 import { StormFailoverSimulator } from "./interactive/StormFailoverSimulator";
 import { DowntimeRiskCalculator } from "./interactive/DowntimeRiskCalculator";
 
@@ -303,16 +302,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" /> Castries, Saint Lucia
             </span>
-          </motion.div>
-
-          {/* Interactive Caribbean Live NOC Terminal */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.4 }}
-            className="pt-4"
-          >
-            <LiveNocTerminal onConsultClick={() => onNavigate("contact")} />
           </motion.div>
         </div>
       </section>
