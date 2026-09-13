@@ -2046,22 +2046,13 @@ async function startServer() {
     });
   });
 
-  // POST administrator login verification
+  // POST administrator login verification (password-only — no email required)
   app.post("/api/admin/login", (req, res) => {
     try {
       const ip = req.ip || req.socket.remoteAddress || "unknown";
 
-      const { email, password } = req.body || {};
-      const submittedEmail = cleanEnvValue(email).toLowerCase();
+      const { password } = req.body || {};
       const submitted = cleanEnvValue(password);
-
-      // If an email was explicitly provided, verify it is the authorized admin email
-      if (submittedEmail && submittedEmail !== AUTHORIZED_ADMIN_EMAIL.toLowerCase()) {
-        console.warn(`[Authentication] Unauthorized administrator email login attempt: "${submittedEmail}" from ${ip}`);
-        return res.status(403).json({
-          error: `Access denied: Only ${AUTHORIZED_ADMIN_EMAIL} is authorized to access the Admin Dashboard.`
-        });
-      }
 
       const currentAuth = getLatestAdminAuth();
       const matches = submitted.length > 0 && verifyAdminPassword(submitted, currentAuth);
