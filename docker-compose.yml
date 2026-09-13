@@ -3,6 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    # Explicit lowercase image name required: Docker image repository names
+    # must be all-lowercase, but our service/container name (V79website) is
+    # not. Without this, Compose falls back to auto-deriving the image name
+    # from "<project>-<service>", which breaks the build with:
+    #   invalid reference format: repository name must be lowercase
+    image: v79website:latest
     container_name: V79website
     restart: unless-stopped
     expose:
