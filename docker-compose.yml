@@ -12,7 +12,7 @@ services:
     container_name: V79website
     restart: unless-stopped
     ports:
-      - "80:3000"
+      - "3000:3000"
     expose:
       - "3000"
     environment:
