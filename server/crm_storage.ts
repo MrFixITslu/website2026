@@ -765,14 +765,30 @@ export class CRMStorage {
       count
     }));
 
-    // Monthly trends (last 6 months)
-    const months = ["Apr 2026", "May 2026", "Jun 2026", "Jul 2026", "Aug 2026", "Sep 2026"];
-    const monthlyTrends = months.map((m, idx) => ({
-      month: m,
-      leads: idx === 5 ? totalLeads : Math.max(2, Math.round(totalLeads * 0.4 + idx * 2)),
-      won: idx === 5 ? wonCustomers : Math.max(1, Math.round(wonCustomers * 0.5 + Math.floor(idx / 2))),
-      value: idx === 5 ? pipelineValue : Math.max(5000, Math.round(pipelineValue * 0.5 + idx * 3000))
-    }));
+    // Monthly trends computed strictly from actual leads (last 6 calendar months)
+    const monthlyTrends: { month: string; leads: number; won: number; value: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const targetYear = d.getFullYear();
+      const targetMonth = d.getMonth();
+      const monthLabel = d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+
+      const monthLeads = leads.filter(l => {
+        if (!l.createdAt) return false;
+        const created = new Date(l.createdAt);
+        return !isNaN(created.getTime()) && created.getFullYear() === targetYear && created.getMonth() === targetMonth;
+      });
+
+      const wonInMonth = monthLeads.filter(l => l.stage === "Won" || l.isConverted);
+      const wonVal = wonInMonth.reduce((acc, l) => acc + (l.estimatedValue || 0), 0);
+
+      monthlyTrends.push({
+        month: monthLabel,
+        leads: monthLeads.length,
+        won: wonInMonth.length,
+        value: wonVal
+      });
+    }
 
     return {
       totalLeads,

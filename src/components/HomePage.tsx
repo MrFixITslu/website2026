@@ -9,6 +9,7 @@ import {
 import { Button } from "./ui/Button";
 import { StormFailoverSimulator } from "./interactive/StormFailoverSimulator";
 import { DowntimeRiskCalculator } from "./interactive/DowntimeRiskCalculator";
+import { CLIENT_STORIES } from "../data/testimonials";
 
 const SERVICES = [
   {
@@ -77,30 +78,6 @@ const ASSESSMENT_STEPS = [
   { icon: Monitor, title: "Infrastructure Review", desc: "Computers, routers, WiFi, and network hardware." },
   { icon: Lock, title: "Security Audit", desc: "Passwords, MFA, endpoint protection, access controls." },
   { icon: Cloud, title: "Data Protection", desc: "Backups, cloud storage, and disaster recovery readiness." },
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Sandra Charles",
-    initials: "SC",
-    role: "General Manager, Rodney Bay Marina",
-    text: "Vision79 Digital transformed our marina's IT infrastructure completely. From reliable Wi-Fi to POS integration, their team delivered beyond our expectations.",
-    rating: 5,
-  },
-  {
-    name: "Marcus Joseph",
-    initials: "MJ",
-    role: "CFO, Island Retail Group",
-    text: "Our Microsoft 365 migration was seamless. Vision79 Digital handled everything — licensing, data migration, and staff training. Highly professional.",
-    rating: 5,
-  },
-  {
-    name: "Angela Delmar",
-    initials: "AD",
-    role: "Director, Castries Health Associates",
-    text: "The cybersecurity audit revealed critical gaps we never knew existed. Vision79 Digital's remediation plan was thorough and executed without interruption.",
-    rating: 5,
-  },
 ];
 
 function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
@@ -508,50 +485,54 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* ── Testimonials ──────────────────────────────────────────── */}
-      <section id="testimonials" className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto scroll-mt-24">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center space-y-2"
-        >
-          <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">Client Stories</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
-            Trusted Across Saint Lucia
-          </h2>
-        </motion.div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t, i) => (
-            <motion.div
-              key={t.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="relative glass rounded-2xl p-6 border border-app-border space-y-4 flex flex-col"
-            >
-              <Quote aria-hidden="true" className="w-8 h-8 text-v79-teal/20 absolute top-5 right-5" />
-              <div className="flex gap-0.5">
-                {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} className="w-3.5 h-3.5 fill-v79-coral text-v79-coral" />
-                ))}
-              </div>
-              <p className="text-sm text-app-text-sec font-light leading-relaxed italic flex-1">"{t.text}"</p>
-              <div className="flex items-center gap-3 pt-2 border-t border-app-border">
-                <div className="w-10 h-10 shrink-0 rounded-full bg-v79-teal/15 border border-v79-teal/25 flex items-center justify-center text-v79-teal text-xs font-bold font-display">
-                  {t.initials}
+      {/* ── Testimonials / Client Stories (Rendered when actual stories are available) ── */}
+      {CLIENT_STORIES.length > 0 && (
+        <section id="testimonials" className="px-6 lg:px-8 space-y-8 max-w-7xl mx-auto scroll-mt-24">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center space-y-2"
+          >
+            <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-v79-teal">Client Stories</span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold font-display text-app-text dark:text-white tracking-tight">
+              Trusted Across Saint Lucia
+            </h2>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {CLIENT_STORIES.map((t, i) => (
+              <motion.div
+                key={t.id || t.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="relative glass rounded-2xl p-6 border border-app-border space-y-4 flex flex-col"
+              >
+                <Quote aria-hidden="true" className="w-8 h-8 text-v79-teal/20 absolute top-5 right-5" />
+                {t.rating && (
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <Star key={j} className="w-3.5 h-3.5 fill-v79-coral text-v79-coral" />
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm text-app-text-sec font-light leading-relaxed italic flex-1">"{t.text}"</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-app-border">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-v79-teal/15 border border-v79-teal/25 flex items-center justify-center text-v79-teal text-xs font-bold font-display">
+                    {t.initials || t.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="space-y-0.5 min-w-0">
+                    <div className="font-bold text-sm text-app-text dark:text-white truncate">{t.name}</div>
+                    <div className="text-[11px] text-app-text-muted font-mono truncate">{t.role}{t.company ? ` • ${t.company}` : ""}</div>
+                  </div>
                 </div>
-                <div className="space-y-0.5 min-w-0">
-                  <div className="font-bold text-sm text-app-text dark:text-white truncate">{t.name}</div>
-                  <div className="text-[11px] text-app-text-muted font-mono truncate">{t.role}</div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
 
 
       {/* ── ICT Business Health Assessment ───────────────────────────

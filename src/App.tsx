@@ -13,6 +13,7 @@ import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
+import { CLIENT_STORIES } from "./data/testimonials";
 
 const ResourcesPage = lazy(() => import("./components/ResourcesPage"));
 
@@ -43,7 +44,7 @@ const SECTIONS = [
     { id: "services-overview", label: "What We Do" },
     { id: "why-v79", label: "Why Choose V79" },
     { id: "cost-of-downtime", label: "Cost of Downtime" },
-    { id: "testimonials", label: "Client Stories" },
+    ...(CLIENT_STORIES.length > 0 ? [{ id: "testimonials", label: "Client Stories" }] : []),
     { id: "free-assessment", label: "ICT Health Assessment" },
   ]},
   { id: "about", label: "About" },

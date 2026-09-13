@@ -182,26 +182,36 @@ export function CrmMetricsDashboard({
               <p className="text-xs text-app-text-sec">Lead flow and won deal counts across the last 6 months.</p>
             </div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.monthlyTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(150, 150, 150, 0.15)" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "currentColor" }} />
-                <YAxis tick={{ fontSize: 11, fill: "currentColor" }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-app-bg, #0f172a)",
-                    border: "1px solid var(--color-app-border, #334155)",
-                    borderRadius: "12px",
-                    fontSize: "12px"
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "11px" }} />
-                <Bar dataKey="leads" name="Total Inquiries" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="won" name="Deals Won" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {metrics.totalLeads === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center rounded-xl bg-app-bg/50 border border-dashed border-app-border text-center p-6 space-y-2">
+              <TrendingUp className="w-8 h-8 text-app-text-muted/40" />
+              <p className="text-xs text-app-text-sec font-medium">No CRM pipeline data yet</p>
+              <p className="text-[11px] text-app-text-muted max-w-sm">
+                Monthly volume and won revenue will display here automatically as inquiries are submitted or created.
+              </p>
+            </div>
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={metrics.monthlyTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(150, 150, 150, 0.15)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "currentColor" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "currentColor" }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--color-app-bg, #0f172a)",
+                      border: "1px solid var(--color-app-border, #334155)",
+                      borderRadius: "12px",
+                      fontSize: "12px"
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  <Bar dataKey="leads" name="Total Inquiries" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="won" name="Deals Won" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Lead Source Performance */}
@@ -212,26 +222,36 @@ export function CrmMetricsDashboard({
               <p className="text-xs text-app-text-sec">Lead intake channels by volume and conversion rate.</p>
             </div>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metrics.sourcePerformance} layout="vertical" margin={{ top: 10, right: 20, left: 30, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(150, 150, 150, 0.15)" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: "currentColor" }} />
-                <YAxis dataKey="source" type="category" tick={{ fontSize: 10, fill: "currentColor" }} width={90} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--color-app-bg, #0f172a)",
-                    border: "1px solid var(--color-app-border, #334155)",
-                    borderRadius: "12px",
-                    fontSize: "12px"
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "11px" }} />
-                <Bar dataKey="count" name="Leads Captured" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="conversionRate" name="Conv Rate %" fill="#00e5ff" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {metrics.sourcePerformance.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center rounded-xl bg-app-bg/50 border border-dashed border-app-border text-center p-6 space-y-2">
+              <Users className="w-8 h-8 text-app-text-muted/40" />
+              <p className="text-xs text-app-text-sec font-medium">No lead sources captured yet</p>
+              <p className="text-[11px] text-app-text-muted max-w-sm">
+                Channel efficiency metrics will appear as leads arrive from web forms, referrals, or outreach.
+              </p>
+            </div>
+          ) : (
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={metrics.sourcePerformance} layout="vertical" margin={{ top: 10, right: 20, left: 30, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(150, 150, 150, 0.15)" />
+                  <XAxis type="number" tick={{ fontSize: 11, fill: "currentColor" }} />
+                  <YAxis dataKey="source" type="category" tick={{ fontSize: 10, fill: "currentColor" }} width={90} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--color-app-bg, #0f172a)",
+                      border: "1px solid var(--color-app-border, #334155)",
+                      borderRadius: "12px",
+                      fontSize: "12px"
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "11px" }} />
+                  <Bar dataKey="count" name="Leads Captured" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="conversionRate" name="Conv Rate %" fill="#00e5ff" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Geographic Distribution Across Saint Lucia */}
@@ -245,18 +265,25 @@ export function CrmMetricsDashboard({
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            {metrics.locationDistribution.map((loc) => (
-              <div
-                key={loc.location}
-                className="bg-app-btn-sec/30 p-3 rounded-xl border border-app-border text-center space-y-1"
-              >
-                <span className="text-[11px] font-medium text-app-text-sec block truncate">{loc.location}</span>
-                <span className="text-lg font-bold font-mono text-app-text block">{loc.count}</span>
-                <span className="text-[9px] text-app-text-muted font-mono uppercase">Opportunities</span>
-              </div>
-            ))}
-          </div>
+          {metrics.locationDistribution.length === 0 ? (
+            <div className="p-8 text-center rounded-xl bg-app-bg/50 border border-dashed border-app-border">
+              <p className="text-xs text-app-text-sec font-medium">No district density data yet</p>
+              <p className="text-[11px] text-app-text-muted">Regional distribution will calculate as new client locations are specified.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {metrics.locationDistribution.map((loc) => (
+                <div
+                  key={loc.location}
+                  className="bg-app-btn-sec/30 p-3 rounded-xl border border-app-border text-center space-y-1"
+                >
+                  <span className="text-[11px] font-medium text-app-text-sec block truncate">{loc.location}</span>
+                  <span className="text-lg font-bold font-mono text-app-text block">{loc.count}</span>
+                  <span className="text-[9px] text-app-text-muted font-mono uppercase">Opportunities</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

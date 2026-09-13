@@ -1549,16 +1549,6 @@ V79 ICT Solutions`;
                     </div>
 
                     <div className="flex items-center gap-2 px-1">
-                      <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span>vision79slu@gmail.com</span>
-                      </div>
-                      <a
-                        href="/"
-                        className="text-xs font-semibold bg-app-btn-sec border border-app-border hover:bg-app-btn-sec/80 px-3.5 py-2 rounded-xl text-app-text transition cursor-pointer"
-                      >
-                        Back to Explorer
-                      </a>
                       <button
                         type="button"
                         onClick={() => {
@@ -1594,12 +1584,6 @@ V79 ICT Solutions`;
                         <p className="text-xs text-app-text-sec">Track clicks, deploy new SaaS tools, and clean up direct-hyperlinks saved inside local SQLite db.</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <a
-                          href="/"
-                          className="text-xs font-semibold bg-app-btn-sec border border-app-border hover:bg-app-btn-sec/80 px-4 py-2 rounded-xl text-app-text transition cursor-pointer"
-                        >
-                          Back to Explorer
-                        </a>
                         <button
                           onClick={handleLogout}
                           className="text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 px-4 py-2 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 transition cursor-pointer flex items-center gap-1.5"
