@@ -10,9 +10,10 @@ import { ShareButtons } from "./ShareButtons";
 
 interface ResourcesPageProps {
   onNavigate?: (v: string) => void;
+  onSelectArticle?: (slug: string) => void;
 }
 
-export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
+export default function ResourcesPage({ onNavigate, onSelectArticle }: ResourcesPageProps) {
   const [articles, setArticles] = useState<BlogArticle[]>([]);
   const [selectedArticle, setSelectedArticle] = useState<BlogArticle | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,13 +26,13 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
       .then((data) => {
         if (Array.isArray(data)) {
           setArticles(data);
-          // Check if article slug was passed in URL (e.g. from shared link)
-          const params = new URLSearchParams(window.location.search);
-          const sharedSlug = params.get("article");
-          if (sharedSlug) {
-            const found = data.find((a: BlogArticle) => a.slug === sharedSlug);
-            if (found) {
-              openArticle(sharedSlug);
+          // If onSelectArticle is NOT passed, handle query param locally
+          if (!onSelectArticle) {
+            const params = new URLSearchParams(window.location.search);
+            const sharedSlug = params.get("article");
+            if (sharedSlug) {
+              const found = data.find((a: BlogArticle) => a.slug === sharedSlug);
+              if (found) openArticle(sharedSlug);
             }
           }
         } else {
@@ -40,17 +41,21 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
       })
       .catch(() => setError("Could not connect to the server."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [onSelectArticle]);
 
   const scrollToResources = () => {
     const el = document.getElementById("resources");
     if (el) {
       const targetY = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 80);
-      animateScrollTo(targetY);
+      window.scrollTo({ top: targetY, behavior: "instant" });
     }
   };
 
   const openArticle = async (slug: string) => {
+    if (onSelectArticle) {
+      onSelectArticle(slug);
+      return;
+    }
     setLoadingSlug(slug);
     setError(null);
     try {
@@ -59,17 +64,15 @@ export default function ResourcesPage({ onNavigate }: ResourcesPageProps) {
       const data = await r.json();
       setSelectedArticle(data);
 
-      // Update URL query param quietly for easy link copying/sharing
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
         url.searchParams.set("article", slug);
         window.history.replaceState({}, "", url.toString());
       }
 
-      // Smoothly scroll to the article reader in the resources section
       setTimeout(() => {
         scrollToResources();
-      }, 50);
+      }, 20);
     } catch {
       setError("Could not load article.");
     } finally {

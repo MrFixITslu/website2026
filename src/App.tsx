@@ -16,6 +16,9 @@ import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleto
 import { CLIENT_STORIES } from "./data/testimonials";
 
 const ResourcesPage = lazy(() => import("./components/ResourcesPage"));
+const ArticleDetailPage = lazy(() =>
+  import("./components/ArticleDetailPage").then(m => ({ default: m.ArticleDetailPage }))
+);
 
 // Lazy-loaded: only needed once a user actually opens a course or tool
 // feedback flow, not on initial marketing-site paint. CourseDetailPage
@@ -106,6 +109,24 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
   const [pulsingAppId, setPulsingAppId] = useState<number | null>(null);
+
+  // Directly selected article for direct link reading (WhatsApp, social, or in-app click)
+  const [selectedArticleSlug, setSelectedArticleSlug] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      return p.get("article");
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const p = new URLSearchParams(window.location.search);
+      setSelectedArticleSlug(p.get("article"));
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem("vision79-theme", theme); } catch {}
@@ -250,6 +271,21 @@ export default function App() {
   const navTransitionSeq = useRef(0);
 
   const scrollTo = (id: string, parentId?: string) => {
+    if (selectedArticleSlug) {
+      setSelectedArticleSlug(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("article");
+      window.history.pushState({}, "", url.pathname + (id ? `#${id}` : ""));
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
+          window.scrollTo(0, topPos);
+        }
+      }, 50);
+      return;
+    }
+
     setActiveSection(parentId || id);
     setMobileNavOpen(false);
     setOpenDropdown(null);
@@ -540,8 +576,38 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Continuous One-Page Apple-Inspired Flow */}
-      <main className="flex-1 space-y-32 pb-24 pt-16">
+      {selectedArticleSlug ? (
+        <main className="flex-1 min-h-[75vh]">
+          <Suspense fallback={<SectionLoadingFallback />}>
+            <ArticleDetailPage
+              slug={selectedArticleSlug}
+              onBack={() => {
+                setSelectedArticleSlug(null);
+                const url = new URL(window.location.href);
+                url.searchParams.delete("article");
+                window.history.pushState({}, "", url.pathname + "#resources");
+                setTimeout(() => scrollTo("resources"), 50);
+              }}
+              onNavigate={(sec) => {
+                setSelectedArticleSlug(null);
+                const url = new URL(window.location.href);
+                url.searchParams.delete("article");
+                window.history.pushState({}, "", url.pathname + "#" + sec);
+                setTimeout(() => scrollTo(sec), 50);
+              }}
+              onSelectArticle={(slug) => {
+                setSelectedArticleSlug(slug);
+                const url = new URL(window.location.href);
+                url.searchParams.set("article", slug);
+                window.history.pushState({}, "", url.toString());
+                window.scrollTo(0, 0);
+              }}
+            />
+          </Suspense>
+        </main>
+      ) : (
+        /* Continuous One-Page Apple-Inspired Flow */
+        <main className="flex-1 space-y-32 pb-24 pt-16">
         <section id="home" className="scroll-mt-20">
           <HomePage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")} />
         </section>
@@ -728,7 +794,16 @@ export default function App() {
 
         <section id="resources" className="scroll-mt-20">
           <Suspense fallback={<SectionLoadingFallback />}>
-            <ResourcesPage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "resources")} />
+            <ResourcesPage
+              onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "resources")}
+              onSelectArticle={(slug) => {
+                setSelectedArticleSlug(slug);
+                const url = new URL(window.location.href);
+                url.searchParams.set("article", slug);
+                window.history.pushState({}, "", url.toString());
+                window.scrollTo(0, 0);
+              }}
+            />
           </Suspense>
         </section>
 
@@ -738,6 +813,7 @@ export default function App() {
           <ContactPage />
         </section>
       </main>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-app-border bg-v79-navy dark:bg-v79-navy-dark pt-12 pb-24 sm:pb-12 px-6 lg:px-12 mt-auto">
