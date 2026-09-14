@@ -3696,7 +3696,150 @@ async function startServer() {
     }
   });
 
-  // --- Dynamic SEO Sitemaps and Robots.txt ---
+  // Turn a title into a URL-safe slug, e.g. "5 Tips for Wi-Fi!" -> "5-tips-for-wi-fi"
+  function slugifyArticleTitle(title: string): string {
+    return String(title || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
+  function writeArticleFile(slug: string, fields: {
+    title: string;
+    description: string;
+    category: string;
+    date: string;
+    author: string;
+    coverImage: string;
+    content: string;
+  }) {
+    const escapeYaml = (v: string) => String(v || "").replace(/"/g, '\\"');
+    const frontMatter = `---
+title: "${escapeYaml(fields.title)}"
+description: "${escapeYaml(fields.description)}"
+category: "${escapeYaml(fields.category)}"
+date: "${escapeYaml(fields.date)}"
+author: "${escapeYaml(fields.author)}"
+coverImage: "${escapeYaml(fields.coverImage)}"
+slug: "${escapeYaml(slug)}"
+---
+${fields.content || ""}`;
+    if (!fs.existsSync(ARTICLES_DIR)) {
+      fs.mkdirSync(ARTICLES_DIR, { recursive: true });
+    }
+    fs.writeFileSync(path.join(ARTICLES_DIR, `${slug}.md`), frontMatter, "utf-8");
+  }
+
+  // POST create a new blog article/post
+  app.post("/api/admin/articles", requireAdmin, (req, res) => {
+    try {
+      const { title, description, category, author, coverImage, content, date, slug: requestedSlug } = req.body || {};
+
+      if (!title || typeof title !== "string" || !title.trim()) {
+        return res.status(400).json({ error: "A title is required." });
+      }
+      if (!content || typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({ error: "Post content is required." });
+      }
+
+      let slug = slugifyArticleTitle(requestedSlug && typeof requestedSlug === "string" ? requestedSlug : title);
+      if (!slug) {
+        return res.status(400).json({ error: "Could not derive a valid URL slug from that title." });
+      }
+
+      if (!fs.existsSync(ARTICLES_DIR)) {
+        fs.mkdirSync(ARTICLES_DIR, { recursive: true });
+      }
+
+      // Ensure the slug is unique — append -2, -3, etc. if it collides
+      let finalSlug = slug;
+      let suffix = 2;
+      while (fs.existsSync(path.join(ARTICLES_DIR, `${finalSlug}.md`))) {
+        finalSlug = `${slug}-${suffix}`;
+        suffix++;
+      }
+
+      writeArticleFile(finalSlug, {
+        title: title.trim(),
+        description: typeof description === "string" ? description.trim() : "",
+        category: typeof category === "string" && category.trim() ? category.trim() : "General",
+        date: typeof date === "string" && date.trim() ? date.trim() : new Date().toISOString().split("T")[0],
+        author: typeof author === "string" && author.trim() ? author.trim() : "Vision79 Digital Expert",
+        coverImage: typeof coverImage === "string" ? coverImage.trim() : "",
+        content: content.trim()
+      });
+
+      console.log(`[Articles] Created post "${title}" (slug: ${finalSlug})`);
+      res.status(201).json({ success: true, slug: finalSlug });
+    } catch (e) {
+      console.error("[API] Error creating article:", e);
+      res.status(500).json({ error: "Failed to create the post." });
+    }
+  });
+
+  // PUT update an existing blog article/post (slug is immutable via this route)
+  app.put("/api/admin/articles/:slug", requireAdmin, (req, res) => {
+    try {
+      const slug = req.params.slug;
+      if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
+        return res.status(400).json({ error: "Invalid article identifier format" });
+      }
+      const fullPath = path.resolve(ARTICLES_DIR, `${slug}.md`);
+      const resolvedArticlesDir = path.resolve(ARTICLES_DIR);
+      if (!fullPath.startsWith(resolvedArticlesDir) || !fs.existsSync(fullPath)) {
+        return res.status(404).json({ error: "Post not found." });
+      }
+
+      const { title, description, category, author, coverImage, content, date } = req.body || {};
+      if (!title || typeof title !== "string" || !title.trim()) {
+        return res.status(400).json({ error: "A title is required." });
+      }
+      if (!content || typeof content !== "string" || !content.trim()) {
+        return res.status(400).json({ error: "Post content is required." });
+      }
+
+      writeArticleFile(slug, {
+        title: title.trim(),
+        description: typeof description === "string" ? description.trim() : "",
+        category: typeof category === "string" && category.trim() ? category.trim() : "General",
+        date: typeof date === "string" && date.trim() ? date.trim() : new Date().toISOString().split("T")[0],
+        author: typeof author === "string" && author.trim() ? author.trim() : "Vision79 Digital Expert",
+        coverImage: typeof coverImage === "string" ? coverImage.trim() : "",
+        content: content.trim()
+      });
+
+      console.log(`[Articles] Updated post "${title}" (slug: ${slug})`);
+      res.json({ success: true, slug });
+    } catch (e) {
+      console.error("[API] Error updating article:", e);
+      res.status(500).json({ error: "Failed to update the post." });
+    }
+  });
+
+  // DELETE a blog article/post
+  app.delete("/api/admin/articles/:slug", requireAdmin, (req, res) => {
+    try {
+      const slug = req.params.slug;
+      if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
+        return res.status(400).json({ error: "Invalid article identifier format" });
+      }
+      const fullPath = path.resolve(ARTICLES_DIR, `${slug}.md`);
+      const resolvedArticlesDir = path.resolve(ARTICLES_DIR);
+      if (!fullPath.startsWith(resolvedArticlesDir) || !fs.existsSync(fullPath)) {
+        return res.status(404).json({ error: "Post not found." });
+      }
+      fs.unlinkSync(fullPath);
+      console.log(`[Articles] Deleted post (slug: ${slug})`);
+      res.json({ success: true });
+    } catch (e) {
+      console.error("[API] Error deleting article:", e);
+      res.status(500).json({ error: "Failed to delete the post." });
+    }
+  });
+
+
   const PRIMARY_CANONICAL_DOMAIN = process.env.CANONICAL_DOMAIN || "https://v79sl.com";
 
   app.get("/robots.txt", (req, res) => {

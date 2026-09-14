@@ -32,7 +32,8 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Key
+  Key,
+  FileText
 } from "lucide-react";
 import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
@@ -40,6 +41,7 @@ import { AppLogo, PRESET_ICONS } from "./components/AppLogo";
 import { ExamModule } from "./components/ExamModule";
 import CourseBuilderPanel from "./components/CourseBuilder/CourseBuilderPanel";
 import { CrmManager } from "./components/crm/CrmManager";
+import { BlogManager } from "./components/blog/BlogManager";
 import {
   ResponsiveContainer,
   LineChart,
@@ -324,7 +326,7 @@ export function LectureItemRow({ lecture, chapIdx, lecIdx, onUpdate, onDelete, a
 }
 
 export default function AdminApp() {
-  const [adminSection, setAdminSection] = useState<"crm" | "marketplace">("crm");
+  const [adminSection, setAdminSection] = useState<"crm" | "marketplace" | "blog">("crm");
   const [apps, setApps] = useState<SaaSApp[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -1546,6 +1548,19 @@ V79 ICT Solutions`;
                         <Package className="w-4 h-4" />
                         <span>SaaS Tools & Marketplace Registrar</span>
                       </button>
+
+                      <button
+                        id="btn-workspace-blog"
+                        onClick={() => setAdminSection("blog")}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                          adminSection === "blog"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                            : "text-app-text-sec hover:text-app-text hover:bg-app-btn-sec"
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Blog Posts</span>
+                      </button>
                     </div>
 
                     <div className="flex items-center gap-2 px-1">
@@ -1574,6 +1589,8 @@ V79 ICT Solutions`;
 
                   {adminSection === "crm" ? (
                     <CrmManager adminToken={adminToken} onUnauthorized={handleUnauthorized} />
+                  ) : adminSection === "blog" ? (
+                    <BlogManager adminToken={adminToken} onUnauthorized={handleUnauthorized} />
                   ) : (
                     <>
                   {/* Top Stats Box */}
