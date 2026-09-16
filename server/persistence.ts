@@ -65,11 +65,15 @@ export function transaction<T>(fn: () => T): T {
 export function readJSON<T>(file: string, initial: T): T {
   const name = path.basename(file);
   const row = get.get(name) as {value: string} | undefined;
-  if (row) return JSON.parse(unseal(row.value));
+  const validate = (value: T): T => {
+    if (Array.isArray(initial) !== Array.isArray(value) || value === null || typeof value !== typeof initial) throw Error(`Invalid data shape for ${name}. Restore or repair the original data.`);
+    return value;
+  };
+  if (row) return validate(JSON.parse(unseal(row.value)));
   if (fs.existsSync(file)) {
     const raw = fs.readFileSync(file, 'utf8');
     if (!raw.trim()) throw Error(`Empty data file: ${name}. Restore a valid backup.`);
-    const parsed = JSON.parse(raw);
+    const parsed = validate(JSON.parse(raw));
     writeJSON(file, parsed);
     // Retain the original bytes as an encrypted migration backup. Never discard a conflicting backup.
     const firstBackup = file + '.migrated.enc';

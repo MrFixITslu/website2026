@@ -12,6 +12,7 @@ test('storage corruption and transaction safeguards',()=>{
  writeJSON('transaction.json',{value:1});assert.throws(()=>transaction(()=>{writeJSON('transaction.json',{value:2});throw Error('rollback')}));assert.equal(readJSON('transaction.json',{}).value,1);
  fs.writeFileSync('data/broken.json','not json');assert.throws(()=>readJSON('data/broken.json',[]));assert.equal(fs.readFileSync('data/broken.json','utf8'),'not json');
  fs.writeFileSync('data/rollback-legacy.json','[{"record":1}]');assert.throws(()=>transaction(()=>{readJSON('data/rollback-legacy.json',[]);throw Error('rollback migration')}));assert.ok(fs.existsSync('data/rollback-legacy.json'));
+ fs.writeFileSync('data/wrong-shape.json','{}');assert.throws(()=>readJSON('data/wrong-shape.json',[]));assert.ok(fs.existsSync('data/wrong-shape.json'));
  assert.throws(()=>transaction(()=>Promise.resolve()));
  `;
  const result=spawnSync(process.execPath,['--import',path.join(repo,'node_modules/tsx/dist/loader.mjs'),'--input-type=module','-e',script],{cwd:tmp,env:{...process.env,ENCRYPTION_KEY:'a'.repeat(64)},encoding:'utf8'});assert.equal(result.status,0,result.stderr);

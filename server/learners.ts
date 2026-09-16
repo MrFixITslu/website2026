@@ -11,10 +11,16 @@ const digest = (s: string) => crypto.createHash('sha256').update(s).digest('hex'
 function field(value: unknown, min: number, max: number): value is string { return typeof value === 'string' && value.trim().length >= min && value.length <= max; }
 export function cookie(req: Request, name: string) { return (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(name+'='))?.slice(name.length+1) || ''; }
 export const cookieOptions = () => ({httpOnly: true, sameSite: 'strict' as const, secure: process.env.NODE_ENV === 'production', path: '/'});
+const requestAccounts = new WeakMap<Request, Account | undefined>();
 export function learner(req: Request): Account | undefined {
-  const data = load(), hash = digest(cookie(req, 'v79_student'));
+  const token = cookie(req, 'v79_student');
+  if (!token) return undefined;
+  if (requestAccounts.has(req)) return requestAccounts.get(req);
+  const data = load(), hash = digest(token);
   const session = data.sessions.find(s => s.hash === hash && s.expires > Date.now());
-  return session ? data.accounts.find(a => a.id === session.id) : undefined;
+  const account = session ? data.accounts.find(a => a.id === session.id) : undefined;
+  requestAccounts.set(req, account);
+  return account;
 }
 function authenticated(req: Request, res: Response, next: () => void) { if (!learner(req)) { res.status(401).json({error:'Sign in to your learner account.'}); return; } next(); }
 export function publicCourse(course: any, req: Request) {
