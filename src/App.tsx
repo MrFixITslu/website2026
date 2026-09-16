@@ -103,6 +103,7 @@ export default function App() {
   const [apps, setApps] = useState<SaaSApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const hadSelectedCourse = useRef(false);
   const [selectedCourse, setSelectedCourse] = useState<SaaSApp | null>(null);
   const [selectedToolForFeedback, setSelectedToolForFeedback] = useState<SaaSApp | null>(null);
   const [ads, setAds] = useState<SaaSAd[]>([]);
@@ -173,9 +174,11 @@ export default function App() {
 
   useEffect(() => {
     if (selectedCourse) {
+      hadSelectedCourse.current = true;
       const url = `/course/${selectedCourse.id}`;
       if (window.location.pathname !== url) window.history.pushState({ courseId: selectedCourse.id }, "", url);
-    } else if (window.location.pathname.startsWith("/course/")) {
+    } else if (hadSelectedCourse.current && window.location.pathname.startsWith("/course/")) {
+      hadSelectedCourse.current = false;
       window.history.pushState({}, "", "/");
     }
   }, [selectedCourse]);
@@ -928,3 +931,4 @@ export default function App() {
     </MotionConfig>
   );
 }
+

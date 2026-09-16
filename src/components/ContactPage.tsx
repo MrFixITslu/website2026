@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Phone, Mail, MapPin, Send, CheckCircle, AlertCircle, Building2, Users, Lock, MessageSquare } from "lucide-react";
 import { FieldError } from "./ui/FieldError";
@@ -59,6 +59,7 @@ async function fetchRecaptchaToken(siteKey?: string): Promise<string> {
 }
 
 export default function ContactPage() {
+  const submissionId = useRef(crypto.randomUUID());
   const [form, setForm] = useState({
     name: "", company: "", email: "", phone: "",
     employees: "", biggestChallenge: "", requestedAction: "", message: "",
@@ -94,12 +95,15 @@ export default function ContactPage() {
     setServerError(null);
 
     try {
-      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+      const configResponse = await fetch("/api/config");
+      if (!configResponse.ok) throw new Error("Configuration unavailable");
+      const config = await configResponse.json();
+      const siteKey = config.recaptchaSiteKey;
       const token = await fetchRecaptchaToken(siteKey);
 
       const res = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": submissionId.current },
         body: JSON.stringify({
           ...form,
           serviceRequested: form.requestedAction || form.biggestChallenge || "General Inquiry",
@@ -458,3 +462,4 @@ export default function ContactPage() {
     </div>
   );
 }
+

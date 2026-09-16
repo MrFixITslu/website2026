@@ -69,7 +69,7 @@ export function calculateDeterministicAnalysis(b: BusinessInput): CRMAnalysisRes
       breakdown.push({
         factor: rule.label,
         points: rule.points,
-        description: `Verified from public profile: matches ${rule.id.replace(/_/g, " ")} criteria.`
+        description: `Heuristic suggestion from supplied business details: matches ${rule.id.replace(/_/g, " ")} criteria.`
       });
     }
   }
@@ -160,11 +160,13 @@ export function calculateDeterministicAnalysis(b: BusinessInput): CRMAnalysisRes
 export async function queryOllama(
   prompt: string,
   systemPrompt: string,
-  ollamaBaseUrl: string = "http://localhost:11434",
+  ollamaBaseUrl: string = "http://ollama:11434",
   model: string = "llama3"
 ): Promise<string | null> {
   return new Promise((resolve) => {
     try {
+      const approved = (process.env.OLLAMA_BASE_URL || "http://ollama:11434").replace(/\/$/, "");
+      if (ollamaBaseUrl.replace(/\/$/, "") !== approved) return resolve(null);
       const url = new URL(`${ollamaBaseUrl.replace(/\/$/, "")}/api/generate`);
       const postData = JSON.stringify({
         model,
@@ -193,7 +195,7 @@ export async function queryOllama(
         },
         (res) => {
           let rawData = "";
-          res.on("data", (chunk) => { rawData += chunk; });
+          res.on("data", (chunk) => { rawData += chunk; if (rawData.length > 1_000_000) { req.destroy(); resolve(null); } });
           res.on("end", () => {
             if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
               try {
@@ -221,8 +223,8 @@ export async function queryOllama(
 
 export async function analyzeBusinessWithAI(
   business: BusinessInput,
-  ollamaBaseUrl: string = process.env.OLLAMA_BASE_URL || "http://localhost:11434",
-  model: string = process.env.OLLAMA_MODEL || "llama3"
+  ollamaBaseUrl: string = process.env.OLLAMA_BASE_URL || "http://ollama:11434",
+  model: string = process.env.OLLAMA_MODEL || "qwen2.5:3b"
 ): Promise<CRMAnalysisResult> {
   const fallback = calculateDeterministicAnalysis(business);
 
@@ -290,7 +292,7 @@ Evaluate whether they need: Website Development/Modernization, Business Automati
   return fallback;
 }
 
-export async function pingOllama(ollamaBaseUrl: string = "http://localhost:11434"): Promise<{
+export async function pingOllama(ollamaBaseUrl: string = "http://ollama:11434"): Promise<{
   connected: boolean;
   models: string[];
   latencyMs?: number;
@@ -337,138 +339,5 @@ export async function pingOllama(ollamaBaseUrl: string = "http://localhost:11434
   });
 }
 
-// Curated verified Saint Lucia public business catalog for compliant prospecting
-export const SAINT_LUCIA_PUBLIC_BUSINESS_DIRECTORY: BusinessInput[] = [
-  {
-    businessName: "Lucian Roots Grill & Bar",
-    category: "Restaurant & Hospitality",
-    industry: "Food & Beverage",
-    location: "Gros Islet",
-    phone: "+1 (758) 450-8921",
-    email: "lucianrootsgrill@gmail.com",
-    facebookUrl: "https://facebook.com/lucianrootsgrill",
-    instagramUrl: "https://instagram.com/lucianrootsgrill",
-    description: "Authentic Caribbean Creole cuisine and weekend seafood grill on the Gros Islet strip. Active social following with no online reservation or digital ordering.",
-    companySize: "10-25"
-  },
-  {
-    businessName: "Bayview Marine & Yacht Services",
-    category: "Maritime & Tourism",
-    industry: "Marine Services",
-    location: "Rodney Bay",
-    phone: "+1 (758) 452-3344",
-    email: "info@bayviewmarineslu.com",
-    facebookUrl: "https://facebook.com/bayviewmarineslu",
-    linkedinUrl: "https://linkedin.com/company/bayview-marine-saint-lucia",
-    description: "Yacht provisioning, outboard engine diagnostics, and catamaran charters based in Rodney Bay Marina. Manual billing and slow VHF/cell coordination.",
-    companySize: "5-15"
-  },
-  {
-    businessName: "Castries Wellness Clinic",
-    category: "Healthcare & Wellness",
-    industry: "Medical Practice",
-    location: "Castries",
-    phone: "+1 (758) 451-7788",
-    email: "appointments@castrieswellness.lc",
-    facebookUrl: "https://facebook.com/castrieswellness",
-    description: "Outpatient family healthcare, lab diagnostics, and physiotherapy. Paper-based appointment scheduling and unencrypted patient intake files.",
-    companySize: "10-20"
-  },
-  {
-    businessName: "Piton Auto Care & Tire Centre",
-    category: "Automotive & Retail",
-    industry: "Auto Repair & Parts",
-    location: "Vieux Fort",
-    phone: "+1 (758) 454-9090",
-    facebookUrl: "https://facebook.com/pitonautoslu",
-    description: "Vehicle maintenance, tire replacement, and fleet service depot in the south near Hewanorra International Airport. Paper work orders and frequent parts stockouts.",
-    companySize: "5-10"
-  },
-  {
-    businessName: "Morne Coubaril Eco Tours",
-    category: "Hospitality & Tourism",
-    industry: "Eco-Tourism",
-    location: "Soufrière",
-    phone: "+1 (758) 459-7383",
-    email: "tours@mornecoubarilsoufriere.com",
-    facebookUrl: "https://facebook.com/mornecoubariltours",
-    instagramUrl: "https://instagram.com/mornecoubariltours",
-    description: "Historic cocoa plantation tours, ziplining, and botanical walks near the Pitons. Heavy reliance on cruise rep paper rosters with no unified direct booking portal.",
-    companySize: "20-50"
-  },
-  {
-    businessName: "St. Lucia Agro-Distributors Ltd",
-    category: "Agriculture & Logistics",
-    industry: "Wholesale Distribution",
-    location: "Dennery",
-    phone: "+1 (758) 453-6120",
-    email: "sales@stluciaagro.com",
-    linkedinUrl: "https://linkedin.com/company/stluciaagro",
-    description: "Wholesale produce and cold-storage distribution supplying supermarket chains and island hotels. Lacks computerized route delivery tracking and inventory sync.",
-    companySize: "15-30"
-  },
-  {
-    businessName: "Atlantic View Eco Lodge",
-    category: "Hospitality & Tourism",
-    industry: "Boutique Accommodation",
-    location: "Micoud",
-    phone: "+1 (758) 454-1122",
-    facebookUrl: "https://facebook.com/atlanticviewecolodge",
-    instagramUrl: "https://instagram.com/atlanticviewecolodge",
-    description: "Boutique cliffside cottages on Saint Lucia's rugged east coast. High seasonal demand but guest Wi-Fi coverage is unstable and booking is via WhatsApp messages.",
-    companySize: "5-10"
-  },
-  {
-    businessName: "Laborie Craft & Timber Works",
-    category: "Manufacturing & Retail",
-    industry: "Woodcraft & Cabinetry",
-    location: "Laborie",
-    phone: "+1 (758) 454-5501",
-    facebookUrl: "https://facebook.com/laboriecraftwood",
-    description: "Custom mahogany furniture, hotel cabinetry, and architectural wood restoration. Hand-drawn estimates and zero web catalogue.",
-    companySize: "5-15"
-  },
-  {
-    businessName: "Choiseul Heritage Potteries",
-    category: "Artisan & Culture",
-    industry: "Traditional Ceramics",
-    location: "Choiseul",
-    phone: "+1 (758) 459-3210",
-    facebookUrl: "https://facebook.com/choiseulpotteries",
-    description: "Indigenous Amerindian clay pottery and artisanal tableware for Caribbean resorts. Walk-in visitors only, no e-commerce or international payment gateway.",
-    companySize: "5-10"
-  },
-  {
-    businessName: "Cap Estate Villa Management",
-    category: "Real Estate & Property",
-    industry: "Property Management",
-    location: "Cap Estate",
-    phone: "+1 (758) 450-4499",
-    email: "concierge@capestatevillas.com",
-    facebookUrl: "https://facebook.com/capestatevillas",
-    linkedinUrl: "https://linkedin.com/company/cap-estate-villas",
-    description: "Luxury vacation villa maintenance, smart lock systems, and high-net-worth guest concierge. Disparate contractor ticketing and missing centralized guest portal.",
-    companySize: "10-25"
-  },
-  {
-    businessName: "Marigot Bay Watersports Hub",
-    category: "Tourism & Recreation",
-    industry: "Watersports",
-    location: "Marigot Bay",
-    phone: "+1 (758) 458-1288",
-    instagramUrl: "https://instagram.com/marigotbaywatersports",
-    description: "Kayak, paddleboard rentals, and diving excursions in the hurricane haven of Marigot Bay. Mobile-only booking through Instagram DMs with frequent missed leads.",
-    companySize: "5-10"
-  },
-  {
-    businessName: "Caribbean Commercial Chambers Legal",
-    category: "Professional Services",
-    industry: "Legal & Corporate",
-    location: "Castries",
-    phone: "+1 (758) 452-9988",
-    email: "inquiries@caribbeancommerciallaw.lc",
-    linkedinUrl: "https://linkedin.com/company/caribbean-commercial-chambers",
-    description: "Corporate law, offshore entity registration, and trademark filings in Castries. Vulnerable to data loss without off-site cloud disaster recovery.",
-    companySize: "10-20"
-  }
-];
+// No invented business records. Operators import verified directory entries.
+export const SAINT_LUCIA_PUBLIC_BUSINESS_DIRECTORY: BusinessInput[] = [];

@@ -12,11 +12,11 @@ interface V79MarkProps {
 export function V79Mark({ className = "w-9 h-9", size }: V79MarkProps) {
   return (
     <img
-      src="/v79-mark.png"
+      src="/v79-official-logo.svg"
       alt="V79 Digital Brand Mark"
       className={`object-contain select-none pointer-events-none drop-shadow-[0_4px_12px_rgba(0,168,232,0.35)] ${className}`}
       style={size ? { width: size, height: size } : undefined}
-      loading="eager"
+      loading="lazy"
       decoding="async"
       draggable={false}
     />
@@ -114,8 +114,8 @@ export function V79OfficialLogo({
  * Uses the white background mark for light mode and the black/neon circular mark for dark mode.
  */
 export function V79FooterLogo({ className = "" }: { className?: string }) {
-  const [lightSrc, setLightSrc] = React.useState("/social%20profile%20pics3.png");
-  const [darkSrc, setDarkSrc] = React.useState("/social%20profile%20pics.png");
+  const [lightSrc, setLightSrc] = React.useState("/v79-official-logo.svg");
+  const [darkSrc, setDarkSrc] = React.useState("/v79-official-logo.svg");
 
   return (
     <div className={`flex items-center gap-4 select-none ${className}`}>
@@ -125,7 +125,7 @@ export function V79FooterLogo({ className = "" }: { className?: string }) {
           src={lightSrc}
           alt="Vision79 Digital Logo (Light)"
           className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl select-none"
-          loading="eager"
+          loading="lazy"
           decoding="async"
           onError={() => {
             if (lightSrc !== "/v79-footer-light.png") {
@@ -141,7 +141,7 @@ export function V79FooterLogo({ className = "" }: { className?: string }) {
           src={darkSrc}
           alt="Vision79 Digital Logo (Dark)"
           className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl select-none"
-          loading="eager"
+          loading="lazy"
           decoding="async"
           onError={() => {
             if (darkSrc !== "/v79-footer-dark.png") {
@@ -170,5 +170,6 @@ export function V79FooterLogo({ className = "" }: { className?: string }) {
     </div>
   );
 }
+
 
 

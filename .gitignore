@@ -11,3 +11,9 @@ coverage/
 data/.admin_auth.json
 data/.encryption_key
 
+
+/data/*
+!/data/articles/
+/uploads/
+*.db-*
+*.migrated.enc

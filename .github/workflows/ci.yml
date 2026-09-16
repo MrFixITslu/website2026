@@ -1,0 +1,29 @@
+name: Production checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=moderate
+      - run: docker build -t website2026:test .
+      - name: Smoke test production container
+        run: |
+          docker run -d --name website-smoke -p 127.0.0.1:3199:3000 -e CAPTCHA_MODE=disabled -e CANONICAL_DOMAIN=http://localhost:3199 website2026:test
+          trap 'docker logs website-smoke; docker rm -f website-smoke' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3199/api/ready; then break; fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:3199/api/ready
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3199/server.cjs)" = 404

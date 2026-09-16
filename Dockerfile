@@ -1,57 +1,18 @@
-# ==============================================================================
-# Multi-Stage Dockerfile for Vision79 Digital Web Application
-# Node 20 LTS Alpine ensures fast, lightweight, and secure container images.
-# ==============================================================================
-
-# ------------------------------------------------------------------------------
-# Stage 1: Build Frontend and Backend
-# ------------------------------------------------------------------------------
-FROM node:20-alpine AS builder
-
+FROM node:24-alpine AS builder
 WORKDIR /app
-
-# Copy dependency manifests
-COPY package.json package-lock.json* ./
-
-# Clean install all dependencies (including devDependencies required for vite & esbuild)
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
-
-# Copy project source
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
+RUN npm run lint && npm run build
 
-# Run production build (compiles Vite SPA + esbuild bundles server.cjs)
-ENV NODE_ENV=production
-RUN npm run build
-
-# ------------------------------------------------------------------------------
-# Stage 2: Production Runtime
-# ------------------------------------------------------------------------------
-FROM node:20-alpine AS runner
-
+FROM node:24-alpine AS runner
 WORKDIR /app
-
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Install curl for container healthchecks
-RUN apk add --no-cache curl
-
-# Copy dependency manifests and install production-only dependencies
-COPY package.json package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi && npm cache clean --force
-
-# Copy compiled bundles from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/data ./data
-
-# Ensure runtime upload and data directories exist
-RUN mkdir -p /app/uploads /app/data
-
-# Healthcheck to verify the server is actively responding
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
-
+ENV NODE_ENV=production PORT=3000
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=builder --chown=node:node /app/dist ./dist
+RUN mkdir -p /app/data /app/uploads && chown node:node /app/data /app/uploads
+USER node
 EXPOSE 3000
-
-CMD ["node", "dist/server.cjs"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "dist/server/server.cjs"]

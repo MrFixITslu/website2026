@@ -1,3 +1,4 @@
+import { readJSON, writeJSON, transaction } from "./persistence";
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
@@ -32,35 +33,7 @@ const CRM_PROPOSALS_FILE = path.join(DATA_DIR, "vision79_crm_proposals.json");
 const CRM_PROSPECTS_FILE = path.join(DATA_DIR, "vision79_crm_prospects.json");
 const CRM_SEARCHES_FILE = path.join(DATA_DIR, "vision79_crm_searches.json");
 
-function ensureFile(filePath: string, defaultData: any) {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, JSON.stringify(defaultData, null, 2), "utf-8");
-  }
-}
-
-function readJSON<T>(filePath: string, defaultData: T): T {
-  try {
-    ensureFile(filePath, defaultData);
-    const content = fs.readFileSync(filePath, "utf-8");
-    if (!content.trim()) return defaultData;
-    return JSON.parse(content) as T;
-  } catch (err) {
-    console.error(`[CRM Storage] Error reading ${filePath}:`, err);
-    return defaultData;
-  }
-}
-
-function writeJSON<T>(filePath: string, data: T) {
-  try {
-    ensureFile(filePath, data);
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-  } catch (err) {
-    console.error(`[CRM Storage] Error writing ${filePath}:`, err);
-  }
-}
+function ensureFile(file: string, initial: any) { readJSON(file, initial); }
 
 export class CRMStorage {
   constructor() {
@@ -149,7 +122,7 @@ export class CRMStorage {
     return null;
   }
 
-  async addLead(leadInput: Partial<CRMLead>, author: string = "Website Form"): Promise<{ lead: CRMLead; isDuplicate: boolean; duplicateOf?: CRMLead }> {
+  addLead(leadInput: Partial<CRMLead>, author: string = "Website Form"): { lead: CRMLead; isDuplicate: boolean; duplicateOf?: CRMLead } {
     const list = readJSON<CRMLead[]>(CRM_LEADS_FILE, []);
 
     // Duplicate detection
@@ -234,6 +207,11 @@ export class CRMStorage {
       isDuplicate: Boolean(existingDuplicate),
       duplicateOf: existingDuplicate || undefined
     };
+  }
+
+  updateLeadStage(id: number, stage: PipelineStage, author: string) {
+    if (!PIPELINE_STAGES.includes(stage)) throw Object.assign(new Error("Invalid stage"), {status: 400});
+    return transaction(() => this.updateLead(id, {stage}, author));
   }
 
   updateLead(id: number, updates: Partial<CRMLead>, author: string = "Admin"): CRMLead {
@@ -528,7 +506,8 @@ export class CRMStorage {
     const limit = params.limit || 10;
 
     // Filter through Saint Lucia public directory and query matches
-    let candidates = SAINT_LUCIA_PUBLIC_BUSINESS_DIRECTORY;
+    let candidates = readJSON<any[]>("business-directory.json", []);
+    if (!candidates.length) throw new Error("Import your business directory first. No live social-network search is configured.");
 
     if (params.location && params.location !== "all") {
       candidates = candidates.filter(b => (b.location || "").toLowerCase().includes(params.location!.toLowerCase()));
@@ -597,7 +576,7 @@ export class CRMStorage {
       duplicates: duplicatesCount,
       approvedCount: 0,
       rejectedCount: 0,
-      searchProvider: params.searchProviderKey ? "External Search Provider" : "Saint Lucia Verified Public Registry",
+      searchProvider: "Curated local directory (not a live web search)",
       timestamp: new Date().toISOString()
     };
     searchLogs.unshift(newLog);
@@ -634,13 +613,19 @@ export class CRMStorage {
       description: p.description
     }, ollamaUrl, model);
 
-    list[idx].aiAnalysis = aiResult;
-    list[idx].leadScore = aiResult.leadScore;
-    list[idx].scoreCategory = aiResult.scoreCategory;
-    list[idx].workflowStatus = "ai_analyzed";
+    const current = readJSON<Prospect[]>(CRM_PROSPECTS_FILE, []);
+    const currentIdx = current.findIndex(item => item.id === prospectId);
+    if (currentIdx < 0) throw new Error("Prospect removed during analysis");
+    if (JSON.stringify(current[currentIdx]) !== JSON.stringify(p)) throw Object.assign(new Error("Prospect changed during analysis; reload and retry"), {status: 409});
+    list.splice(0, list.length, ...current);
+    const targetIdx = currentIdx;
+    list[targetIdx].aiAnalysis = aiResult;
+    list[targetIdx].leadScore = aiResult.leadScore;
+    list[targetIdx].scoreCategory = aiResult.scoreCategory;
+    list[targetIdx].workflowStatus = "ai_analyzed";
 
     writeJSON(CRM_PROSPECTS_FILE, list);
-    return list[idx];
+    return list[targetIdx];
   }
 
   approveProspectToLead(prospectId: string, author: string = "Admin"): CRMLead {
@@ -649,6 +634,8 @@ export class CRMStorage {
     if (idx === -1) throw new Error(`Prospect ${prospectId} not found`);
 
     const p = list[idx];
+    if (p.convertedLeadId) { const existing = this.getLeadById(p.convertedLeadId); if (existing) return existing; }
+    return transaction(() => {
     const { lead } = this.addLead({
       name: p.businessName,
       company: p.businessName,
@@ -675,6 +662,7 @@ export class CRMStorage {
     writeJSON(CRM_PROSPECTS_FILE, list);
 
     return lead;
+    });
   }
 
   bulkApproveProspects(prospectIds: string[], author: string = "Admin"): CRMLead[] {
@@ -809,3 +797,4 @@ export class CRMStorage {
 }
 
 export const crmStorage = new CRMStorage();
+

@@ -13,6 +13,7 @@ export interface SaaSApp {
   // Custom courses telemetry fields
   price?: number;
   rating?: number;
+  ratingCount?: number;
   instructor?: string;
   duration?: string;
   lessonsCount?: number;
@@ -67,3 +68,4 @@ export interface BlogArticle {
 }
 
 export type AppView = 'home' | 'about' | 'services' | 'industries' | 'solutions' | 'resources' | 'contact';
+

@@ -1,8 +1,10 @@
+import { cookie, cookieOptions, mountLearners, publicCourse, learner } from "./server/learners";
 import express from "express";
+import { atomicWrite, encryptionKey, seal, unseal, readJSON, writeJSON, transaction, storageReady } from "./server/persistence";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
-import { createServer as createViteServer } from "vite";
+
 import dotenv from "dotenv";
 import multer from "multer";
 import rateLimit from "express-rate-limit";
@@ -17,9 +19,8 @@ dotenv.config();
 // Admin authentication configuration
 // ---------------------------------------------------------------------------
 // The admin password MUST come from the environment. If it is not supplied,
-// a strong random password is generated at startup and printed once to the
-// server logs (never to a client) so the operator can retrieve it via
-// `docker logs`. There is no hardcoded fallback password.
+// a strong random setup password is written to the private
+// data/.admin_setup_password file for the operator. There is no hardcoded fallback password.
 // General URL/reference validation for stored URL-ish fields (accessUrl,
 // ad imageUrl/linkUrl). Blocks dangerous absolute URI schemes that could be
 // used for stored XSS (javascript:, data:, vbscript:) or otherwise abused,
@@ -88,7 +89,7 @@ function isCourseComplete(app: any): boolean {
   }
   if (!Array.isArray(questions) || questions.length === 0) return false;
 
-  const hasValidQuestion = questions.some((q: any) =>
+  const hasValidQuestion = questions.every((q: any) =>
     q &&
     typeof q.question === "string" && q.question.trim().length > 0 &&
     Array.isArray(q.options) && q.options.length >= 2 &&
@@ -117,6 +118,7 @@ const cleanEnvValue = (val: any): string => {
 const ADMIN_AUTH_PATH = path.join(process.cwd(), "data", ".admin_auth.json");
 
 interface AdminAuthRecord {
+  version?: number;
   salt: string;
   hash: string;
   mustChangePassword: boolean;
@@ -128,7 +130,7 @@ interface AdminAuthRecord {
 }
 
 const AUTHORIZED_ADMIN_EMAIL = cleanEnvValue(process.env.ADMIN_EMAIL) || "vision79slu@gmail.com";
-const DEFAULT_INITIAL_ADMIN_PASSWORD = "%^Y&U*sw44%X";
+
 
 function hashAdminPassword(password: string, salt?: string): { salt: string; hash: string } {
   const useSalt = salt || crypto.randomBytes(16).toString("hex");
@@ -162,8 +164,9 @@ function verifyAdminPassword(password: string, record: AdminAuthRecord): boolean
 }
 
 function saveAdminAuth(record: AdminAuthRecord) {
+  record.version = 2;
   fs.mkdirSync(path.dirname(ADMIN_AUTH_PATH), { recursive: true });
-  fs.writeFileSync(ADMIN_AUTH_PATH, JSON.stringify(record, null, 2), { mode: 0o600 });
+  atomicWrite(ADMIN_AUTH_PATH, JSON.stringify(record));
 }
 
 function loadOrCreateAdminAuth(): AdminAuthRecord {
@@ -178,23 +181,32 @@ function loadOrCreateAdminAuth(): AdminAuthRecord {
     if (fs.existsSync(ADMIN_AUTH_PATH)) {
       const parsed = JSON.parse(fs.readFileSync(ADMIN_AUTH_PATH, "utf-8"));
       if (parsed && typeof parsed.salt === "string" && typeof parsed.hash === "string") {
-        return parsed as AdminAuthRecord;
+        if (parsed.version === 2) return parsed as AdminAuthRecord;
+        atomicWrite(ADMIN_AUTH_PATH + '.legacy.enc', seal(JSON.stringify(parsed)));
+        const temporary = crypto.randomBytes(24).toString('base64url');
+        const fresh = {...hashAdminPassword(temporary), mustChangePassword:true, updatedAt:new Date().toISOString(), version:2};
+        atomicWrite(path.join(process.cwd(), 'data', '.admin_setup_password'), temporary);
+        saveAdminAuth(fresh);
+        console.warn('[Authentication] Legacy credential retired. Read data/.admin_setup_password locally to sign in.');
+        return fresh;
       }
-      console.error("[Authentication] Persisted admin credential file is malformed, regenerating.");
+      throw new Error("Malformed administrator credential file. Restore it or use the documented offline recovery procedure.");
     }
   } catch (e) {
-    console.error("[Authentication] Failed to read persisted admin credential, regenerating:", e);
+    throw e;
   }
 
   const envPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  const initialPassword = (envPassword && envPassword !== "play123") ? envPassword : DEFAULT_INITIAL_ADMIN_PASSWORD;
+  if (envPassword && envPassword.length < 16) throw new Error("ADMIN_PASSWORD must contain at least 16 characters");
+  const initialPassword = envPassword || crypto.randomBytes(24).toString("base64url");
+  if (!envPassword) atomicWrite(path.join(process.cwd(), "data", ".admin_setup_password"), initialPassword);
   const { salt, hash } = hashAdminPassword(initialPassword);
   // mustChangePassword is true here on purpose: a brand-new deployment must
   // not be left running indefinitely on the auto-generated/default password.
   const record: AdminAuthRecord = { salt, hash, mustChangePassword: true, updatedAt: new Date().toISOString() };
   saveAdminAuth(record);
   console.warn("=".repeat(70));
-  console.warn("[Authentication] Admin credential initialized.");
+  console.warn("[Authentication] Admin initialized. Use ADMIN_PASSWORD or read data/.admin_setup_password locally; change it on first login.");
   console.warn(`[Authentication] Authorized Administrator: ${AUTHORIZED_ADMIN_EMAIL}`);
   console.warn("[Authentication] You will be required to set a new password on first login.");
   console.warn("=".repeat(70));
@@ -209,8 +221,8 @@ function loadOrCreateAdminAuth(): AdminAuthRecord {
 // or just today's date) in your environment/.env and restart the container.
 // On startup this overwrites the persisted admin credential with a fresh
 // one-time password, forces a password change on next login, and — unless
-// you also set ADMIN_PASSWORD to choose the new password yourself — prints
-// the generated one-time password to the container logs exactly once.
+// you also set ADMIN_PASSWORD to choose the new password yourself — writes
+// the generated setup credential to a private local file.
 //
 // The reset only fires when ADMIN_RESET_TOKEN differs from the token value
 // already recorded as consumed in the persisted credential file, so it is
@@ -225,7 +237,9 @@ function applyAdminResetIfRequested(record: AdminAuthRecord): AdminAuthRecord {
   }
 
   const suppliedPassword = cleanEnvValue(process.env.ADMIN_PASSWORD);
-  const oneTimePassword = suppliedPassword || crypto.randomBytes(9).toString("base64url");
+  if (suppliedPassword && suppliedPassword.length < 16) throw new Error("ADMIN_PASSWORD must have at least 16 characters");
+  const oneTimePassword = suppliedPassword || crypto.randomBytes(24).toString("base64url");
+  if (!suppliedPassword) atomicWrite(path.join(process.cwd(), "data", ".admin_setup_password"), oneTimePassword);
   const { salt, hash } = hashAdminPassword(oneTimePassword);
   const newRecord: AdminAuthRecord = {
     salt,
@@ -242,7 +256,7 @@ function applyAdminResetIfRequested(record: AdminAuthRecord): AdminAuthRecord {
   if (suppliedPassword) {
     console.warn("[Authentication] Admin password was reset to the value you supplied via ADMIN_PASSWORD.");
   } else {
-    console.warn(`[Authentication] One-time password: ${oneTimePassword}`);
+    console.warn("[Authentication] Read the reset password locally from data/.admin_setup_password.");
     console.warn("[Authentication] This is shown ONLY here, ONCE. It will not be logged again.");
   }
   console.warn("[Authentication] You will be required to set a new password immediately after logging in.");
@@ -264,7 +278,7 @@ function getLatestAdminAuth(): AdminAuthRecord {
       }
     }
   } catch (e) {
-    console.error("[Authentication] Error reading latest admin auth from disk:", e);
+    throw e;
   }
   return adminAuth;
 }
@@ -272,7 +286,7 @@ function getLatestAdminAuth(): AdminAuthRecord {
 // In-memory session store: token -> { expiry timestamp (ms), mustChangePassword }.
 // Tokens are cryptographically random and single-instance scoped, which is
 // appropriate for this app's single-container deployment model.
-const ADMIN_SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 interface AdminSession {
   expiry: number;
   mustChangePassword: boolean;
@@ -297,7 +311,7 @@ function getAdminSession(token: string | undefined | null): AdminSession | null 
 }
 
 function isValidAdminSession(token: string | undefined | null): boolean {
-  return getAdminSession(token) !== null;
+  const session=getAdminSession(token); return !!session && !session.mustChangePassword;
 }
 
 function invalidateAllAdminSessions() {
@@ -312,9 +326,12 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000).unref();
 
+function adminCookie(req: express.Request): string | null { return cookie(req, "v79_admin") || null; }
+function setAdminCookie(res: express.Response, token: string) { res.cookie("v79_admin", token, {...cookieOptions(), maxAge: ADMIN_SESSION_TTL_MS}); }
+
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const token = adminCookie(req);
   const session = getAdminSession(token);
   if (!session) {
     return res.status(401).json({ error: "Unauthorized access: a valid administrator session is required." });
@@ -332,7 +349,7 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
 // Keyed by IP address; a small dependency-free approach since the app has no
 // external cache/store.
 const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-const LOGIN_MAX_ATTEMPTS = 50;
+const LOGIN_MAX_ATTEMPTS = 10;
 const loginAttempts = new Map<string, { count: number; windowStart: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -377,88 +394,15 @@ setInterval(() => {
 // for authorized API responses.
 const ENCRYPTION_KEY_PATH = path.join(process.cwd(), "data", ".encryption_key");
 
-function loadOrCreateEncryptionKey(): Buffer {
-  const fromEnv = cleanEnvValue(process.env.ENCRYPTION_KEY);
-  if (fromEnv) {
-    const buf = /^[0-9a-fA-F]{64}$/.test(fromEnv)
-      ? Buffer.from(fromEnv, "hex")
-      : crypto.createHash("sha256").update(fromEnv).digest();
-    return buf;
-  }
-  try {
-    if (fs.existsSync(ENCRYPTION_KEY_PATH)) {
-      const hex = fs.readFileSync(ENCRYPTION_KEY_PATH, "utf-8").trim();
-      if (/^[0-9a-fA-F]{64}$/.test(hex)) return Buffer.from(hex, "hex");
-    }
-  } catch (e) {
-    console.error("[Encryption] Failed to read persisted key:", e);
-  }
-  const generated = crypto.randomBytes(32);
-  try {
-    fs.mkdirSync(path.dirname(ENCRYPTION_KEY_PATH), { recursive: true });
-    fs.writeFileSync(ENCRYPTION_KEY_PATH, generated.toString("hex"), { mode: 0o600 });
-    console.warn("=".repeat(70));
-    console.warn("[Encryption] No ENCRYPTION_KEY env var set.");
-    console.warn(`[Encryption] Generated and persisted a new key at ${ENCRYPTION_KEY_PATH}`);
-    console.warn("[Encryption] Set ENCRYPTION_KEY in your environment for production deployments,");
-    console.warn("[Encryption] and back up that key - losing it makes existing encrypted data unrecoverable.");
-    console.warn("=".repeat(70));
-  } catch (e) {
-    console.error("[Encryption] Failed to persist generated key (encrypted fields will not survive restart):", e);
-  }
-  return generated;
-}
-
-const ENCRYPTION_KEY = loadOrCreateEncryptionKey();
-const ENC_PREFIX = "enc:v1:";
-
-function encryptPII(plaintext: string): string {
-  if (plaintext === undefined || plaintext === null || plaintext === "") return plaintext;
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", ENCRYPTION_KEY, iv);
-  const encrypted = Buffer.concat([cipher.update(String(plaintext), "utf-8"), cipher.final()]);
-  const authTag = cipher.getAuthTag();
-  return ENC_PREFIX + Buffer.concat([iv, authTag, encrypted]).toString("base64");
-}
-
-function decryptPII(payload: string): string {
-  if (!payload || typeof payload !== "string" || !payload.startsWith(ENC_PREFIX)) {
-    // Not encrypted (e.g. legacy/seed data) - return as-is.
-    return payload;
-  }
-  try {
-    const raw = Buffer.from(payload.slice(ENC_PREFIX.length), "base64");
-    const iv = raw.subarray(0, 12);
-    const authTag = raw.subarray(12, 28);
-    const ciphertext = raw.subarray(28);
-    const decipher = crypto.createDecipheriv("aes-256-gcm", ENCRYPTION_KEY, iv);
-    decipher.setAuthTag(authTag);
-    const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
-    return decrypted.toString("utf-8");
-  } catch (e) {
-    console.error("[Encryption] Failed to decrypt field (wrong/rotated key?):", e);
-    return "[unable to decrypt]";
-  }
-}
+const ENCRYPTION_KEY = encryptionKey;
+function encryptPII(value: string): string { return value ? seal(String(value)) : value; }
+function decryptPII(value: string): string { return typeof value === "string" ? unseal(value) : value; }
 
 // No fabricated demo courses/apps are seeded. A production deployment
 // should start with a genuinely empty catalog and have real apps/courses
 // added through the admin panel - fake instructor names, fake ratings,
 // and fake launch counts were previously seeded here and have been removed.
 const SEED_APPS: any[] = [];
-
-let sqliteModule: any = null;
-
-// Try to dyamically load sqlite3 so the server never crashes on startup if prebuilds are missing
-async function loadSqlite() {
-  try {
-    const pkg = await import("sqlite3");
-    sqliteModule = pkg.default || pkg;
-    console.log("[Database] sqlite3 module imported successfully.");
-  } catch (e) {
-    console.warn("[Database] sqlite3 binary not found/compiled in this container. Falling back to JSON-File DB Engine.");
-  }
-}
 
 const SEED_ADS: any[] = [
   {
@@ -481,66 +425,10 @@ const JSON_EXAM_ATTEMPTS_FILE = path.join(DATA_DIR, "vision79_exam_attempts.json
 const JSON_INSTRUCTORS_FILE = path.join(DATA_DIR, "vision79_instructors.json");
 const JSON_LEADS_FILE = path.join(DATA_DIR, "vision79_leads.json");
 
-// For backwards compatibility and seamless Docker setup, copy files from the root if present
-const ROOT_DB_FILE = path.join(process.cwd(), "vision79_saas.json");
-const ROOT_ADS_FILE = path.join(process.cwd(), "vision79_ads.json");
-const ROOT_FEEDBACK_FILE = path.join(process.cwd(), "vision79_feedback.json");
-const ROOT_EXAM_ATTEMPTS_FILE = path.join(process.cwd(), "vision79_exam_attempts.json");
-const ROOT_INSTRUCTORS_FILE = path.join(process.cwd(), "vision79_instructors.json");
-const ROOT_LEADS_FILE = path.join(process.cwd(), "vision79_leads.json");
-
-if (!fs.existsSync(JSON_DB_FILE) && fs.existsSync(ROOT_DB_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_DB_FILE, JSON_DB_FILE);
-    console.log("[Migration] Copied root vision79_saas.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_saas.json:", e);
-  }
-}
-
-if (!fs.existsSync(JSON_ADS_FILE) && fs.existsSync(ROOT_ADS_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_ADS_FILE, JSON_ADS_FILE);
-    console.log("[Migration] Copied root vision79_ads.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_ads.json:", e);
-  }
-}
-
-if (!fs.existsSync(JSON_FEEDBACK_FILE) && fs.existsSync(ROOT_FEEDBACK_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_FEEDBACK_FILE, JSON_FEEDBACK_FILE);
-    console.log("[Migration] Copied root vision79_feedback.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_feedback.json:", e);
-  }
-}
-
-if (!fs.existsSync(JSON_EXAM_ATTEMPTS_FILE) && fs.existsSync(ROOT_EXAM_ATTEMPTS_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_EXAM_ATTEMPTS_FILE, JSON_EXAM_ATTEMPTS_FILE);
-    console.log("[Migration] Copied root vision79_exam_attempts.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_exam_attempts.json:", e);
-  }
-}
-
-if (!fs.existsSync(JSON_INSTRUCTORS_FILE) && fs.existsSync(ROOT_INSTRUCTORS_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_INSTRUCTORS_FILE, JSON_INSTRUCTORS_FILE);
-    console.log("[Migration] Copied root vision79_instructors.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_instructors.json:", e);
-  }
-}
-
-if (!fs.existsSync(JSON_LEADS_FILE) && fs.existsSync(ROOT_LEADS_FILE)) {
-  try {
-    fs.copyFileSync(ROOT_LEADS_FILE, JSON_LEADS_FILE);
-    console.log("[Migration] Copied root vision79_leads.json to data/ directory.");
-  } catch (e) {
-    console.error("[Migration] Failed to copy root vision79_leads.json:", e);
-  }
+// Import legacy root files only if present. The persistence layer archives originals securely.
+for (const file of [JSON_DB_FILE, JSON_ADS_FILE, JSON_FEEDBACK_FILE, JSON_EXAM_ATTEMPTS_FILE, JSON_INSTRUCTORS_FILE, JSON_LEADS_FILE]) {
+  const rootFile=path.join(process.cwd(), path.basename(file));
+  if (fs.existsSync(rootFile)) readJSON(rootFile, []);
 }
 
 // No fabricated testimonials are seeded. Previously this contained fake
@@ -553,38 +441,16 @@ const SEED_FEEDBACK: any[] = [];
 // added through the admin panel.
 const SEED_INSTRUCTORS: any[] = [];
 
-class JsonDatabase {
-  readInstructors(): any[] {
-    try {
-      if (!fs.existsSync(JSON_INSTRUCTORS_FILE)) {
-        this.writeInstructors(SEED_INSTRUCTORS);
-        return SEED_INSTRUCTORS;
-      }
-      const content = fs.readFileSync(JSON_INSTRUCTORS_FILE, "utf-8");
-      if (!content.trim()) {
-        this.writeInstructors(SEED_INSTRUCTORS);
-        return SEED_INSTRUCTORS;
-      }
-      return JSON.parse(content);
-    } catch (e) {
-      console.error("[JSON Database] Instructors Read error:", e);
-      return SEED_INSTRUCTORS;
-    }
-  }
+class DocumentDatabase {
+  readInstructors(): any[] { return readJSON(JSON_INSTRUCTORS_FILE, SEED_INSTRUCTORS); }
 
-  writeInstructors(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_INSTRUCTORS_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Instructors Write error:", e);
-    }
-  }
+  writeInstructors(data: any[]) { writeJSON(JSON_INSTRUCTORS_FILE, data); }
 
-  async getInstructors(): Promise<any[]> {
+  getInstructors(): any[] {
     return this.readInstructors();
   }
 
-  async addInstructor(name: string): Promise<any> {
+  addInstructor(name: string): any {
     const list = this.readInstructors();
     if (list.some((i: any) => i.name.toLowerCase() === name.trim().toLowerCase())) {
       throw new Error("Instructor already exists");
@@ -596,92 +462,21 @@ class JsonDatabase {
     return newInst;
   }
 
-  async init() {
-    const dbEmpty = !fs.existsSync(JSON_DB_FILE) || fs.readFileSync(JSON_DB_FILE, "utf-8").trim() === "[]" || fs.readFileSync(JSON_DB_FILE, "utf-8").trim() === "";
-    if (dbEmpty) {
-      console.log("[JSON Database] DB File empty or not found. Seeding beautiful initial VISION79 JSON dataset...");
-      this.write(SEED_APPS);
-    } else {
-      console.log("[JSON Database] Successfully loaded existing JSON-backed database.");
-    }
+  init() { this.read(); this.readAds(); this.readInstructors(); this.readFeedback(); this.readExamAttempts(); this.readLeads(); }
 
-    const adsEmpty = !fs.existsSync(JSON_ADS_FILE) || fs.readFileSync(JSON_ADS_FILE, "utf-8").trim() === "[]" || fs.readFileSync(JSON_ADS_FILE, "utf-8").trim() === "";
-    if (adsEmpty) {
-      console.log("[JSON Database] Ads File empty or not found. Seeding beautiful initial VISION79 JSON ads dataset...");
-      this.writeAds(SEED_ADS);
-    } else {
-      console.log("[JSON Database] Successfully loaded existing JSON-backed ads database.");
-    }
-  }
+  read(): any[] { return readJSON(JSON_DB_FILE, SEED_APPS); }
 
-  read(): any[] {
-    try {
-      const content = fs.readFileSync(JSON_DB_FILE, "utf-8");
-      const list = JSON.parse(content);
-      let updated = false;
-      const cleanList = list.map((item: any, i: number) => {
-        if (item.id === undefined) {
-          item.id = i + 1;
-          updated = true;
-        }
-        return item;
-      });
-      if (updated) {
-        this.write(cleanList);
-      }
-      return cleanList;
-    } catch (e) {
-      console.error("[JSON Database] Read error, resetting:", e);
-      return SEED_APPS.map((item, i) => ({ ...item, id: i + 1 }));
-    }
-  }
+  write(data: any[]) { writeJSON(JSON_DB_FILE, data); }
 
-  write(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Write error:", e);
-    }
-  }
+  readAds(): any[] { return readJSON(JSON_ADS_FILE, SEED_ADS); }
 
-  readAds(): any[] {
-    try {
-      if (!fs.existsSync(JSON_ADS_FILE)) {
-        return SEED_ADS.map((ad, i) => ({ ...ad, id: i + 1 }));
-      }
-      const content = fs.readFileSync(JSON_ADS_FILE, "utf-8");
-      const list = JSON.parse(content);
-      let updated = false;
-      const cleanList = list.map((ad: any, i: number) => {
-        if (ad.id === undefined) {
-          ad.id = i + 1;
-          updated = true;
-        }
-        return ad;
-      });
-      if (updated) {
-        this.writeAds(cleanList);
-      }
-      return cleanList;
-    } catch (e) {
-      console.error("[JSON Database] Ads Read error, resetting:", e);
-      return SEED_ADS.map((ad, i) => ({ ...ad, id: i + 1 }));
-    }
-  }
+  writeAds(data: any[]) { writeJSON(JSON_ADS_FILE, data); }
 
-  writeAds(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_ADS_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Ads Write error:", e);
-    }
-  }
-
-  async getApps(): Promise<any[]> {
+  getApps(): any[] {
     return this.read();
   }
 
-  async addApp(app: any): Promise<any> {
+  addApp(app: any): any {
     const list = this.read();
     const nextId = list.reduce((max, a) => Math.max(max, a.id), 0) + 1;
     const newApp = {
@@ -695,7 +490,7 @@ class JsonDatabase {
     return newApp;
   }
 
-  async incrementLaunch(id: number): Promise<any> {
+  incrementLaunch(id: number): any {
     const list = this.read();
     const index = list.findIndex(a => a.id === Number(id));
     if (index === -1) {
@@ -706,7 +501,7 @@ class JsonDatabase {
     return list[index];
   }
 
-  async deleteApp(id: number): Promise<boolean> {
+  deleteApp(id: number): boolean {
     const list = this.read();
     const initialLen = list.length;
     const filtered = list.filter(a => a.id !== Number(id));
@@ -714,7 +509,7 @@ class JsonDatabase {
     return filtered.length < initialLen;
   }
 
-  async updateApp(id: number, app: any): Promise<any> {
+  updateApp(id: number, app: any): any {
     const list = this.read();
     const index = list.findIndex(a => a.id === Number(id));
     if (index === -1) {
@@ -730,11 +525,11 @@ class JsonDatabase {
     return updatedApp;
   }
 
-  async getAds(): Promise<any[]> {
+  getAds(): any[] {
     return this.readAds();
   }
 
-  async addAd(ad: any): Promise<any> {
+  addAd(ad: any): any {
     const list = this.readAds();
     const nextId = list.reduce((max, a) => Math.max(max, a.id), 0) + 1;
     const newAd = {
@@ -747,7 +542,7 @@ class JsonDatabase {
     return newAd;
   }
 
-  async deleteAd(id: number): Promise<boolean> {
+  deleteAd(id: number): boolean {
     const list = this.readAds();
     const initialLen = list.length;
     const filtered = list.filter(a => a.id !== Number(id));
@@ -755,33 +550,11 @@ class JsonDatabase {
     return filtered.length < initialLen;
   }
 
-  readFeedback(): any[] {
-    try {
-      if (!fs.existsSync(JSON_FEEDBACK_FILE)) {
-        this.writeFeedback(SEED_FEEDBACK);
-        return SEED_FEEDBACK;
-      }
-      const content = fs.readFileSync(JSON_FEEDBACK_FILE, "utf-8");
-      if (!content.trim()) {
-        this.writeFeedback(SEED_FEEDBACK);
-        return SEED_FEEDBACK;
-      }
-      return JSON.parse(content);
-    } catch (e) {
-      console.error("[JSON Database] Feedback Read error:", e);
-      return SEED_FEEDBACK;
-    }
-  }
+  readFeedback(): any[] { return readJSON(JSON_FEEDBACK_FILE, SEED_FEEDBACK); }
 
-  writeFeedback(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_FEEDBACK_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Feedback Write error:", e);
-    }
-  }
+  writeFeedback(data: any[]) { writeJSON(JSON_FEEDBACK_FILE, data); }
 
-  async getFeedback(appId?: number): Promise<any[]> {
+  getFeedback(appId?: number): any[] {
     let list = this.readFeedback();
     if (appId !== undefined) {
       list = list.filter(f => f.appId === Number(appId));
@@ -789,7 +562,7 @@ class JsonDatabase {
     return list.map(f => ({ ...f, userName: decryptPII(f.userName) }));
   }
 
-  async addFeedback(feedback: any): Promise<any> {
+  addFeedback(feedback: any): any {
     const list = this.readFeedback();
     const nextId = list.reduce((max, f) => Math.max(max, f.id || 0), 0) + 1;
     const newFeedback = {
@@ -808,7 +581,7 @@ class JsonDatabase {
     return { ...newFeedback, userName: decryptPII(newFeedback.userName) };
   }
 
-  async onboardFeedback(id: number, comment: string): Promise<any> {
+  onboardFeedback(id: number, comment: string): any {
     const list = this.readFeedback();
     const index = list.findIndex(f => f.id === Number(id));
     if (index === -1) {
@@ -821,40 +594,23 @@ class JsonDatabase {
     return list[index];
   }
 
-  readExamAttempts(): any[] {
-    try {
-      if (!fs.existsSync(JSON_EXAM_ATTEMPTS_FILE)) {
-        return [];
-      }
-      const content = fs.readFileSync(JSON_EXAM_ATTEMPTS_FILE, "utf-8");
-      if (!content.trim()) return [];
-      return JSON.parse(content);
-    } catch (e) {
-      console.error("[JSON Database] Exam Attempts Read error:", e);
-      return [];
-    }
-  }
+  readExamAttempts(): any[] { return readJSON(JSON_EXAM_ATTEMPTS_FILE, []); }
 
-  writeExamAttempts(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_EXAM_ATTEMPTS_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Exam Attempts Write error:", e);
-    }
-  }
+  writeExamAttempts(data: any[]) { writeJSON(JSON_EXAM_ATTEMPTS_FILE, data); }
 
-  async getExamAttempts(appId?: number): Promise<any[]> {
+  getExamAttempts(appId?: number): any[] {
     const all = this.readExamAttempts();
     const filtered = appId === undefined ? all : all.filter((a: any) => Number(a.appId) === Number(appId));
     return filtered.map((a: any) => ({ ...a, studentName: decryptPII(a.studentName) }));
   }
 
-  async addExamAttempt(attempt: any): Promise<any> {
+  addExamAttempt(attempt: any): any {
     const list = this.readExamAttempts();
     const nextId = list.reduce((max, a) => Math.max(max, a.id || 0), 0) + 1;
     const newAttempt = {
       id: nextId,
       appId: Number(attempt.appId),
+      studentId: attempt.studentId || null,
       studentName: encryptPII(attempt.studentName || "Anonymous Student"),
       score: attempt.score || "0/0",
       passed: attempt.passed ? 1 : 0,
@@ -865,29 +621,11 @@ class JsonDatabase {
     return { ...newAttempt, studentName: decryptPII(newAttempt.studentName) };
   }
 
-  readLeads(): any[] {
-    try {
-      if (!fs.existsSync(JSON_LEADS_FILE)) {
-        return [];
-      }
-      const content = fs.readFileSync(JSON_LEADS_FILE, "utf-8");
-      if (!content.trim()) return [];
-      return JSON.parse(content);
-    } catch (e) {
-      console.error("[JSON Database] Leads Read error:", e);
-      return [];
-    }
-  }
+  readLeads(): any[] { return readJSON(JSON_LEADS_FILE, []); }
 
-  writeLeads(data: any[]) {
-    try {
-      fs.writeFileSync(JSON_LEADS_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[JSON Database] Leads Write error:", e);
-    }
-  }
+  writeLeads(data: any[]) { writeJSON(JSON_LEADS_FILE, data); }
 
-  async getLeads(): Promise<any[]> {
+  getLeads(): any[] {
     const all = this.readLeads();
     return all.map((l: any) => ({
       ...l,
@@ -898,7 +636,7 @@ class JsonDatabase {
     }));
   }
 
-  async addLead(lead: any): Promise<any> {
+  addLead(lead: any): any {
     const list = this.readLeads();
     const nextId = list.reduce((max, l) => Math.max(max, l.id || 0), 0) + 1;
     const newLead = {
@@ -925,7 +663,7 @@ class JsonDatabase {
     };
   }
 
-  async updateLead(id: number, lead: any): Promise<any> {
+  updateLead(id: number, lead: any): any {
     const list = this.readLeads();
     const index = list.findIndex(l => l.id === Number(id));
     if (index === -1) {
@@ -946,7 +684,7 @@ class JsonDatabase {
   // Tracks delivery of this lead to the V79Tiquet gateway, separate from
   // the visitor-facing status/adminNotes above. tiquetEventId is set once,
   // on creation, and reused on every retry attempt.
-  async updateLeadTiquetSync(id: number, tiquetEventId: string, tiquetSyncStatus: string): Promise<void> {
+  updateLeadTiquetSync(id: number, tiquetEventId: string, tiquetSyncStatus: string): void {
     const list = this.readLeads();
     const index = list.findIndex(l => l.id === Number(id));
     if (index === -1) return;
@@ -955,10 +693,10 @@ class JsonDatabase {
     this.writeLeads(list);
   }
 
-  async getPendingTiquetLeads(): Promise<any[]> {
+  getPendingTiquetLeads(): any[] {
     const list = this.readLeads();
     return list
-      .filter(l => l.tiquetSyncStatus === "pending")
+      .filter(l => ["pending", "disabled"].includes(l.tiquetSyncStatus))
       .map(l => ({
         ...l,
         name: decryptPII(l.name),
@@ -966,709 +704,6 @@ class JsonDatabase {
         email: decryptPII(l.email),
         phone: decryptPII(l.phone)
       }));
-  }
-}
-
-class SqliteDatabase {
-  private db: any;
-
-  async init() {
-    const sqlite3 = sqliteModule.verbose();
-    const DB_FILE = path.join(process.cwd(), "data", "vision79_saas.db");
-    this.db = new sqlite3.Database(DB_FILE);
-
-    return new Promise<void>((resolve, reject) => {
-      this.db.serialize(() => {
-        this.db.run(
-          `CREATE TABLE IF NOT EXISTS saas_instructors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL UNIQUE
-          )`,
-          (instErr: any) => {
-            if (instErr) {
-              console.error("[SQLite DB] Instructors Table Creation failed:", instErr);
-            } else {
-              this.db.get("SELECT COUNT(*) as count FROM saas_instructors", (cErr: any, row: any) => {
-                if (!cErr && row && row.count === 0) {
-                  console.log("[SQLite DB] Instructors table empty. Seeding...");
-                  const stmt = this.db.prepare("INSERT INTO saas_instructors (name) VALUES (?)");
-                  const defaultInstructors = [
-                    "Vision79 Lead Architect",
-                    "Vision79 Lead Instructor",
-                    "Vision79 Systems Trainer",
-                    "Sarah Drasner (V79 Guest)"
-                  ];
-                  for (const name of defaultInstructors) {
-                    stmt.run([name]);
-                  }
-                  stmt.finalize();
-                }
-              });
-            }
-          }
-        );
-
-        this.db.run(
-          `CREATE TABLE IF NOT EXISTS saas_exam_attempts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            appId INTEGER NOT NULL,
-            studentName TEXT NOT NULL,
-            score TEXT NOT NULL,
-            passed INTEGER NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`
-        );
-
-        this.db.run(
-          `CREATE TABLE IF NOT EXISTS saas_apps (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            subtitle TEXT NOT NULL,
-            description TEXT NOT NULL,
-            category TEXT NOT NULL,
-            pricingType TEXT NOT NULL,
-            logoUrl TEXT NOT NULL,
-            accessUrl TEXT NOT NULL,
-            launchCount INTEGER NOT NULL DEFAULT 0,
-            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`,
-          (err: any) => {
-            if (err) {
-              console.error("[SQLite DB] Creation failed:", err);
-              return reject(err);
-            }
-
-            // Alter table statements to add newer columns dynamically for Courses supporting
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN price REAL DEFAULT 0", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN instructor TEXT", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN rating REAL DEFAULT 0", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN duration TEXT", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN lessonsCount INTEGER DEFAULT 10", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN curriculum TEXT", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN exam TEXT", () => {});
-            this.db.run("ALTER TABLE saas_apps ADD COLUMN syllabus TEXT", () => {});
-
-            this.db.get("SELECT COUNT(*) as count FROM saas_apps", (countErr: any, row: any) => {
-              if (countErr) return reject(countErr);
-
-              if (row && row.count === 0) {
-                console.log("[SQLite DB] Database empty. Seeding SQLite...");
-                const stmt = this.db.prepare(
-                  `INSERT INTO saas_apps (name, subtitle, description, category, pricingType, logoUrl, accessUrl, launchCount, price, instructor, rating, duration, lessonsCount, curriculum)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-                );
-
-                for (const app of SEED_APPS) {
-                  stmt.run([
-                    app.name,
-                    app.subtitle,
-                    app.description,
-                    app.category,
-                    app.pricingType,
-                    app.logoUrl,
-                    app.accessUrl,
-                    app.launchCount || 0,
-                    app.price || 0,
-                    app.instructor || "",
-                    app.rating || 0,
-                    app.duration || "",
-                    app.lessonsCount || 0,
-                    app.curriculum || ""
-                  ]);
-                }
-
-                stmt.finalize();
-              }
-            });
-          }
-        );
-
-        this.db.run(
-          `CREATE TABLE IF NOT EXISTS saas_ads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            subtitle TEXT NOT NULL,
-            imageUrl TEXT NOT NULL,
-            linkUrl TEXT NOT NULL,
-            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-          )`,
-          (err: any) => {
-            if (err) {
-              console.error("[SQLite DB] Ads Table Creation failed:", err);
-              return reject(err);
-            }
-
-            const initLeadsTable = () => {
-              this.db.run(
-                `CREATE TABLE IF NOT EXISTS saas_leads (
-                  id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT NOT NULL,
-                  company TEXT NOT NULL,
-                  email TEXT NOT NULL,
-                  phone TEXT NOT NULL,
-                  employees TEXT NOT NULL,
-                  biggestChallenge TEXT NOT NULL,
-                  message TEXT,
-                  status TEXT DEFAULT 'New',
-                  adminNotes TEXT DEFAULT '',
-                  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-                )`,
-                (lErr: any) => {
-                  if (lErr) {
-                    console.error("[SQLite DB] Leads Table Creation failed:", lErr);
-                    return reject(lErr);
-                  }
-                  // V79Tiquet gateway tracking: tiquetEventId is a stable id
-                  // generated once per submission and reused on retry, so a
-                  // retried delivery can't create a duplicate client/job on
-                  // the Tiquet side. tiquetSyncStatus lets a periodic sweep
-                  // find and retry any lead that didn't make it over yet,
-                  // without touching the local record the visitor already
-                  // has confirmation for.
-                  this.db.run("ALTER TABLE saas_leads ADD COLUMN tiquetEventId TEXT", () => {});
-                  this.db.run("ALTER TABLE saas_leads ADD COLUMN tiquetSyncStatus TEXT", () => {});
-                  resolve();
-                }
-              );
-            };
-
-            const initFeedbackTable = () => {
-              this.db.run(
-                `CREATE TABLE IF NOT EXISTS saas_feedback (
-                  id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  appId INTEGER NOT NULL,
-                  appName TEXT NOT NULL,
-                  rating INTEGER NOT NULL,
-                  comment TEXT NOT NULL,
-                  userName TEXT NOT NULL,
-                  onboarded INTEGER NOT NULL DEFAULT 0,
-                  onboardedComment TEXT NOT NULL DEFAULT '',
-                  feedbackType TEXT NOT NULL DEFAULT 'feedback',
-                  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-                )`,
-                (fErr: any) => {
-                  if (fErr) {
-                    console.error("[SQLite DB] Feedback Table Creation failed:", fErr);
-                    return reject(fErr);
-                  }
-
-                  // Safe ALTER TABLE statement to add feedbackType dynamically if the table exists
-                  this.db.run("ALTER TABLE saas_feedback ADD COLUMN feedbackType TEXT NOT NULL DEFAULT 'feedback'", () => {});
-                  this.db.run("ALTER TABLE saas_feedback ADD COLUMN onboardedAt TEXT", () => {});
-
-                  this.db.get("SELECT COUNT(*) as count FROM saas_feedback", (fCountErr: any, fRow: any) => {
-                    if (fCountErr) return reject(fCountErr);
-
-                    if (fRow && fRow.count === 0) {
-                      console.log("[SQLite DB] Feedback empty. Seeding SQLite Feedback...");
-                      const fStmt = this.db.prepare(
-                        `INSERT INTO saas_feedback (appId, appName, rating, comment, userName, onboarded, onboardedComment, createdAt)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-                      );
-
-                      for (const f of SEED_FEEDBACK) {
-                        fStmt.run([
-                          f.appId,
-                          f.appName,
-                          f.rating,
-                          f.comment,
-                          f.userName || "Anonymous",
-                          f.onboarded,
-                          f.onboardedComment || "",
-                          f.createdAt
-                        ]);
-                      }
-
-                      fStmt.finalize((ffErr: any) => {
-                        if (ffErr) return reject(ffErr);
-                        initLeadsTable();
-                      });
-                    } else {
-                      initLeadsTable();
-                    }
-                  });
-                }
-              );
-            };
-
-            this.db.get("SELECT COUNT(*) as count FROM saas_ads", (countErr: any, row: any) => {
-              if (countErr) return reject(countErr);
-
-              if (row && row.count === 0) {
-                console.log("[SQLite DB] Ads empty. Seeding SQLite Ads...");
-                const stmt = this.db.prepare(
-                  `INSERT INTO saas_ads (title, subtitle, imageUrl, linkUrl)
-                   VALUES (?, ?, ?, ?)`
-                );
-
-                for (const ad of SEED_ADS) {
-                  stmt.run([
-                    ad.title,
-                    ad.subtitle,
-                    ad.imageUrl,
-                    ad.linkUrl
-                  ]);
-                }
-
-                stmt.finalize((fErr: any) => {
-                  if (fErr) return reject(fErr);
-                  initFeedbackTable();
-                });
-              } else {
-                initFeedbackTable();
-              }
-            });
-          }
-        );
-      });
-    });
-  }
-
-  async getApps(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM saas_apps ORDER BY id DESC", (err: any, rows: any) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-  }
-
-  async addApp(app: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        INSERT INTO saas_apps (name, subtitle, description, category, pricingType, logoUrl, accessUrl, launchCount, price, instructor, rating, duration, lessonsCount, curriculum, exam, syllabus)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      const self = this;
-      this.db.run(q, [
-        app.name, 
-        app.subtitle, 
-        app.description, 
-        app.category, 
-        app.pricingType, 
-        app.logoUrl, 
-        app.accessUrl,
-        app.price || 0,
-        app.instructor || "",
-        app.rating || 0,
-        app.duration || "",
-        app.lessonsCount || 0,
-        app.curriculum || "",
-        app.exam || "",
-        app.syllabus || ""
-      ], (err: any) => {
-        if (err) return reject(err);
-        
-        self.db.get("SELECT last_insert_rowid() AS lastId", (rowIdErr: any, rowIdRes: any) => {
-          if (rowIdErr) return reject(rowIdErr);
-          const newId = rowIdRes ? rowIdRes.lastId : 0;
-          
-          self.db.get("SELECT * FROM saas_apps WHERE id = ?", [newId], (gErr: any, row: any) => {
-            if (gErr) return reject(gErr);
-            resolve(row);
-          });
-        });
-      });
-    });
-  }
-
-  async incrementLaunch(id: number): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const self = this;
-      this.db.run(
-        "UPDATE saas_apps SET launchCount = launchCount + 1 WHERE id = ?",
-        [id],
-        (err: any) => {
-          if (err) return reject(err);
-          self.db.get("SELECT * FROM saas_apps WHERE id = ?", [id], (gErr: any, row: any) => {
-            if (gErr) return reject(gErr);
-            resolve(row);
-          });
-        }
-      );
-    });
-  }
-
-  async deleteApp(id: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      // First check if the application exists so we can return a proper boolean success
-      this.db.get("SELECT id FROM saas_apps WHERE id = ?", [id], (err: any, row: any) => {
-        if (err) {
-          console.error(`[SQLite DB] Error checking app existence for ID ${id}:`, err);
-          return reject(err);
-        }
-        if (!row) {
-          console.log(`[SQLite DB] Delete app mismatch: ID ${id} not found.`);
-          return resolve(false);
-        }
-        
-        // Exists, perform the standard DELETE command
-        this.db.run("DELETE FROM saas_apps WHERE id = ?", [id], (delErr: any) => {
-          if (delErr) {
-            console.error(`[SQLite DB] Error deleting app record ID ${id}:`, delErr);
-            return reject(delErr);
-          }
-          console.log(`[SQLite DB] Successfully deleted saas_apps record with ID: ${id}`);
-          resolve(true);
-        });
-      });
-    });
-  }
-
-  async updateApp(id: number, app: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const self = this;
-      self.db.get("SELECT * FROM saas_apps WHERE id = ?", [Number(id)], (fetchErr: any, existing: any) => {
-        if (fetchErr) return reject(fetchErr);
-        if (!existing) return reject(new Error(`SaaS app ${id} not found`));
-
-        // Merge: only fields explicitly present in `app` override the
-        // existing stored value. This prevents a partial update (e.g. from
-        // the basic-info edit form, which doesn't send curriculum/exam)
-        // from wiping out fields it never intended to touch.
-        const merged = { ...existing, ...app };
-
-        const q = `
-          UPDATE saas_apps 
-          SET name = ?, subtitle = ?, description = ?, category = ?, pricingType = ?, logoUrl = ?, accessUrl = ?, price = ?, instructor = ?, rating = ?, duration = ?, lessonsCount = ?, curriculum = ?, exam = ?, syllabus = ?
-          WHERE id = ?
-        `;
-        self.db.run(q, [
-          merged.name,
-          merged.subtitle,
-          merged.description,
-          merged.category,
-          merged.pricingType,
-          merged.logoUrl,
-          merged.accessUrl,
-          merged.price !== undefined ? Number(merged.price) : 0,
-          merged.instructor || "",
-          merged.rating !== undefined ? Number(merged.rating) : 0,
-          merged.duration || "",
-          merged.lessonsCount !== undefined ? Number(merged.lessonsCount) : 0,
-          merged.curriculum || "",
-          merged.exam || "",
-          merged.syllabus || "",
-          Number(id)
-        ], (err: any) => {
-          if (err) {
-            console.error(`[SQLite DB] Error updating app record ID ${id}:`, err);
-            return reject(err);
-          }
-
-          self.db.get("SELECT * FROM saas_apps WHERE id = ?", [id], (gErr: any, row: any) => {
-            if (gErr) return reject(gErr);
-            resolve(row);
-          });
-        });
-      });
-    });
-  }
-
-  async getAds(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM saas_ads ORDER BY id DESC", (err: any, rows: any) => {
-        if (err) return reject(err);
-        resolve(rows);
-      });
-    });
-  }
-
-  async addAd(ad: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        INSERT INTO saas_ads (title, subtitle, imageUrl, linkUrl)
-        VALUES (?, ?, ?, ?)
-      `;
-      const self = this;
-      this.db.run(q, [ad.title, ad.subtitle, ad.imageUrl, ad.linkUrl], (err: any) => {
-        if (err) return reject(err);
-        
-        self.db.get("SELECT last_insert_rowid() AS lastId", (rowIdErr: any, rowIdRes: any) => {
-          if (rowIdErr) return reject(rowIdErr);
-          const newId = rowIdRes ? rowIdRes.lastId : 0;
-          
-          self.db.get("SELECT * FROM saas_ads WHERE id = ?", [newId], (gErr: any, row: any) => {
-            if (gErr) return reject(gErr);
-            resolve(row);
-          });
-        });
-      });
-    });
-  }
-
-  async deleteAd(id: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      // First check if the ad exists
-      this.db.get("SELECT id FROM saas_ads WHERE id = ?", [id], (err: any, row: any) => {
-        if (err) {
-          console.error(`[SQLite DB] Error checking ad existence for ID ${id}:`, err);
-          return reject(err);
-        }
-        if (!row) {
-          console.log(`[SQLite DB] Delete ad mismatch: ID ${id} not found.`);
-          return resolve(false);
-        }
-        
-        this.db.run("DELETE FROM saas_ads WHERE id = ?", [id], (delErr: any) => {
-          if (delErr) {
-            console.error(`[SQLite DB] Error executing DELETE FROM saas_ads for ID ${id}:`, delErr);
-            return reject(delErr);
-          }
-          console.log(`[SQLite DB] Successfully deleted saas_ads campaign record with ID: ${id}`);
-          resolve(true);
-        });
-      });
-    });
-  }
-
-  async getFeedback(appId?: number): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      let query = "SELECT * FROM saas_feedback";
-      const params: any[] = [];
-      if (appId !== undefined) {
-        query += " WHERE appId = ?";
-        params.push(Number(appId));
-      }
-      query += " ORDER BY id DESC";
-      this.db.all(query, params, (err: any, rows: any) => {
-        if (err) return reject(err);
-        resolve((rows || []).map((r: any) => ({ ...r, userName: decryptPII(r.userName) })));
-      });
-    });
-  }
-
-  async addFeedback(feedback: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        INSERT INTO saas_feedback (appId, appName, rating, comment, userName, onboarded, onboardedComment, feedbackType, createdAt)
-        VALUES (?, ?, ?, ?, ?, 0, '', ?, CURRENT_TIMESTAMP)
-      `;
-      const self = this;
-      this.db.run(q, [
-        Number(feedback.appId),
-        feedback.appName || "Unknown SaaS",
-        Number(feedback.rating),
-        feedback.comment || "",
-        encryptPII(feedback.userName || "Anonymous"),
-        feedback.feedbackType || "feedback"
-      ], function(this: any, err: any) {
-        if (err) return reject(err);
-        
-        self.db.get("SELECT last_insert_rowid() AS lastId", (rowIdErr: any, rowIdRes: any) => {
-          if (rowIdErr) return reject(rowIdErr);
-          const newId = rowIdRes ? rowIdRes.lastId : 0;
-          
-          self.db.get("SELECT * FROM saas_feedback WHERE id = ?", [newId], (gErr: any, row: any) => {
-            if (gErr) return reject(gErr);
-            resolve(row ? { ...row, userName: decryptPII(row.userName) } : row);
-          });
-        });
-      });
-    });
-  }
-
-  async onboardFeedback(id: number, comment: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        UPDATE saas_feedback 
-        SET onboarded = 1, onboardedComment = ?, onboardedAt = ? 
-        WHERE id = ?
-      `;
-      const self = this;
-      const now = new Date().toISOString();
-      this.db.run(q, [comment || "", now, Number(id)], function(this: any, err: any) {
-        if (err) return reject(err);
-        
-        self.db.get("SELECT * FROM saas_feedback WHERE id = ?", [Number(id)], (fetchErr: any, row: any) => {
-          if (fetchErr) return reject(fetchErr);
-          resolve(row ? { ...row, userName: decryptPII(row.userName) } : row);
-        });
-      });
-    });
-  }
-
-  async getExamAttempts(appId?: number): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const decorate = (rows: any) => (rows || []).map((r: any) => ({ ...r, studentName: decryptPII(r.studentName) }));
-      if (appId === undefined) {
-        this.db.all("SELECT * FROM saas_exam_attempts ORDER BY id DESC", (err: any, rows: any) => {
-          if (err) return reject(err);
-          resolve(decorate(rows));
-        });
-      } else {
-        this.db.all(
-          "SELECT * FROM saas_exam_attempts WHERE appId = ? ORDER BY id DESC",
-          [appId],
-          (err: any, rows: any) => {
-            if (err) return reject(err);
-            resolve(decorate(rows));
-          }
-        );
-      }
-    });
-  }
-
-  async addExamAttempt(attempt: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        INSERT INTO saas_exam_attempts (appId, studentName, score, passed, timestamp)
-        VALUES (?, ?, ?, ?, ?)
-      `;
-      const self = this;
-      const ts = attempt.timestamp || new Date().toISOString();
-      this.db.run(q, [
-        Number(attempt.appId),
-        encryptPII(attempt.studentName || "Anonymous Student"),
-        attempt.score || "0/0",
-        attempt.passed ? 1 : 0,
-        ts
-      ], function(this: any, err: any) {
-        if (err) return reject(err);
-        
-        const insertId = this.lastID;
-        self.db.get("SELECT * FROM saas_exam_attempts WHERE id = ?", [insertId], (gErr: any, row: any) => {
-          if (gErr) return reject(gErr);
-          resolve(row ? { ...row, studentName: decryptPII(row.studentName) } : row);
-        });
-      });
-    });
-  }
-
-  async getInstructors(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM saas_instructors ORDER BY name ASC", (err: any, rows: any) => {
-        if (err) return reject(err);
-        resolve(rows || []);
-      });
-    });
-  }
-
-  async addInstructor(name: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const self = this;
-      const trimmed = name.trim();
-      this.db.run("INSERT INTO saas_instructors (name) VALUES (?)", [trimmed], function(this: any, err: any) {
-        if (err) {
-          if (err.message && err.message.includes("UNIQUE")) {
-            return reject(new Error("Instructor already exists"));
-          }
-          return reject(err);
-        }
-        const insertId = this.lastID;
-        self.db.get("SELECT * FROM saas_instructors WHERE id = ?", [insertId], (gErr: any, row: any) => {
-          if (gErr) return reject(gErr);
-          resolve(row);
-        });
-      });
-    });
-  }
-
-  async getLeads(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM saas_leads ORDER BY id DESC", (err: any, rows: any) => {
-        if (err) return reject(err);
-        const decrypted = (rows || []).map((r: any) => ({
-          ...r,
-          name: decryptPII(r.name),
-          company: decryptPII(r.company),
-          email: decryptPII(r.email),
-          phone: decryptPII(r.phone)
-        }));
-        resolve(decrypted);
-      });
-    });
-  }
-
-  async addLead(lead: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        INSERT INTO saas_leads (name, company, email, phone, employees, biggestChallenge, message, status, adminNotes, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'New', '', CURRENT_TIMESTAMP)
-      `;
-      const self = this;
-      this.db.run(q, [
-        encryptPII(lead.name),
-        encryptPII(lead.company),
-        encryptPII(lead.email),
-        encryptPII(lead.phone),
-        lead.employees || "",
-        lead.biggestChallenge || "",
-        lead.message || ""
-      ], function(this: any, err: any) {
-        if (err) return reject(err);
-        
-        const insertId = this.lastID;
-        self.db.get("SELECT * FROM saas_leads WHERE id = ?", [insertId], (gErr: any, row: any) => {
-          if (gErr) return reject(gErr);
-          if (!row) return resolve(null);
-          resolve({
-            ...row,
-            name: decryptPII(row.name),
-            company: decryptPII(row.company),
-            email: decryptPII(row.email),
-            phone: decryptPII(row.phone)
-          });
-        });
-      });
-    });
-  }
-
-  async updateLead(id: number, lead: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const q = `
-        UPDATE saas_leads 
-        SET status = ?, adminNotes = ?
-        WHERE id = ?
-      `;
-      const self = this;
-      this.db.run(q, [
-        lead.status || 'New',
-        lead.adminNotes || '',
-        Number(id)
-      ], function(this: any, err: any) {
-        if (err) return reject(err);
-        self.db.get("SELECT * FROM saas_leads WHERE id = ?", [Number(id)], (gErr: any, row: any) => {
-          if (gErr) return reject(gErr);
-          if (!row) return resolve(null);
-          resolve({
-            ...row,
-            name: decryptPII(row.name),
-            company: decryptPII(row.company),
-            email: decryptPII(row.email),
-            phone: decryptPII(row.phone)
-          });
-        });
-      });
-    });
-  }
-
-  // Tracks delivery of this lead to the V79Tiquet gateway, separate from
-  // the visitor-facing status/adminNotes above. tiquetEventId is set once,
-  // on creation, and reused on every retry attempt.
-  async updateLeadTiquetSync(id: number, tiquetEventId: string, tiquetSyncStatus: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        "UPDATE saas_leads SET tiquetEventId = ?, tiquetSyncStatus = ? WHERE id = ?",
-        [tiquetEventId, tiquetSyncStatus, Number(id)],
-        (err: any) => (err ? reject(err) : resolve())
-      );
-    });
-  }
-
-  async getPendingTiquetLeads(): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT * FROM saas_leads WHERE tiquetSyncStatus = 'pending'", [], (err: any, rows: any[]) => {
-        if (err) return reject(err);
-        resolve((rows || []).map(row => ({
-          ...row,
-          name: decryptPII(row.name),
-          company: decryptPII(row.company),
-          email: decryptPII(row.email),
-          phone: decryptPII(row.phone)
-        })));
-      });
-    });
   }
 }
 
@@ -1789,25 +824,8 @@ Protect your data today. Contact V79SL for automated cloud backup configurations
 let db: any;
 
 async function initDb() {
-  await loadSqlite();
-  if (sqliteModule) {
-    try {
-      const sqliteDb = new SqliteDatabase();
-      await sqliteDb.init();
-      db = sqliteDb;
-      console.log("[Database] Active storage layer: SQLite Database and File initialized of persistence!");
-    } catch (e) {
-      console.error("[Database] SQLite init failed, falling back to JSON schema:", e);
-      const jsonDb = new JsonDatabase();
-      await jsonDb.init();
-      db = jsonDb;
-    }
-  } else {
-    console.log("[Database] Active storage layer: Pure-JSON Engine file initialized!");
-    const jsonDb = new JsonDatabase();
-    await jsonDb.init();
-    db = jsonDb;
-  }
+  db = new DocumentDatabase();
+  db.init();
 
   try {
     seedArticlesIfEmpty();
@@ -1823,7 +841,7 @@ async function startServer() {
   const PORT = Number(cleanEnvValue(process.env.PORT)) || 3000;
   // Trust the first proxy hop (e.g. Nginx Proxy Manager) so req.ip reflects
   // the real client address for rate limiting and logging.
-  app.set("trust proxy", 1);
+  app.set("trust proxy", process.env.TRUSTED_PROXIES ? process.env.TRUSTED_PROXIES.split(",").map(x => x.trim()) : false);
   app.disable("x-powered-by");
 
   // Auto-detect production mode if NODE_ENV is set to "production", or we are running the compiled dist bundle, or server.ts is absent
@@ -1831,11 +849,13 @@ async function startServer() {
   const isProdFile = !!(process.argv[1] && (process.argv[1].endsWith(".cjs") || process.argv[1].includes("dist/")));
   const isProduction = process.env.NODE_ENV === "production" || isCJS || isProdFile || !fs.existsSync(path.resolve(process.cwd(), "server.ts"));
   const isDev = !isProduction;
+  if (isProduction) process.env.NODE_ENV = "production";
 
   let viteInstance: any = null;
   if (isDev) {
     console.log("[Vite] Initializing Vite dev server in middleware mode.");
-    viteInstance = await createViteServer({
+    const { createServer } = await import("vite");
+    viteInstance = await createServer({
       server: { middlewareMode: true },
       appType: "custom",
     });
@@ -1862,8 +882,24 @@ async function startServer() {
     next();
   });
 
-  app.use(express.json({ limit: "5mb" }));
+  app.use((req, res, next) => {
+    if (isProduction) res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https://www.google.com/recaptcha/; frame-src 'self' blob: https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'");
+    if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+      const origin = req.headers.origin;
+      const allowed = process.env.CANONICAL_DOMAIN || "http://localhost:3000";
+      if ((origin && origin !== new URL(allowed).origin) || req.headers['sec-fetch-site'] === 'cross-site') return res.status(403).json({error: "Cross-site request denied"});
+    }
+    next();
+  });
+  app.use('/api', rateLimit({windowMs:60000,max:300,standardHeaders:true,legacyHeaders:false}));
+  app.use(express.json({ limit: "1mb" }));
 
+  app.use((req, res, next) => { if (!['GET','HEAD','OPTIONS'].includes(req.method) && req.is('application/json') && (!req.body || Array.isArray(req.body) || typeof req.body !== 'object')) return res.status(400).json({error:'Expected a JSON object'}); next(); });
+  app.get('/api/config', (_req,res)=>res.json({recaptchaSiteKey:process.env.RECAPTCHA_SITE_KEY || process.env.VITE_RECAPTCHA_SITE_KEY || '',captchaEnabled:process.env.CAPTCHA_MODE !== 'disabled'}));
+  app.get('/api/ready', (_req,res)=>{try {storageReady();res.json({status:'ready'});}catch {res.status(503).json({status:'storage unavailable'});}});
+  mountLearners(app, db, requireAdmin, isCourseComplete);
+  app.use((req,res,next)=>{if(!['GET','HEAD','OPTIONS'].includes(req.method) && !req.body && !req.is('multipart/form-data')) req.body={};next();});
   const BUILD_VERSION = "2026.09.12-v2";
   const SERVER_START_TIME = new Date().toISOString();
 
@@ -1897,7 +933,13 @@ async function startServer() {
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
-  app.use("/uploads", express.static(uploadsDir));
+  app.use("/uploads", (req,res,next)=>{
+    if (isValidAdminSession(adminCookie(req))) return next();
+    const requested='/uploads'+req.path;
+    const restricted=db.getApps().filter((c:any)=>c.category==='courses' && (Number(c.price)>0 || c.pricingType==='premium')).filter((c:any)=>JSON.parse(c.curriculum||'[]').some((ch:any)=>(ch.lectures||[]).some((l:any)=>!l.freePreview && JSON.stringify(l).includes(requested))));
+    if (restricted.length && !restricted.some((c:any)=>learner(req)?.courses[String(c.id)]?.enrolled)) return res.status(403).json({error:'Enrollment required'});
+    next();
+  }, express.static(uploadsDir, {dotfiles:'deny',index:false}));
 
   // Multer Storage Engine for Audio and Video uploads
   const storage = multer.diskStorage({
@@ -1974,9 +1016,7 @@ async function startServer() {
         return next(e);
       }
     } else {
-      const distPath = fs.existsSync(path.join(process.cwd(), "dist"))
-        ? path.join(process.cwd(), "dist")
-        : (typeof __dirname !== "undefined" ? __dirname : path.resolve(process.cwd(), "dist"));
+      const distPath = path.resolve(process.env.CLIENT_DIST || path.join(process.cwd(), "dist/client"));
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
@@ -2017,14 +1057,14 @@ async function startServer() {
       // courses whose curriculum + exam are actually finished, so a course
       // can never appear "available" mid-setup.
       const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const token = adminCookie(req);
       const isAdmin = isValidAdminSession(token);
 
       const visibleApps = isAdmin
         ? appsWithLiveRatings
         : appsWithLiveRatings.filter((a: any) => a.category !== "courses" || a.isComplete);
 
-      res.json(visibleApps);
+      res.json(isAdmin ? visibleApps : visibleApps.map((c: any) => publicCourse(c, req)));
     } catch (err) {
       console.error("[API] Error fetching apps:", err);
       res.status(500).json({ error: "Db exception fetching applications" });
@@ -2034,7 +1074,7 @@ async function startServer() {
   // GET administrator session verification
   app.get("/api/admin/verify-session", (req, res) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const token = adminCookie(req);
     const session = getAdminSession(token);
     if (!session) {
       return res.status(401).json({ valid: false, error: "Session invalid or expired" });
@@ -2051,7 +1091,9 @@ async function startServer() {
     try {
       const ip = req.ip || req.socket.remoteAddress || "unknown";
 
+      if (isRateLimited(ip)) return res.status(429).json({error: "Too many login attempts. Try later."});
       const { password } = req.body || {};
+      if (typeof password !== "string" || password.length > 256) return res.status(400).json({error: "Invalid password"});
       const submitted = cleanEnvValue(password);
 
       const currentAuth = getLatestAdminAuth();
@@ -2060,10 +1102,11 @@ async function startServer() {
       if (matches) {
         clearLoginAttempts(ip);
         const token = issueAdminSession(currentAuth.mustChangePassword);
+        setAdminCookie(res, token);
         console.log(`[Authentication] Success. New session token issued for ${AUTHORIZED_ADMIN_EMAIL}.`);
         return res.json({
           success: true,
-          token,
+          token: "cookie-session",
           adminEmail: AUTHORIZED_ADMIN_EMAIL,
           mustChangePassword: currentAuth.mustChangePassword
         });
@@ -2086,8 +1129,9 @@ async function startServer() {
   // POST administrator logout - invalidate the current session token
   app.post("/api/admin/logout", (req, res) => {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    const token = adminCookie(req);
     if (token) adminSessions.delete(token);
+    res.clearCookie("v79_admin", {path: "/"});
     res.json({ success: true });
   });
 
@@ -2098,7 +1142,7 @@ async function startServer() {
   app.post("/api/admin/change-password", (req, res) => {
     try {
       const authHeader = req.headers.authorization;
-      const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const token = adminCookie(req);
       const session = getAdminSession(token);
       if (!session) {
         return res.status(401).json({ error: "Unauthorized access: a valid administrator session is required." });
@@ -2134,9 +1178,12 @@ async function startServer() {
       // can't linger around after the password it was tied to is retired.
       invalidateAllAdminSessions();
       const newToken = issueAdminSession(false);
+      setAdminCookie(res, newToken);
+      const setupFile = path.join(process.cwd(), "data", ".admin_setup_password");
+      if (fs.existsSync(setupFile)) fs.unlinkSync(setupFile);
 
       console.log("[Authentication] Admin password changed successfully. All prior sessions revoked.");
-      return res.json({ success: true, token: newToken });
+      return res.json({ success: true, token: "cookie-session" });
     } catch (err: any) {
       console.error("[Authentication] Critical exception during password change:", err);
       return res.status(500).json({ error: "Server authentication engine error." });
@@ -2283,7 +1330,7 @@ async function startServer() {
   // PUT update an existing SaaS application record
   app.put("/api/apps/:id", requireAdmin, async (req, res) => {
 
-    const id = Number(req.params.id);
+    const id = Number(String(req.params.id));
     const { name, subtitle, description, category, pricingType, logoUrl, accessUrl, price, instructor, rating, duration, lessonsCount, curriculum, exam, syllabus } = req.body;
 
     // validation
@@ -2326,7 +1373,7 @@ async function startServer() {
       if (syllabus !== undefined) updatePayload.syllabus = syllabus;
 
       const updatedApp = await db.updateApp(id, updatePayload);
-      res.json(updatedApp);
+      res.json(publicCourse(updatedApp, req));
     } catch (err) {
       console.error("[API] Error updating app:", err);
       res.status(500).json({ error: "Failed to update application" });
@@ -2346,26 +1393,8 @@ async function startServer() {
   const CB_DATA_FILE = path.join(CB_DATA_DIR, "course_builder_store.json");
   if (!fs.existsSync(CB_DATA_DIR)) fs.mkdirSync(CB_DATA_DIR, { recursive: true });
 
-  function cbLoad(): any {
-    try {
-      if (fs.existsSync(CB_DATA_FILE)) {
-        return JSON.parse(fs.readFileSync(CB_DATA_FILE, "utf-8"));
-      }
-    } catch (e) {
-      console.error("[CourseBuilder] Error loading data:", e);
-    }
-    const initial = { courses: [], modules: [], lessons: [], quizzes: [], assets: [] };
-    fs.writeFileSync(CB_DATA_FILE, JSON.stringify(initial, null, 2), "utf-8");
-    return initial;
-  }
-
-  function cbSave(data: any) {
-    try {
-      fs.writeFileSync(CB_DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      console.error("[CourseBuilder] Error saving data:", e);
-    }
-  }
+  function cbLoad(): any { return readJSON(CB_DATA_FILE, {courses: [], modules: [], lessons: [], quizzes: [], assets: []}); }
+  function cbSave(data: any) { writeJSON(CB_DATA_FILE, data); }
 
   let cbDb = cbLoad();
 
@@ -2403,14 +1432,14 @@ async function startServer() {
 
   app.get("/api/courses/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const course = cbDb.courses.find((c: any) => c.id === req.params.id);
+    const course = cbDb.courses.find((c: any) => c.id === String(req.params.id));
     if (!course) return res.status(404).json({ error: "Course not found" });
     res.json(course);
   });
 
   app.put("/api/courses/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const index = cbDb.courses.findIndex((c: any) => c.id === req.params.id);
+    const index = cbDb.courses.findIndex((c: any) => c.id === String(req.params.id));
     if (index === -1) return res.status(404).json({ error: "Course not found" });
     cbDb.courses[index] = { ...cbDb.courses[index], ...req.body, updatedAt: new Date().toISOString() };
     cbSave(cbDb);
@@ -2419,7 +1448,7 @@ async function startServer() {
 
   app.delete("/api/courses/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const courseId = req.params.id;
+    const courseId = String(req.params.id);
     cbDb.courses = cbDb.courses.filter((c: any) => c.id !== courseId);
     cbDb.modules = cbDb.modules.filter((m: any) => m.courseId !== courseId);
     cbDb.lessons = cbDb.lessons.filter((l: any) => l.courseId !== courseId);
@@ -2454,7 +1483,7 @@ async function startServer() {
 
   app.put("/api/modules/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const index = cbDb.modules.findIndex((m: any) => m.id === req.params.id);
+    const index = cbDb.modules.findIndex((m: any) => m.id === String(req.params.id));
     if (index === -1) return res.status(404).json({ error: "Module not found" });
     cbDb.modules[index] = { ...cbDb.modules[index], ...req.body };
     cbSave(cbDb);
@@ -2463,7 +1492,7 @@ async function startServer() {
 
   app.delete("/api/modules/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const modId = req.params.id;
+    const modId = String(req.params.id);
     cbDb.modules = cbDb.modules.filter((m: any) => m.id !== modId);
     cbDb.lessons = cbDb.lessons.filter((l: any) => l.moduleId !== modId);
     cbSave(cbDb);
@@ -2507,14 +1536,14 @@ async function startServer() {
 
   app.get("/api/lessons/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const lesson = cbDb.lessons.find((l: any) => l.id === req.params.id);
+    const lesson = cbDb.lessons.find((l: any) => l.id === String(req.params.id));
     if (!lesson) return res.status(404).json({ error: "Lesson not found" });
     res.json(lesson);
   });
 
   app.put("/api/lessons/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const index = cbDb.lessons.findIndex((l: any) => l.id === req.params.id);
+    const index = cbDb.lessons.findIndex((l: any) => l.id === String(req.params.id));
     if (index === -1) return res.status(404).json({ error: "Lesson not found" });
     cbDb.lessons[index] = { ...cbDb.lessons[index], ...req.body };
     cbSave(cbDb);
@@ -2523,7 +1552,7 @@ async function startServer() {
 
   app.delete("/api/lessons/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const lesId = req.params.id;
+    const lesId = String(req.params.id);
     cbDb.lessons = cbDb.lessons.filter((l: any) => l.id !== lesId);
     cbDb.quizzes = cbDb.quizzes.filter((q: any) => q.lessonId !== lesId);
     cbSave(cbDb);
@@ -2587,7 +1616,7 @@ async function startServer() {
 
   app.delete("/api/assets/:id", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    cbDb.assets = cbDb.assets.filter((a: any) => a.id !== req.params.id);
+    cbDb.assets = cbDb.assets.filter((a: any) => a.id !== String(req.params.id));
     cbSave(cbDb);
     res.json({ success: true });
   });
@@ -2595,7 +1624,7 @@ async function startServer() {
   // Export package (used by the "Export" modal in the ported UI)
   app.get("/api/courses/:id/export-package", requireAdmin, (req, res) => {
     cbDb = cbLoad();
-    const courseId = req.params.id;
+    const courseId = String(req.params.id);
     const course = cbDb.courses.find((c: any) => c.id === courseId);
     if (!course) return res.status(404).json({ error: "Course not found" });
     const modules = cbDb.modules.filter((m: any) => m.courseId === courseId);
@@ -2671,7 +1700,7 @@ async function startServer() {
 
   app.post("/api/courses/:id/publish", requireAdmin, async (req, res) => {
     cbDb = cbLoad();
-    const courseId = req.params.id;
+    const courseId = String(req.params.id);
     const courseIndex = cbDb.courses.findIndex((c: any) => c.id === courseId);
     if (courseIndex === -1) return res.status(404).json({ error: "Course not found" });
 
@@ -2742,7 +1771,7 @@ async function startServer() {
   });
 
   // POST increment download or launch trigger
-  app.post("/api/apps/increment", async (req, res) => {
+  app.post("/api/apps/increment", rateLimit({windowMs:60000,max:30,standardHeaders:true,legacyHeaders:false}), async (req, res) => {
     const { id } = req.body;
     const numericId = Number(id);
 
@@ -2755,7 +1784,7 @@ async function startServer() {
       if (!updatedApp) {
         return res.status(404).json({ error: "No matching application found" });
       }
-      res.json(updatedApp);
+      res.json(publicCourse(updatedApp, req));
     } catch (err) {
       console.error("[API] Error incrementing launch count:", err);
       res.status(500).json({ error: "Database error updating counters" });
@@ -2765,7 +1794,7 @@ async function startServer() {
   // DELETE a SaaS application record
   app.delete("/api/apps/:id", requireAdmin, async (req, res) => {
 
-    const appId = Number(req.params.id);
+    const appId = Number(String(req.params.id));
 
     try {
       const deleted = await db.deleteApp(appId);
@@ -2809,7 +1838,7 @@ async function startServer() {
   });
 
   // GET all student exam attempts
-  app.get("/api/exam/attempts", async (req, res) => {
+  app.get("/api/exam/attempts", requireAdmin, async (req, res) => {
     try {
       const appIdQuery = req.query.appId ? Number(req.query.appId) : undefined;
       const attempts = await db.getExamAttempts(appIdQuery);
@@ -2817,36 +1846,6 @@ async function startServer() {
     } catch (err) {
       console.error("[API] Error fetching exam attempts:", err);
       res.status(500).json({ error: "Db exception fetching exam attempts" });
-    }
-  });
-
-  // POST save a student exam attempt
-  app.post("/api/exam/attempt", async (req, res) => {
-    const { appId, studentName, score, passed } = req.body;
-    const numericAppId = Number(appId);
-
-    if (!appId || !Number.isFinite(numericAppId) || !studentName) {
-      return res.status(400).json({ error: "appId and studentName are required parameters" });
-    }
-    if (typeof studentName !== "string" || studentName.length > 100) {
-      return res.status(400).json({ error: "studentName must be a string under 100 characters" });
-    }
-    if (score !== undefined && (typeof score !== "string" || score.length > 20)) {
-      return res.status(400).json({ error: "score must be a short string (e.g. '8/10')" });
-    }
-
-    try {
-      const attempt = await db.addExamAttempt({
-        appId: numericAppId,
-        studentName,
-        score,
-        passed: !!passed,
-        timestamp: new Date().toISOString()
-      });
-      res.status(201).json(attempt);
-    } catch (err) {
-      console.error("[API] Error saving exam attempt:", err);
-      res.status(500).json({ error: "Db exception saving exam attempt" });
     }
   });
 
@@ -2886,7 +1885,7 @@ async function startServer() {
   // DELETE a carousel ad record
   app.delete("/api/ads/:id", requireAdmin, async (req, res) => {
 
-    const adId = Number(req.params.id);
+    const adId = Number(String(req.params.id));
 
     try {
       const deleted = await db.deleteAd(adId);
@@ -2913,11 +1912,12 @@ async function startServer() {
   });
 
   // POST submit new feedback (rating, comment) for an app
-  app.post("/api/feedback", async (req, res) => {
+  app.post("/api/feedback", rateLimit({windowMs:3600000,max:10,standardHeaders:true,legacyHeaders:false}), async (req, res) => {
     const { appId, appName, rating, comment, userName, feedbackType } = req.body;
 
     const numericAppId = Number(appId);
     const numericRating = Number(rating);
+    if (!db.getApps().some((a:any)=>a.id===numericAppId)) return res.status(404).json({error:"Application not found"});
 
     if (!appId || !Number.isFinite(numericAppId) || !rating || !comment) {
       return res.status(400).json({ error: "Missing required fields (appId, rating, comment) in body" });
@@ -2963,7 +1963,7 @@ async function startServer() {
   // POST mark a feedback as onboarded / addressed with admin response
   app.post("/api/admin/feedback/:id/onboard", requireAdmin, async (req, res) => {
 
-    const id = Number(req.params.id);
+    const id = Number(String(req.params.id));
     const { onboardedComment } = req.body;
 
     try {
@@ -2982,12 +1982,13 @@ async function startServer() {
   const V79TIQUET_INTAKE_URL = process.env.V79TIQUET_INTAKE_URL; // e.g. http://v79-tiquet-manager:3050/api/public/intake
   const V79TIQUET_INTAKE_SECRET = process.env.V79TIQUET_INTAKE_SECRET;
   const TIQUET_RETRY_DELAYS_MS = [1500, 4000];
+  const deliveries = new Map<string, Promise<"sent" | "pending" | "failed" | "disabled">>();
 
   function tiquetGatewayConfigured(): boolean {
     return !!(V79TIQUET_INTAKE_URL && V79TIQUET_INTAKE_SECRET);
   }
 
-  async function attemptTiquetDelivery(payload: Record<string, unknown>): Promise<boolean | "permanent-failure"> {
+  async function attemptTiquetDelivery(payload: Record<string, unknown>): Promise<"sent" | "pending" | "failed"> {
     const res = await fetch(V79TIQUET_INTAKE_URL as string, {
       method: "POST",
       headers: {
@@ -2997,13 +1998,13 @@ async function startServer() {
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(8000),
     });
-    if (res.ok) return true;
-    if (res.status >= 400 && res.status < 500) {
+    if (res.ok) return "sent";
+    if (res.status >= 400 && res.status < 500 && ![408,429].includes(res.status)) {
       const body = await res.json().catch(() => null);
       console.warn(`[V79Tiquet Gateway] Rejected (HTTP ${res.status}): ${body?.error || "no error detail"} — will not retry.`);
-      return "permanent-failure";
+      return "failed";
     }
-    return false; // 5xx / unexpected — treat as transient, worth retrying
+    return "pending"; // Retry transient errors
   }
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -3014,8 +2015,12 @@ async function startServer() {
    * nothing more to do), false if it should be left 'pending' for the
    * periodic sweep to retry later.
    */
-  async function sendLeadToTiquet(lead: any, eventId: string): Promise<boolean> {
-    if (!tiquetGatewayConfigured()) return true; // integration not configured — nothing to do, not an error
+  function sendLeadToTiquet(lead:any,eventId:string): Promise<"sent" | "pending" | "failed" | "disabled"> {
+    const running=deliveries.get(eventId);if(running)return running;
+    const pending=deliverLeadToTiquet(lead,eventId).finally(()=>deliveries.delete(eventId));deliveries.set(eventId,pending);return pending;
+  }
+  async function deliverLeadToTiquet(lead: any, eventId: string): Promise<"sent" | "pending" | "failed" | "disabled"> {
+    if (!tiquetGatewayConfigured()) return "disabled"; // integration not configured — nothing to do, not an error
 
     const payload = {
       eventId,
@@ -3032,14 +2037,14 @@ async function startServer() {
     for (let attempt = 0; attempt <= TIQUET_RETRY_DELAYS_MS.length; attempt++) {
       try {
         const result = await attemptTiquetDelivery(payload);
-        if (result === true || result === "permanent-failure") return true;
+        if (result !== "pending") return result;
       } catch (err: any) {
         console.warn(`[V79Tiquet Gateway] Delivery attempt ${attempt + 1} failed: ${err.message}`);
       }
       if (attempt < TIQUET_RETRY_DELAYS_MS.length) await sleep(TIQUET_RETRY_DELAYS_MS[attempt]);
     }
     console.warn(`[V79Tiquet Gateway] Lead ${eventId} still pending delivery after inline retries — periodic sweep will keep trying.`);
-    return false;
+    return "pending";
   }
 
   // Periodic sweep: catches any lead whose Tiquet delivery didn't succeed
@@ -3064,7 +2069,7 @@ async function startServer() {
     for (const lead of pending) {
       try {
         const delivered = await sendLeadToTiquet(lead, lead.tiquetEventId);
-        if (delivered) await db.updateLeadTiquetSync(lead.id, lead.tiquetEventId, "sent");
+        await db.updateLeadTiquetSync(lead.id, lead.tiquetEventId, delivered);
       } catch (err: any) {
         console.error(`[V79Tiquet Gateway] Sweep failed for lead ${lead.id}:`, err.message);
       }
@@ -3081,7 +2086,7 @@ async function startServer() {
   // pattern of every integration being optional until its env vars are set.
   async function verifyRecaptcha(token: unknown): Promise<boolean> {
     const secret = process.env.RECAPTCHA_SECRET_KEY;
-    if (!secret) return true;
+    if (!secret) return process.env.CAPTCHA_MODE === "disabled";
     // A token that's missing entirely (not one that was provided and
     // failed) is treated as "couldn't verify" rather than "rejected" —
     // ad-blockers and privacy extensions commonly block Google's reCAPTCHA
@@ -3092,8 +2097,7 @@ async function startServer() {
     // downstream; a bot that DOES get a token and fails verification is a
     // much stronger, more deliberate signal and is still rejected below.
     if (typeof token !== "string" || !token) {
-      console.warn("[reCAPTCHA] No token provided (likely blocked client-side) — allowing submission through.");
-      return true;
+      return false;
     }
     try {
       const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
@@ -3103,10 +2107,10 @@ async function startServer() {
         signal: AbortSignal.timeout(5000),
       });
       const data = await res.json();
-      return !!data.success && (typeof data.score !== "number" || data.score >= 0.5);
+      return !!data.success && typeof data.score === "number" && data.score >= 0.5 && data.action === "submit" && data.hostname === new URL(process.env.CANONICAL_DOMAIN || "https://v79sl.com").hostname;
     } catch (err: any) {
-      console.warn("[reCAPTCHA] Verification request failed, allowing submission through:", err.message);
-      return true; // don't let a reCAPTCHA outage block legitimate visitors
+      console.warn("[reCAPTCHA] Verification request failed:", err.message);
+      return false;
     }
   }
 
@@ -3126,7 +2130,7 @@ async function startServer() {
     const { name, company, email, phone, employees, biggestChallenge, serviceRequested, message, pageOrigin, leadSource, location, recaptchaToken } = req.body;
     
     // Server-side validation
-    if (!name || !name.trim() || !company || !company.trim() || !email || !email.trim() || !phone || !phone.trim()) {
+    if (![name, company, email, phone].every(v => typeof v === "string" && v.trim().length > 0 && v.length <= 250) || ![employees, biggestChallenge, serviceRequested, message, pageOrigin, leadSource, location].every(v => v === undefined || (typeof v === "string" && v.length <= 4000))) {
       return res.status(400).json({ error: "All required contact fields (Name, Company, Email, Phone) must be filled." });
     }
 
@@ -3149,10 +2153,16 @@ async function startServer() {
         biggestChallenge: biggestChallenge || "",
         message: message || ""
       };
-      const newLead = await db.addLead(leadData);
+      const requestId = req.headers['idempotency-key'];
+      if (requestId !== undefined && (typeof requestId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(requestId))) return res.status(400).json({error:'Invalid request identifier'});
+      const requestHash=crypto.createHash('sha256').update(JSON.stringify(leadData)).digest('hex');
+      const previous = readJSON<any[]>('lead-requests.json', []).find(r=>r.id===requestId && r.expires>Date.now());
+      if(previous) return previous.hash===requestHash ? res.status(200).json({id:previous.leadId,success:true}) : res.status(409).json({error:'Request identifier already used'});
+      const { newLead, crmCaptureResult, eventId } = transaction(() => {
+      const newLead = db.addLead(leadData);
 
       // Durable CRM capture with duplicate detection & AI scoring
-      const crmCaptureResult = await crmStorage.addLead({
+      const crmCaptureResult = crmStorage.addLead({
         name: name.trim(),
         company: company.trim(),
         email: email.trim(),
@@ -3169,7 +2179,10 @@ async function startServer() {
       }, "Website Contact Form");
 
       const eventId = crypto.randomUUID();
-      await db.updateLeadTiquetSync(newLead.id, eventId, "pending");
+      db.updateLeadTiquetSync(newLead.id, eventId, "pending");
+      if(requestId){const recent=readJSON<any[]>('lead-requests.json',[]).filter(r=>r.expires>Date.now());recent.push({id:requestId,hash:requestHash,leadId:newLead.id,expires:Date.now()+86400000});writeJSON('lead-requests.json',recent);}
+      return {newLead, crmCaptureResult, eventId};
+      });
       
       res.status(201).json({
         ...newLead,
@@ -3180,7 +2193,7 @@ async function startServer() {
 
       sendLeadToTiquet(leadData, eventId)
         .then((delivered) => {
-          if (delivered) return db.updateLeadTiquetSync(newLead.id, eventId, "sent");
+          return db.updateLeadTiquetSync(newLead.id, eventId, delivered);
         })
         .catch((err) => {
           console.error(`[V79Tiquet Gateway] Unexpected error delivering lead ${newLead.id}:`, err.message);
@@ -3191,6 +2204,14 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/leads/:id/retry', requireAdmin, async (req,res)=>{
+    const lead = db.getLeads().find((l:any)=>l.id===Number(String(req.params.id)));
+    if(!lead)return res.status(404).json({error:'Lead not found'});
+    if(lead.tiquetSyncStatus==='sent')return res.status(409).json({error:'Already delivered'});
+    const eventId=lead.tiquetEventId || crypto.randomUUID();
+    db.updateLeadTiquetSync(lead.id,eventId,'pending');
+    const state=await sendLeadToTiquet(lead,eventId);db.updateLeadTiquetSync(lead.id,eventId,state);res.json({status:state});
+  });
   app.get("/api/admin/leads", requireAdmin, async (req, res) => {
     try {
       const list = await db.getLeads();
@@ -3202,7 +2223,7 @@ async function startServer() {
   });
 
   app.put("/api/admin/leads/:id", requireAdmin, async (req, res) => {
-    const id = Number(req.params.id);
+    const id = Number(String(req.params.id));
     const { status, adminNotes } = req.body;
     try {
       const updated = await db.updateLead(id, { status, adminNotes });
@@ -3246,7 +2267,7 @@ async function startServer() {
 
   app.get("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
     try {
-      const lead = crmStorage.getLeadById(Number(req.params.id));
+      const lead = crmStorage.getLeadById(Number(String(req.params.id)));
       if (!lead) return res.status(404).json({ error: "Lead not found" });
       const activities = crmStorage.getActivities(lead.id);
       const calls = crmStorage.getCalls(lead.id);
@@ -3270,7 +2291,7 @@ async function startServer() {
 
   app.put("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
     try {
-      const updated = crmStorage.updateLead(Number(req.params.id), req.body, "Admin");
+      const updated = transaction(() => crmStorage.updateLead(Number(String(req.params.id)), req.body, "Admin"));
       res.json(updated);
     } catch (e) {
       console.error("[CRM API] Error updating CRM lead:", e);
@@ -3282,7 +2303,7 @@ async function startServer() {
     try {
       const stage = req.body.stage;
       if (!stage) return res.status(400).json({ error: "stage is required in request body" });
-      const updated = crmStorage.updateLeadStage(Number(req.params.id), stage, "Admin");
+      const updated = crmStorage.updateLeadStage(Number(String(req.params.id)), stage, "Admin");
       res.json(updated);
     } catch (e) {
       console.error("[CRM API] Error updating lead stage:", e);
@@ -3292,7 +2313,7 @@ async function startServer() {
 
   app.post("/api/admin/crm/leads/:id/convert", requireAdmin, (req, res) => {
     try {
-      const converted = crmStorage.convertLeadToClient(Number(req.params.id), req.body, "Admin");
+      const converted = crmStorage.convertLeadToClient(Number(String(req.params.id)), req.body, "Admin");
       res.json(converted);
     } catch (e) {
       console.error("[CRM API] Error converting lead:", e);
@@ -3302,7 +2323,7 @@ async function startServer() {
 
   app.post("/api/admin/crm/leads/:id/archive", requireAdmin, (req, res) => {
     try {
-      const archived = crmStorage.archiveLead(Number(req.params.id), "Admin");
+      const archived = crmStorage.archiveLead(Number(String(req.params.id)), "Admin");
       res.json(archived);
     } catch (e) {
       console.error("[CRM API] Error archiving lead:", e);
@@ -3312,7 +2333,7 @@ async function startServer() {
 
   app.post(["/api/admin/crm/leads/merge", "/api/admin/crm/leads/:id/merge"], requireAdmin, (req, res) => {
     try {
-      const primaryId = req.params.id ? Number(req.params.id) : Number(req.body.primaryLeadId || req.body.primaryId);
+      const primaryId = String(req.params.id) ? Number(String(req.params.id)) : Number(req.body.primaryLeadId || req.body.primaryId);
       const duplicateId = Number(req.body.duplicateLeadId || req.body.duplicateId);
       if (!primaryId || !duplicateId) {
         return res.status(400).json({ error: "Both primary and duplicate lead IDs are required for merge." });
@@ -3327,7 +2348,7 @@ async function startServer() {
 
   app.delete("/api/admin/crm/leads/:id", requireAdmin, (req, res) => {
     try {
-      const ok = crmStorage.deleteLead(Number(req.params.id));
+      const ok = crmStorage.deleteLead(Number(String(req.params.id)));
       res.json({ success: ok });
     } catch (e) {
       console.error("[CRM API] Error deleting lead:", e);
@@ -3337,7 +2358,7 @@ async function startServer() {
 
   app.get("/api/admin/crm/leads/:id/activities", requireAdmin, (req, res) => {
     try {
-      const list = crmStorage.getActivities(Number(req.params.id));
+      const list = crmStorage.getActivities(Number(String(req.params.id)));
       res.json(list);
     } catch (e) {
       res.status(500).json({ error: "Failed to load activities." });
@@ -3347,7 +2368,7 @@ async function startServer() {
   app.post("/api/admin/crm/leads/:id/activities", requireAdmin, (req, res) => {
     try {
       const act = crmStorage.addActivity({
-        leadId: Number(req.params.id),
+        leadId: Number(String(req.params.id)),
         type: req.body.type || "note",
         title: req.body.title || "Note Added",
         description: req.body.description || "",
@@ -3362,7 +2383,7 @@ async function startServer() {
 
   app.get("/api/admin/crm/leads/:id/calls", requireAdmin, (req, res) => {
     try {
-      const list = crmStorage.getCalls(Number(req.params.id));
+      const list = crmStorage.getCalls(Number(String(req.params.id)));
       res.json(list);
     } catch (e) {
       res.status(500).json({ error: "Failed to load calls." });
@@ -3372,7 +2393,7 @@ async function startServer() {
   app.post("/api/admin/crm/leads/:id/calls", requireAdmin, (req, res) => {
     try {
       const call = crmStorage.addCall({
-        leadId: Number(req.params.id),
+        leadId: Number(String(req.params.id)),
         outcome: req.body.outcome || "Called",
         durationSecs: req.body.durationSecs || 0,
         notes: req.body.notes || "",
@@ -3414,7 +2435,7 @@ async function startServer() {
     try {
       const status = req.body.status;
       if (status) {
-        const updated = crmStorage.updateTaskStatus(req.params.id, status);
+        const updated = crmStorage.updateTaskStatus(String(req.params.id), status);
         return res.json(updated);
       }
       res.json({ success: true });
@@ -3454,6 +2475,11 @@ async function startServer() {
     }
   });
 
+  app.post('/api/admin/crm/directory',requireAdmin,(req,res)=>{
+    const entries=req.body.entries;
+    if(!Array.isArray(entries)||entries.length>500||entries.some(e=>!e||typeof e.businessName!=='string'||!e.businessName.trim()||e.businessName.length>200||Object.values(e).some(v=>typeof v!=='string'||v.length>4000)))return res.status(400).json({error:'Provide up to 500 business records with text fields and a businessName.'});
+    writeJSON('business-directory.json',entries);res.json({count:entries.length});
+  });
   app.get("/api/admin/crm/prospects/history", requireAdmin, (req, res) => {
     try {
       const history = crmStorage.getSearchHistory();
@@ -3466,8 +2492,8 @@ async function startServer() {
   app.post("/api/admin/crm/prospects/:id/analyze", requireAdmin, async (req, res) => {
     try {
       const updated = await crmStorage.analyzeProspect(
-        req.params.id,
-        req.body.ollamaUrl || process.env.OLLAMA_BASE_URL,
+        String(req.params.id),
+        process.env.OLLAMA_BASE_URL,
         req.body.model || process.env.OLLAMA_MODEL
       );
       res.json(updated);
@@ -3479,7 +2505,7 @@ async function startServer() {
 
   app.post("/api/admin/crm/prospects/:id/approve", requireAdmin, (req, res) => {
     try {
-      const lead = crmStorage.approveProspectToLead(req.params.id, "Admin");
+      const lead = crmStorage.approveProspectToLead(String(req.params.id), "Admin");
       res.json({ ...lead, lead });
     } catch (e) {
       res.status(500).json({ error: (e as any)?.message || "Failed to approve prospect." });
@@ -3498,7 +2524,7 @@ async function startServer() {
 
   app.post("/api/admin/crm/prospects/:id/reject", requireAdmin, (req, res) => {
     try {
-      const ok = crmStorage.rejectProspect(req.params.id);
+      const ok = crmStorage.rejectProspect(String(req.params.id));
       res.json({ success: ok });
     } catch (e) {
       res.status(500).json({ error: "Failed to reject prospect." });
@@ -3520,7 +2546,7 @@ async function startServer() {
       const businessData = req.body;
       const analysis = await analyzeBusinessWithAI(
         businessData,
-        req.body.ollamaUrl || process.env.OLLAMA_BASE_URL,
+        process.env.OLLAMA_BASE_URL,
         req.body.model || process.env.OLLAMA_MODEL
       );
       res.json(analysis);
@@ -3532,7 +2558,7 @@ async function startServer() {
 
   app.get("/api/admin/crm/ai/status", requireAdmin, async (req, res) => {
     try {
-      const baseUrl = (req.query.baseUrl as string) || process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+      const baseUrl = process.env.OLLAMA_BASE_URL || "http://ollama:11434";
       const status = await pingOllama(baseUrl);
       res.json(status);
     } catch (e) {
@@ -3665,7 +2691,7 @@ async function startServer() {
   });
 
   app.get("/api/articles/:slug", (req, res) => {
-    const slug = req.params.slug;
+    const slug = String(req.params.slug);
     if (!slug || typeof slug !== "string" || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
       return res.status(400).json({ error: "Invalid article identifier format" });
     }
@@ -3715,7 +2741,7 @@ async function startServer() {
     coverImage: string;
     content: string;
   }) {
-    const escapeYaml = (v: string) => String(v || "").replace(/"/g, '\\"');
+    const escapeYaml = (v: string) => String(v || "").replace(/[\r\n]/g, " ").replace(/"/g, '\\"');
     const frontMatter = `---
 title: "${escapeYaml(fields.title)}"
 description: "${escapeYaml(fields.description)}"
@@ -3729,7 +2755,7 @@ ${fields.content || ""}`;
     if (!fs.existsSync(ARTICLES_DIR)) {
       fs.mkdirSync(ARTICLES_DIR, { recursive: true });
     }
-    fs.writeFileSync(path.join(ARTICLES_DIR, `${slug}.md`), frontMatter, "utf-8");
+    atomicWrite(path.join(ARTICLES_DIR, `${slug}.md`), frontMatter);
   }
 
   // POST create a new blog article/post
@@ -3782,7 +2808,7 @@ ${fields.content || ""}`;
   // PUT update an existing blog article/post (slug is immutable via this route)
   app.put("/api/admin/articles/:slug", requireAdmin, (req, res) => {
     try {
-      const slug = req.params.slug;
+      const slug = String(req.params.slug);
       if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
         return res.status(400).json({ error: "Invalid article identifier format" });
       }
@@ -3821,7 +2847,7 @@ ${fields.content || ""}`;
   // DELETE a blog article/post
   app.delete("/api/admin/articles/:slug", requireAdmin, (req, res) => {
     try {
-      const slug = req.params.slug;
+      const slug = String(req.params.slug);
       if (!slug || !/^[a-zA-Z0-9_-]+$/.test(slug)) {
         return res.status(400).json({ error: "Invalid article identifier format" });
       }
@@ -3924,6 +2950,14 @@ ${articlesXml}</urlset>`;
   });
 
   // Vite development vs production serving logic
+  app.use('/api', (_req,res)=>res.status(404).json({error:'API route not found'}));
+  app.use((req,res,next)=>{
+    const courseMatch=req.path.match(/^\/course\/(\d+)$/);
+    if(courseMatch && !db.getApps().some((c:any)=>c.id===Number(courseMatch[1]) && isCourseComplete(c)))return res.status(404).type('html').send('<h1>Course not found</h1><a href="/">Return to Vision79 Digital</a>');
+    const allowed = ['/', '/services', '/about', '/contact', '/industries', '/resources', '/solutions', '/courses', '/marketplace', '/privacy', '/terms', '/admin', '/adimin', '/adimn'];
+    if (req.method === 'GET' && !allowed.includes(req.path) && !/^\/course\/\d+$/.test(req.path) && !req.path.startsWith('/assets/') && !req.path.startsWith('/uploads/') && !/\.[a-z0-9]+$/i.test(req.path)) return res.status(404).type('html').send('<!doctype html><html lang="en"><title>Page not found</title><main><h1>Page not found</h1><p>The page may have moved.</p><a href="/">Return to Vision79 Digital</a></main></html>');
+    next();
+  });
   if (isDev) {
     // Intercept HTML requests in dev mode to inject dynamic post Open Graph / Twitter image metadata
     app.use(async (req, res, next) => {
@@ -3961,7 +2995,7 @@ ${articlesXml}</urlset>`;
     }
 
     // Fallback UI router in development
-    app.get("*", async (req, res, next) => {
+    app.get("/{*path}", async (req, res, next) => {
       try {
         const url = req.originalUrl;
         const htmlPath = path.resolve(process.cwd(), "index.html");
@@ -3989,9 +3023,7 @@ ${articlesXml}</urlset>`;
     });
   } else {
     console.log("[Production] Serving static distribution assets.");
-    const distPath = fs.existsSync(path.join(process.cwd(), "dist"))
-      ? path.join(process.cwd(), "dist")
-      : (typeof __dirname !== "undefined" ? __dirname : path.resolve(process.cwd(), "dist"));
+    const distPath = path.resolve(process.env.CLIENT_DIST || path.join(process.cwd(), "dist/client"));
     
     // Dist hashed assets get 1-year immutable cache
     app.use("/assets", express.static(path.join(distPath, "assets"), {
@@ -4013,12 +3045,13 @@ ${articlesXml}</urlset>`;
       }
     }));
 
-    app.get("*", (req, res) => {
+    app.get("/{*path}", (req, res) => {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
       res.setHeader("Pragma", "no-cache");
       res.setHeader("Expires", "0");
       res.setHeader("Surrogate-Control", "no-store");
 
+      if (/\.[a-z0-9]+$/i.test(req.path)) return res.status(404).end();
       const reqPath = (req.path || "").toLowerCase();
       if (reqPath.startsWith("/admin") || reqPath.startsWith("/adimin") || reqPath.startsWith("/adimn")) {
         return res.sendFile(path.join(distPath, "admin.html"));
@@ -4041,7 +3074,7 @@ ${articlesXml}</urlset>`;
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("[Unhandled Error]", err);
     if (res.headersSent) return next(err);
-    res.status(err.status || 500).json({ error: "Internal server error." });
+    res.status(Number.isInteger(err.status) && err.status >= 400 && err.status <= 599 ? err.status : 500).json({ error: "Internal server error." });
   });
 
   // Active listener
@@ -4052,4 +3085,6 @@ ${articlesXml}</urlset>`;
 
 startServer().catch((error) => {
   console.error("[Startup] Server failed to start:", error);
+  process.exit(1);
 });
+
