@@ -1,3 +1,4 @@
+import { LearnerAccess, Learner } from "./LearnerAccess";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -60,65 +61,21 @@ interface Chapter {
   lectures: Lecture[];
 }
 
-export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
+export function CourseDetailPage(props: CourseDetailPageProps) { return <LearnerAccess>{student => <CourseDetailContent key={`${student.id}-${props.course.id}`} {...props} student={student}/>}</LearnerAccess>; }
+
+function CourseDetailContent({ course: initialCourse, onBack, student }: CourseDetailPageProps & {student:Learner}) {
+  const [course,setCourse] = useState(initialCourse);
+  const [syncError,setSyncError] = useState("");
+  const [loaded,setLoaded] = useState(false);
+  const [saveVersion,setSaveVersion] = useState(0);
   // Persistence state for course purchases
   const [isEnrolled, setIsEnrolled] = useState<boolean>(false);
   const [activeLecture, setActiveLecture] = useState<Lecture | null>(null);
 
-  // A stable per-device student identifier (previously this was a hardcoded
-  // fake value shown to every visitor). It's generated once and persisted so
-  // it's at least real and consistent, though it's not tied to a real account
-  // since this app has no customer authentication system.
-  const [studentId] = useState<string>(() => {
-    try {
-      const existing = localStorage.getItem("vision79-student-id");
-      if (existing) return existing;
-      const generated = `v79-${crypto.randomUUID().slice(0, 8)}`;
-      localStorage.setItem("vision79-student-id", generated);
-      return generated;
-    } catch {
-      return "v79-guest";
-    }
-  });
-  
-  // Completed lectures state
-  const [completedLectures, setCompletedLectures] = useState<Record<string, boolean>>(() => {
-    try {
-      const stored = localStorage.getItem(`vision79-completed-lectures-${course.id}`);
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const handleToggleLectureComplete = (lecId: string, completed: boolean) => {
-    setCompletedLectures(prev => {
-      const updated = { ...prev, [lecId]: completed };
-      try {
-        localStorage.setItem(`vision79-completed-lectures-${course.id}`, JSON.stringify(updated));
-      } catch (e) {
-        console.warn("Blocked writing to localStorage:", e);
-      }
-      return updated;
-    });
-  };
-
-  const handleToggleAllLectures = (complete: boolean) => {
-    const allLecIds = chapters.flatMap(c => c.lectures).map(l => l.id);
-    const updated: Record<string, boolean> = {};
-    if (complete) {
-      allLecIds.forEach(id => {
-        updated[id] = true;
-      });
-    }
-    setCompletedLectures(updated);
-    try {
-      localStorage.setItem(`vision79-completed-lectures-${course.id}`, JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Blocked writing to localStorage:", e);
-    }
-  };
-  
+  const studentId = student.id;
+  const [completedLectures,setCompletedLectures] = useState<Record<string,boolean>>({});
+  const handleToggleLectureComplete = (id:string, complete:boolean) => { setCompletedLectures(p=>({...p,[id]:complete})); setSaveVersion(v=>v+1); };
+  const handleToggleAllLectures = (complete:boolean) => { setCompletedLectures(Object.fromEntries(chapters.flatMap(c=>c.lectures).map(l=>[l.id,complete]))); setSaveVersion(v=>v+1); };
   // Checking/resetting purchase state based on price/type
   const isPromoActive = (c: any) => {
     if (c.category !== "courses" || !c.createdAt) return false;
@@ -133,22 +90,6 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
   const hasPromo = isPromoActive(course) && originalPrice > 0;
   const displayPrice = hasPromo ? originalPrice * 0.5 : originalPrice;
   const isPaid = displayPrice > 0 || course.pricingType === "premium";
-
-  useEffect(() => {
-    if (!isPaid) {
-      setIsEnrolled(true);
-    } else {
-      let stored = null;
-      try {
-        stored = localStorage.getItem(`vision79-enrolled-${course.id}`);
-      } catch (e) {
-        console.warn("Blocked accessing localStorage:", e);
-      }
-      if (stored === "true") {
-        setIsEnrolled(true);
-      }
-    }
-  }, [course.id, isPaid]);
 
   // Collapsible Chapters
   const [expandedChapters, setExpandedChapters] = useState<Record<number, boolean>>({
@@ -230,15 +171,19 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
     setFeedbackType("idea");
   }, [course.id]);
 
-  // Notes state
-  const [studentNote, setStudentNote] = useState<string>(() => {
-    try {
-      return localStorage.getItem(`vision79-note-${course.id}`) || "";
-    } catch (e) {
-      console.warn("Blocked accessing localStorage:", e);
-      return "";
-    }
-  });
+  const [studentNote,setStudentNote] = useState("");
+  const refreshLearning = async () => {
+    const r=await fetch('/api/student/courses/'+course.id); const d=await r.json(); if(!r.ok)throw Error(d.error);
+    setCourse(d.course);setIsEnrolled(d.state.enrolled);setCompletedLectures(d.state.completed||{});setStudentNote(d.state.note||'');setLoaded(true);
+  };
+  useEffect(()=>{refreshLearning().catch(e=>setSyncError(e.message));},[course.id]);
+  useEffect(()=>{
+    if(!loaded||!isEnrolled||!saveVersion)return;
+    let active=true;const timer=setTimeout(()=>{
+      fetch('/api/student/courses/'+course.id+'/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({completed:completedLectures,note:studentNote})}).then(async r=>{if(!r.ok)throw Error((await r.json()).error);if(active)setSyncError('');}).catch(e=>active&&setSyncError(e.message||'Progress could not be saved. Please retry.'));
+    },300);
+    return()=>{active=false;clearTimeout(timer);};
+  },[saveVersion,loaded,isEnrolled,course.id]);
 
   // QA State
   const [questions, setQuestions] = useState<Array<{ id: number; author: string; text: string; date: string; replies: Array<{ author: string; text: string; date: string; isInstructor?: boolean }> }>>([]);
@@ -291,7 +236,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
 
   const handleSelectLecture = (lec: Lecture) => {
     if (!isEnrolled && !lec.freePreview) {
-      alert("This chapter is premium locked. Complete enrollment payment details on the right to access.");
+      alert("Request enrollment to access this lecture. Paid courses require staff approval; no payment is taken here.");
       return;
     }
     setActiveLecture(lec);
@@ -306,49 +251,24 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
 
   // Enrollment handler. No payment processor is connected in this app, so
   // this does not collect or simulate charging a card - it honestly records
-  // enrollment for this device only.
-  const handleCheckoutSubmit = () => {
-    setPayError(null);
-    setIsPaying(true);
-    setIsEnrolled(true);
-    try {
-      localStorage.setItem(`vision79-enrolled-${course.id}`, "true");
-    } catch (e) {
-      console.warn("Blocked writing to localStorage:", e);
-      setPayError("Couldn't save your enrollment on this device. Check your browser's storage settings and try again.");
-      setIsEnrolled(false);
-    } finally {
-      setIsPaying(false);
-    }
+  // enrollment in your learner account.
+  const handleCheckoutSubmit = async () => {
+    setPayError(null);setIsPaying(true);
+    try { const r=await fetch('/api/student/courses/'+course.id+'/enroll',{method:'POST'});const d=await r.json();if(!r.ok)throw Error(d.error);await refreshLearning();if(!d.state.enrolled)setPayError(d.message); }
+    catch(e){setPayError((e as Error).message);}finally{setIsPaying(false);}
   };
+  const saveNote = (txt:string) => {setStudentNote(txt);setSaveVersion(v=>v+1);};
 
-  const saveNote = (txt: string) => {
-    setStudentNote(txt);
-    try {
-      localStorage.setItem(`vision79-note-${course.id}`, txt);
-    } catch (e) {
-      console.warn("Blocked writing to localStorage:", e);
-    }
-  };
-
-  const submitQuestion = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newQuestionTxt.trim()) return;
-
-    const newQ = {
-      id: Date.now(),
-      author: "You (Student)",
-      text: newQuestionTxt,
-      date: "Just now",
-      replies: []
-    };
-
-    setQuestions([newQ, ...questions]);
-    setNewQuestionTxt("");
+  useEffect(()=>{if(isEnrolled)fetch('/api/student/courses/'+course.id+'/questions').then(async r=>{if(!r.ok)throw Error('Cannot load discussions');setQuestions(await r.json());}).catch(e=>setSyncError(e.message));},[course.id,isEnrolled]);
+  const submitQuestion = async (e:React.FormEvent) => {
+    e.preventDefault();if(!newQuestionTxt.trim())return;
+    try {const r=await fetch('/api/student/courses/'+course.id+'/questions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:newQuestionTxt})});const d=await r.json();if(!r.ok)throw Error(d.error);setQuestions(q=>[d,...q]);setNewQuestionTxt('');}catch(e){setSyncError((e as Error).message);}
   };
 
   return (
     <div id="course-details-layout" className="w-full flex flex-col min-h-screen text-app-text antialiased">
+      {syncError && <div role="alert" className="p-3 border border-red-500">{syncError} <button onClick={()=>setSaveVersion(v=>v+1)}>Retry saving</button></div>}
+
       
       {/* PROFESSIONAL TITLE BACK ACTION BAR */}
       <div className="flex items-center justify-between border-b border-app-border bg-app-aside-bg/30 p-4 sticky top-0 backdrop-blur-md z-40">
@@ -371,12 +291,12 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
         <div className="max-w-4xl relative z-10 space-y-3.5">
           <div className="flex items-center gap-2">
             <span className="text-[9px] bg-yellow-500 text-black font-extrabold uppercase px-2.5 py-0.5 rounded tracking-wide">
-              Bestseller
+              Course
             </span>
             <div className="flex items-center gap-1.5 text-xs text-indigo-400">
               <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-              <span className="font-bold text-white text-sm">{course.rating || 4.9}</span>
-              <span className="text-zinc-400 font-normal">(1,420 ratings) • 12,504 students</span>
+              <span className="font-bold text-white text-sm">{course.rating ?? 0}</span>
+              <span className="text-zinc-400 font-normal">({course.ratingCount || 0} ratings)</span>
             </div>
           </div>
 
@@ -390,13 +310,13 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-xs font-mono text-zinc-400">
             <div>
-              Instructor: <span className="text-indigo-400 underline font-semibold">{course.instructor || "Dr. Angela Yu"}</span>
+              Instructor: <span className="text-indigo-400 underline font-semibold">{course.instructor || "Instructor to be announced"}</span>
             </div>
             <div>
-              Last updated: <span className="text-zinc-300">June 2026</span>
+              Last updated: <span className="text-zinc-300">{course.createdAt ? new Date(course.createdAt).toLocaleDateString() : "Not provided"}</span>
             </div>
             <div>
-              Language: <span className="text-zinc-300">English [CC]</span>
+              Language: <span className="text-zinc-300">English</span>
             </div>
           </div>
         </div>
@@ -419,7 +339,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                   Streaming {activeLecture ? activeLecture.title : "Initialization"}
                 </span>
               </div>
-              <span className="text-[10px] text-zinc-500">{activeLecture?.duration} • SIMULATOR</span>
+              <span className="text-[10px] text-zinc-500">{activeLecture?.duration}</span>
             </div>
 
             {/* LIVE DISPLAY VIDEO SCREEN CANVAS */}
@@ -700,7 +620,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                     <textarea
                       value={studentNote}
                       onChange={(e) => saveNote(e.target.value)}
-                      placeholder="# Course Notes Setup...&#10;- Important secret swapper models go in process.env&#10;- Use ALTER TABLE statements dynamically in sqlite pre-loads&#10;- Deploying behind Nginx reverse-proxies require binding to host 0.0.0.0..."
+                      placeholder="Write your course notes here…"
                       rows={8}
                       className="w-full bg-app-input border border-app-input-border text-app-text rounded-xl p-3 text-xs font-mono placeholder:text-app-text-muted/50 focus:outline-none focus:border-indigo-500 transition-all leading-relaxed"
                     />
@@ -725,7 +645,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                         type="text"
                         value={newQuestionTxt}
                         onChange={(e) => setNewQuestionTxt(e.target.value)}
-                        placeholder="Ask deep architectural questions about this course layout..."
+                        placeholder="Ask a question about this course…"
                         className="flex-1 bg-app-input border border-app-input-border text-app-text rounded-xl p-2.5 text-xs placeholder:text-app-text-muted/50 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
                       />
                       <button 
@@ -1162,7 +1082,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                     is connected with real API keys. */}
                 <div className="space-y-3">
                   <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">
-                    Payment processing isn't connected yet, so enrolling here won't charge a card. Enrolling unlocks the full curriculum preview on this device.
+                    Free courses activate immediately. Paid courses require approval after payment is arranged directly with V79 Digital. No card is charged on this page.
                   </div>
 
                   {payError && (
@@ -1184,7 +1104,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                       </>
                     ) : (
                       <>
-                        Enroll{displayPrice > 0 ? ` (${displayPrice.toFixed(2)} - not charged)` : ""}
+                        {isPaid ? "Request enrollment" : "Enroll free"}
                       </>
                     )}
                   </button>
@@ -1224,7 +1144,7 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
                 <div className="space-y-1">
                   <h3 className="font-bold text-app-text text-base font-display">Enrollment Activated! ✅</h3>
                   <p className="text-[10px] text-app-text-muted leading-relaxed font-mono">
-                    Full lifetime access authenticated successfully. Expand any curriculum block on the left, mark off your lectures, and unlock graduation certifications!
+                    Your enrollment is active. Expand any curriculum block on the left, mark off your lectures, and unlock graduation certifications!
                   </p>
                 </div>
 
@@ -1264,3 +1184,4 @@ export function CourseDetailPage({ course, onBack }: CourseDetailPageProps) {
     </div>
   );
 }
+

@@ -1,3 +1,5 @@
+import { lazy, Suspense } from "react";
+import { OperationsPanel } from "./components/OperationsPanel";
 import React, { useState, useEffect, ChangeEvent, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -39,8 +41,8 @@ import { SaaSApp, AppStatistics, SaaSAd } from "./types";
 import ReactMarkdown from "react-markdown";
 import { AppLogo, PRESET_ICONS } from "./components/AppLogo";
 import { ExamModule } from "./components/ExamModule";
-import CourseBuilderPanel from "./components/CourseBuilder/CourseBuilderPanel";
-import { CrmManager } from "./components/crm/CrmManager";
+const CourseBuilderPanel = lazy(() => import("./components/CourseBuilder/CourseBuilderPanel"));
+const CrmManager = lazy(() => import("./components/crm/CrmManager").then(m => ({default:m.CrmManager})));
 import { BlogManager } from "./components/blog/BlogManager";
 import {
   ResponsiveContainer,
@@ -65,39 +67,9 @@ const getDurationText = (created: string, onboarded?: string) => {
 };
 
 const safeSessionStorage = {
-  getItem(key: string): string | null {
-    try {
-      const v = sessionStorage.getItem(key);
-      if (v) return v;
-    } catch (e) {
-      console.warn("sessionStorage.getItem blocked:", e);
-    }
-    try {
-      return localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  setItem(key: string, value: string): void {
-    try {
-      sessionStorage.setItem(key, value);
-    } catch (e) {
-      console.warn("sessionStorage.setItem blocked:", e);
-    }
-    try {
-      localStorage.setItem(key, value);
-    } catch {}
-  },
-  removeItem(key: string): void {
-    try {
-      sessionStorage.removeItem(key);
-    } catch (e) {
-      console.warn("sessionStorage.removeItem blocked:", e);
-    }
-    try {
-      localStorage.removeItem(key);
-    } catch {}
-  }
+  getItem(key: string): string | null { try { localStorage.removeItem(key); return sessionStorage.getItem(key) ? "cookie-session" : null; } catch { return null; } },
+  setItem(key: string, _value: string) { try { localStorage.removeItem(key); sessionStorage.setItem(key, "cookie-session"); } catch {} },
+  removeItem(key: string) { try { localStorage.removeItem(key); sessionStorage.removeItem(key); } catch {} }
 };
 
 interface LectureItemRowProps {
@@ -1140,7 +1112,7 @@ V79 ICT Solutions`;
 
   // Active session validation on startup to clear any dead or expired tokens
   useEffect(() => {
-    const token = safeSessionStorage.getItem("admin-token");
+    const token = "cookie-session";
     if (token) {
       fetch("/api/admin/verify-session", {
         headers: { Authorization: `Bearer ${token}` }
@@ -1149,6 +1121,7 @@ V79 ICT Solutions`;
           if (res.ok) {
             const data = await res.json();
             setAdminToken(token);
+            safeSessionStorage.setItem("admin-token", token);
             setMustChangePassword(!!data.mustChangePassword);
           } else {
             console.warn("[AdminApp] Stored admin session token is invalid or expired. Resetting session.");
@@ -1588,7 +1561,7 @@ V79 ICT Solutions`;
                   </div>
 
                   {adminSection === "crm" ? (
-                    <CrmManager adminToken={adminToken} onUnauthorized={handleUnauthorized} />
+                    <><OperationsPanel/><Suspense fallback={<p role="status">Loading CRM…</p>}><CrmManager adminToken={adminToken} onUnauthorized={handleUnauthorized} /></Suspense></>
                   ) : adminSection === "blog" ? (
                     <BlogManager adminToken={adminToken} onUnauthorized={handleUnauthorized} />
                   ) : (
@@ -3103,7 +3076,7 @@ V79 ICT Solutions`;
           {/* V79 ACADEMY COURSE BUILDER - full-screen in-admin workspace */}
           {showCourseBuilder && (
             <div className="fixed inset-0 z-50">
-              <CourseBuilderPanel onExit={() => setShowCourseBuilder(false)} />
+              <Suspense fallback={<p role="status">Loading course builder…</p>}><CourseBuilderPanel onExit={() => setShowCourseBuilder(false)} /></Suspense>
             </div>
           )}
 
@@ -3126,3 +3099,4 @@ V79 ICT Solutions`;
     </div>
   );
 }
+

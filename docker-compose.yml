@@ -1,49 +1,38 @@
 services:
   V79website:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    # Explicit lowercase image name required: Docker image repository names
-    # must be all-lowercase, but our service/container name (V79website) is
-    # not. Without this, Compose falls back to auto-deriving the image name
-    # from "<project>-<service>", which breaks the build with:
-    #   invalid reference format: repository name must be lowercase
+    build: .
     image: v79website:latest
     container_name: V79website
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    init: true
     expose:
       - "3000"
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - CANONICAL_DOMAIN=${CANONICAL_DOMAIN:-https://v79sl.com}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-vision79slu@gmail.com}
-      # Leave ADMIN_PASSWORD unset for normal operation — the server seeds a
-      # secure initial credential itself on first run and forces a password
-      # change on first login. Set it in your .env only when you also set
-      # ADMIN_RESET_TOKEN below to force a specific new password.
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
-      # One-time admin password reset: set this to any new value + restart to
-      # force a password reset if you're locked out. See server.ts comments
-      # near applyAdminResetIfRequested() for how it behaves. Leave blank
-      # during normal operation.
-      - ADMIN_RESET_TOKEN=${ADMIN_RESET_TOKEN:-}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
-      - RECAPTCHA_SECRET_KEY=${RECAPTCHA_SECRET_KEY}
-      - V79TIQUET_INTAKE_URL=${V79TIQUET_INTAKE_URL:-http://v79-tiquet-manager:3050/api/public/intake}
-      - V79TIQUET_INTAKE_SECRET=${V79TIQUET_INTAKE_SECRET}
+      NODE_ENV: production
+      PORT: 3000
+      CANONICAL_DOMAIN: ${CANONICAL_DOMAIN:-https://v79sl.com}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-vision79slu@gmail.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_RESET_TOKEN: ${ADMIN_RESET_TOKEN:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      CAPTCHA_MODE: ${CAPTCHA_MODE:-required}
+      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY:-}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
+      V79TIQUET_INTAKE_URL: ${V79TIQUET_INTAKE_URL:-http://v79-tiquet-manager:3050/api/public/intake}
+      V79TIQUET_INTAKE_SECRET: ${V79TIQUET_INTAKE_SECRET:-}
     volumes:
-      # Persist dynamic database JSONs (articles, courses, leads) and uploaded media
       - ./data:/app/data
       - ./uploads:/app/uploads
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - proxy_network
-
 networks:
   proxy_network:
     external: true
-

@@ -131,11 +131,11 @@ export function CrmProspectFinder({
             <div className="flex items-center gap-2">
               <Search className="w-5 h-5 text-sky-500" />
               <h2 className="text-base font-bold text-app-text font-display">
-                Saint Lucia Business Prospect Discovery Engine
+                Saint Lucia Business Directory
               </h2>
             </div>
             <p className="text-xs text-app-text-sec mt-0.5">
-              Target SMBs across Saint Lucia commercial districts, identify digital infrastructure gaps, and populate the CRM.
+              Search the curated local directory and add prospects to your CRM. This is not a live Facebook, Instagram or LinkedIn search. Suggestions are estimates to verify before outreach.
             </p>
           </div>
 
@@ -231,7 +231,7 @@ export function CrmProspectFinder({
                   className="flex-1 py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   <Search className={`w-4 h-4 ${isSearching ? "animate-spin" : ""}`} />
-                  <span>{isSearching ? "Searching..." : "Discover Businesses"}</span>
+                  <span>{isSearching ? "Searching..." : "Search directory"}</span>
                 </button>
               </div>
             </div>
@@ -281,7 +281,7 @@ export function CrmProspectFinder({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {prospects.length === 0 ? (
               <div className="col-span-2 glass p-12 text-center text-xs text-app-text-muted rounded-2xl border border-app-border">
-                No prospects in current pool. Run a discovery search above to locate Saint Lucia businesses.
+                No prospects in current pool. Search the local directory above.
               </div>
             ) : (
               prospects.map((p) => {
@@ -484,3 +484,4 @@ export function CrmProspectFinder({
     </div>
   );
 }
+

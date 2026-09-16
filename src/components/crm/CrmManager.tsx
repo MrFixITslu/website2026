@@ -55,7 +55,7 @@ export function CrmManager({ adminToken, onUnauthorized }: CrmManagerProps) {
     let token = adminToken;
     if (!token) {
       try {
-        token = sessionStorage.getItem("admin-token") || localStorage.getItem("admin-token");
+        token = sessionStorage.getItem("admin-token");
       } catch (e) {
         token = null;
       }
@@ -648,3 +648,4 @@ export function CrmManager({ adminToken, onUnauthorized }: CrmManagerProps) {
     </div>
   );
 }
+
