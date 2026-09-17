@@ -160,18 +160,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-6 lg:px-8 text-center space-y-8">
-          {/* Badge Tagline */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center"
-          >
-            <p className="max-w-3xl text-sm sm:text-base leading-relaxed text-app-text-sec">
-              V79 Digital is a new business founded by Neil Verdant. It brings together the experience he gained working with AT&amp;T, Cingular and Digicel St. Lucia, Dominica, and St. Vincent to help small and medium businesses make better use of technology.
-            </p>
-          </motion.div>
-
           {/* Headline & Description */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

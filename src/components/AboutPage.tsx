@@ -155,6 +155,10 @@ export default function AboutPage() {
               </div>
             </div>
 
+            <p className="relative z-10 text-xs sm:text-[13px] text-white/85 leading-relaxed pt-2 border-t border-white/10">
+              V79 Digital is a new business founded by Neil Verdant. It brings together the experience he gained working with AT&amp;T, Cingular and Digicel St. Lucia, Dominica, and St. Vincent to help small and medium businesses make better use of technology.
+            </p>
+
             <div className="relative z-10 space-y-2.5 pt-2 border-t border-white/10 text-xs">
               <div className="flex items-start gap-2.5 text-white/90">
                 <Network className="w-4 h-4 text-v79-teal mt-0.5 shrink-0" />
