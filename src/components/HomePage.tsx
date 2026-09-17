@@ -55,7 +55,6 @@ const METRICS = [
   { label: "Years ICT Experience", value: "25", suffix: "+", desc: "Telecoms & enterprise IT" },
   { label: "Uptime SLA Guarantee", value: "99.9", suffix: "%", desc: "Financially backed" },
   { label: "On-Site Response Time", value: "4", suffix: "hr", desc: "Guaranteed SLA" },
-  { label: "V79 Digital", value: "New", suffix: "", desc: "Business founded by Neil Verdant", static: true },
 ];
 
 const WHY_CHOOSE_VISION79 = [
@@ -284,7 +283,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
       {/* ── Trust Bar ─────────────────────────────────────────────── */}
       <section className="px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
@@ -295,7 +294,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               className="glass rounded-2xl p-6 text-center space-y-1 border border-app-border hover:border-v79-teal/40 transition-colors"
             >
               <div className="text-3xl font-extrabold font-mono text-app-text dark:text-white">
-                {m.static ? m.value : <AnimatedCounter value={parseFloat(m.value)} suffix={m.suffix} />}
+                {<AnimatedCounter value={parseFloat(m.value)} suffix={m.suffix} />}
               </div>
               <div className="text-xs font-bold text-app-text-sec uppercase tracking-wider">{m.label}</div>
               <div className="text-[10px] text-app-text-muted font-mono">{m.desc}</div>
