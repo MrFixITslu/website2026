@@ -12,7 +12,7 @@ import IndustriesPage from "./components/IndustriesPage";
 import ContactPage from "./components/ContactPage";
 import { SaaSApp, SaaSAd, CategoryFilter } from "./types";
 import { AppLogo } from "./components/AppLogo";
-import { V79OfficialLogo, V79FooterLogo } from "./components/V79OfficialLogo";
+import { V79OfficialLogo } from "./components/V79OfficialLogo";
 import { AppCardSkeleton, SectionLoadingFallback } from "./components/ui/Skeleton";
 import { CLIENT_STORIES } from "./data/testimonials";
 
@@ -240,7 +240,7 @@ export default function App() {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (visible) setActiveSection(visible.target.id);
       },
-      { rootMargin: "-72px 0px -60% 0px", threshold: [0.1, 0.25, 0.5, 0.75] }
+      { rootMargin: "-120px 0px -60% 0px", threshold: [0.1, 0.25, 0.5, 0.75] }
     );
     sectionEls.forEach(el => observer.observe(el));
     return () => observer.disconnect();
@@ -283,7 +283,7 @@ export default function App() {
       setTimeout(() => {
         const el = document.getElementById(id);
         if (el) {
-          const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
+          const topPos = el.getBoundingClientRect().top + window.pageYOffset - 120;
           window.scrollTo(0, topPos);
         }
       }, 50);
@@ -313,7 +313,7 @@ export default function App() {
     const jump = () => {
       const el = document.getElementById(id);
       if (el) {
-        const topPos = el.getBoundingClientRect().top + window.pageYOffset - 72;
+        const topPos = el.getBoundingClientRect().top + window.pageYOffset - 120;
         window.scrollTo(0, topPos); // instant — hidden behind the fade overlay
       }
     };
@@ -360,7 +360,7 @@ export default function App() {
       {/* Nav transition overlay: fades to the page background, jumps the
           scroll position instantly while fully opaque, then fades back in
           — so a nav click never shows content flying past mid-scroll.
-          Starts below the header (top-16 matches the header's h-16) so the
+          Starts below the header (top-28 matches the header's h-28) so the
           sticky header itself never gets covered/flickers during a
           transition — it should feel like a fixed anchor, not something
           that disappears every time you click a nav link. */}
@@ -369,20 +369,20 @@ export default function App() {
         initial={false}
         animate={{ opacity: navTransitioning ? 1 : 0 }}
         transition={{ duration: (navTransitioning ? NAV_FADE_IN_MS : NAV_FADE_OUT_MS) / 1000, ease: "easeInOut" }}
-        className="fixed top-16 inset-x-0 bottom-0 z-[45] bg-app-bg pointer-events-none"
+        className="fixed top-28 inset-x-0 bottom-0 z-[45] bg-app-bg pointer-events-none"
       />
       {/* Apple-inspired Sticky Header */}
-      <header className="h-16 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50">
+      <header className="h-28 flex items-center justify-between px-6 lg:px-12 border-b border-app-border bg-app-header-bg/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50">
         <button
           onClick={() => scrollTo("home")}
           aria-label="Vision79 Digital Home"
           className="flex items-center cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded-xl py-1 px-1 -ml-1 transition-opacity hover:opacity-90"
         >
-          <V79OfficialLogo showMark={false} showTagline={false} size="md" />
+          <V79OfficialLogo size="md" />
         </button>
 
         {/* Desktop Nav */}
-        <nav ref={navRef} aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
+        <nav ref={navRef} aria-label="Main Navigation" className="hidden lg:flex items-center gap-1.5">
           {SECTIONS.map(sec => {
             const active = isSectionActive(sec);
             const hasSubItems = !!sec.subItems?.length;
@@ -462,7 +462,7 @@ export default function App() {
         </nav>
 
         {/* Mobile controls */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex lg:hidden items-center gap-2">
           <button
             onClick={() => setTheme(p => p === "dark" ? "light" : "dark")}
             aria-label="Toggle theme"
@@ -511,7 +511,7 @@ export default function App() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="md:hidden fixed top-16 left-0 right-0 z-40 bg-app-header-bg/95 backdrop-blur-2xl border-b border-app-border p-5 flex flex-col gap-2 shadow-2xl max-h-[calc(100vh-4rem)] overflow-y-auto"
+            className="lg:hidden fixed top-28 left-0 right-0 z-40 bg-app-header-bg/95 backdrop-blur-2xl border-b border-app-border p-5 flex flex-col gap-2 shadow-2xl max-h-[calc(100vh-7rem)] overflow-y-auto"
           >
             {SECTIONS.map(sec => {
               const active = isSectionActive(sec);
@@ -611,20 +611,20 @@ export default function App() {
         </main>
       ) : (
         /* Continuous One-Page Apple-Inspired Flow */
-        <main className="flex-1 space-y-32 pb-24 pt-16">
-        <section id="home" className="scroll-mt-20">
+        <main className="flex-1 space-y-32 pb-24 pt-28">
+        <section id="home" className="scroll-mt-32">
           <HomePage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")} />
         </section>
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="about" className="scroll-mt-20">
+        <section id="about" className="scroll-mt-32">
           <AboutPage />
         </section>
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="services" className="scroll-mt-20">
+        <section id="services" className="scroll-mt-32">
           <ServicesPage
             onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")}
             openId={openServiceId}
@@ -634,13 +634,13 @@ export default function App() {
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="industries" className="scroll-mt-20">
+        <section id="industries" className="scroll-mt-32">
           <IndustriesPage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "industries")} />
         </section>
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="solutions" className="scroll-mt-20 max-w-7xl mx-auto px-6 lg:px-12 w-full">
+        <section id="solutions" className="scroll-mt-32 max-w-7xl mx-auto px-6 lg:px-12 w-full">
           <AnimatePresence mode="wait">
             {selectedToolForFeedback ? (
               <motion.div key="feedback" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.15 }}>
@@ -714,7 +714,7 @@ export default function App() {
                   {searchQuery && <button onClick={() => setSearchQuery("")} aria-label="Clear search" className="absolute right-4 text-app-text-muted hover:text-app-text text-xs font-mono font-bold cursor-pointer">CLEAR</button>}
                 </div>
 
-                <div id="app-marketplace-grid" className="scroll-mt-24">
+                <div id="app-marketplace-grid" className="scroll-mt-32">
                   {loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                       {[1, 2, 3].map(n => <AppCardSkeleton key={n} />)}
@@ -796,7 +796,7 @@ export default function App() {
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="resources" className="scroll-mt-20">
+        <section id="resources" className="scroll-mt-32">
           <Suspense fallback={<SectionLoadingFallback />}>
             <ResourcesPage
               onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "resources")}
@@ -813,7 +813,7 @@ export default function App() {
 
         <div className="w-full max-w-7xl mx-auto px-6"><div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent" /></div>
 
-        <section id="contact" className="scroll-mt-20">
+        <section id="contact" className="scroll-mt-32">
           <ContactPage />
         </section>
       </main>
@@ -824,7 +824,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-slate-200 dark:border-white/10">
           <div className="space-y-4 col-span-2">
             <div className="flex items-center">
-              <V79OfficialLogo showMark={false} showTagline={true} size="lg" />
+              <V79OfficialLogo size="lg" />
             </div>
             <p className="text-xs text-slate-600 dark:text-white/70 font-light max-w-sm leading-relaxed">
               World-class managed IT, cybersecurity, cloud infrastructure, and software development for businesses across Saint Lucia and the Eastern Caribbean.
