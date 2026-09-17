@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import {
   Shield, Cloud, Monitor, Network, Cpu, BarChart3, ArrowRight, Phone, Mail,
@@ -51,13 +51,6 @@ const SERVICES = [
   },
 ];
 
-const METRICS = [
-  { label: "Years ICT Experience", value: "25", suffix: "+", desc: "Telecoms & enterprise IT" },
-  { label: "Uptime SLA Guarantee", value: "99.9", suffix: "%", desc: "Financially backed" },
-  { label: "On-Site Response Time", value: "4", suffix: "hr", desc: "Guaranteed SLA" },
-  { label: "V79 Digital", value: "New", suffix: "", desc: "Business founded by Neil Verdant", static: true },
-];
-
 const WHY_CHOOSE_VISION79 = [
   { title: "Hurricane Recovery Ready", desc: "Business continuity plans built for storm season, not just server downtime.", icon: Shield },
   { title: "Proactive, Not Break-Fix", desc: "24/7 monitoring catches problems before they become outages.", icon: Clock },
@@ -79,44 +72,6 @@ const ASSESSMENT_STEPS = [
   { icon: Lock, title: "Security Audit", desc: "Passwords, MFA, endpoint protection, access controls." },
   { icon: Cloud, title: "Data Protection", desc: "Backups, cloud storage, and disaster recovery readiness." },
 ];
-
-function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !started.current) {
-          started.current = true;
-          const duration = 1800;
-          const steps = 60;
-          const increment = value / steps;
-          let current = 0;
-          const timer = setInterval(() => {
-            current += increment;
-            if (current >= value) {
-              setCount(value);
-              clearInterval(timer);
-            } else {
-              setCount(Math.floor(current));
-            }
-          }, duration / steps);
-        }
-      },
-      { threshold: 0.5 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [value]);
-
-  return (
-    <span ref={ref}>
-      {count.toLocaleString()}{suffix}
-    </span>
-  );
-}
 
 const FAQS = [
   {
@@ -279,28 +234,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <MapPin className="w-3.5 h-3.5" /> Castries, Saint Lucia
             </span>
           </motion.div>
-        </div>
-      </section>
-
-      {/* ── Trust Bar ─────────────────────────────────────────────── */}
-      <section className="px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {METRICS.map((m, i) => (
-            <motion.div
-              key={m.label}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="glass rounded-2xl p-6 text-center space-y-1 border border-app-border hover:border-v79-teal/40 transition-colors"
-            >
-              <div className="text-3xl font-extrabold font-mono text-app-text dark:text-white">
-                {m.static ? m.value : <AnimatedCounter value={parseFloat(m.value)} suffix={m.suffix} />}
-              </div>
-              <div className="text-xs font-bold text-app-text-sec uppercase tracking-wider">{m.label}</div>
-              <div className="text-[10px] text-app-text-muted font-mono">{m.desc}</div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
