@@ -55,7 +55,7 @@ const METRICS = [
   { label: "Years ICT Experience", value: "25", suffix: "+", desc: "Telecoms & enterprise IT" },
   { label: "Uptime SLA Guarantee", value: "99.9", suffix: "%", desc: "Financially backed" },
   { label: "On-Site Response Time", value: "4", suffix: "hr", desc: "Guaranteed SLA" },
-  { label: "Serving the Caribbean", value: "2018", suffix: "", desc: "Since founding", static: true },
+  { label: "V79 Digital", value: "New", suffix: "", desc: "Business founded by Neil Verdant", static: true },
 ];
 
 const WHY_CHOOSE_VISION79 = [
@@ -212,10 +212,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             transition={{ duration: 0.5 }}
             className="flex justify-center"
           >
-            <span className="inline-flex items-center gap-2 text-[10px] font-mono font-extrabold uppercase tracking-[0.2em] text-v79-teal bg-v79-teal/10 border border-v79-teal/25 px-4 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-v79-teal animate-pulse" />
-              Enterprise ICT Partner — Since 2018
-            </span>
+            <p className="max-w-3xl text-sm sm:text-base leading-relaxed text-app-text-sec">
+              V79 Digital is a new business founded by Neil Verdant. It brings together the experience he gained working with AT&amp;T, Cingular and Digicel St. Lucia, Dominica, and St. Vincent to help small and medium businesses make better use of technology.
+            </p>
           </motion.div>
 
           {/* Headline & Description */}
