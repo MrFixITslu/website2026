@@ -153,7 +153,7 @@ export default function ContactPage() {
           Let's Talk About Your Business Technology
         </h1>
         <p className="max-w-xl mx-auto text-sm text-app-text-sec font-light leading-relaxed">
-          Fill out the form below and our team will reach out within one business day to schedule your free ICT consultation.
+          Fill out the form below and we aim to respond within one business day to arrange your free ICT consultation.
         </p>
       </motion.section>
 
@@ -464,7 +464,7 @@ export default function ContactPage() {
                   <div className="space-y-1.5 text-center">
                     <p className="flex items-center justify-center gap-1.5 text-[10px] text-app-text-muted font-mono">
                       <Lock className="w-3 h-3 shrink-0" />
-                      We respond within 1 business day. Your information is encrypted in our application storage.
+                      We aim to respond within 1 business day. Your information is encrypted in our application storage.
                     </p>
                     <p className="text-[10px] text-app-text-muted leading-relaxed">
                       By submitting, you authorise V79 Digital to use these details to respond to your enquiry and manage the resulting business relationship.
