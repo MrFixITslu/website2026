@@ -101,14 +101,24 @@ export default function ContactPage() {
       const siteKey = config.recaptchaSiteKey;
       const token = await fetchRecaptchaToken(siteKey);
 
+      const currentUrl = typeof window !== "undefined" ? new URL(window.location.href) : null;
+      const campaignParts = currentUrl ? [
+        currentUrl.searchParams.get("utm_source"),
+        currentUrl.searchParams.get("utm_medium"),
+        currentUrl.searchParams.get("utm_campaign"),
+      ].filter(Boolean) : [];
+      const leadSource = campaignParts.length
+        ? `Website Contact Form (${campaignParts.join(" / ")})`
+        : "Website Contact Form";
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": submissionId.current },
         body: JSON.stringify({
           ...form,
           serviceRequested: form.requestedAction || form.biggestChallenge || "General Inquiry",
-          pageOrigin: typeof window !== "undefined" ? window.location.pathname : "/contact",
-          leadSource: "Website Contact Form",
+          pageOrigin: currentUrl ? currentUrl.pathname + currentUrl.search : "/contact",
+          leadSource,
           recaptchaToken: token
         }),
       });
@@ -220,6 +230,8 @@ export default function ContactPage() {
                   key="success"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  role="status"
+                  aria-live="polite"
                   className="glass rounded-2xl border border-v79-teal/30 bg-v79-teal/5 p-10 text-center space-y-4 h-full flex flex-col items-center justify-center"
                 >
                   <div className="w-16 h-16 rounded-full bg-v79-teal/15 border border-v79-teal/30 flex items-center justify-center">
@@ -449,10 +461,16 @@ export default function ContactPage() {
                     </a>
                   </div>
 
-                  <p className="flex items-center justify-center gap-1.5 text-[10px] text-app-text-muted text-center font-mono">
-                    <Lock className="w-3 h-3 shrink-0" />
-                    We respond within 1 business day. Your information is encrypted and never shared.
-                  </p>
+                  <div className="space-y-1.5 text-center">
+                    <p className="flex items-center justify-center gap-1.5 text-[10px] text-app-text-muted font-mono">
+                      <Lock className="w-3 h-3 shrink-0" />
+                      We respond within 1 business day. Your information is encrypted in our application storage.
+                    </p>
+                    <p className="text-[10px] text-app-text-muted leading-relaxed">
+                      By submitting, you authorise V79 Digital to use these details to respond to your enquiry and manage the resulting business relationship.
+                      {" "}<a href="/privacy.html" className="text-v79-teal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-v79-teal/50 rounded">Privacy notice</a>.
+                    </p>
+                  </div>
                 </motion.form>
               )}
             </AnimatePresence>

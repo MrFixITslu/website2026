@@ -59,7 +59,7 @@ const CARIBBEAN_BUILT = [
 
 const SERVICE_PROMISE = [
   { title: "Professional Comms", desc: "Clear, prompt updates.", detail: "Every email, phone call, or dispatch is logged in our ticketing portal and explained in straightforward, jargon-free English." },
-  { title: "Clear Expectations", desc: "Guaranteed responsibilities.", detail: "We establish precise operational frameworks, ensuring you always know exactly who handles password resets, router reboots, or hardware upgrades." },
+  { title: "Clear Expectations", desc: "Defined responsibilities.", detail: "We establish precise operational frameworks, ensuring you always know exactly who handles password resets, router reboots, or hardware upgrades." },
   { title: "Transparent Reporting", desc: "Comprehensive audits.", detail: "On the first Monday of every month, retainers receive automated reports auditing ticket resolution speed, system utilization, server health, and backup verification logs." },
   { title: "Security-First", desc: "Zero compromised shortcuts.", detail: "Every change we configure adheres to the principle of least-privilege, utilizing strong MFA, segregated WiFi access controls, and localized database firewalls." },
   { title: "Business-Focused", desc: "ROI-based choices.", detail: "We prioritize practical, cost-effective recommendations that improve your bottom line rather than upselling unnecessary technology." },
@@ -151,12 +151,12 @@ export default function AboutPage() {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Active on-island executive lead" />
                 </div>
                 <p className="text-xs text-v79-teal font-mono">Founder &amp; Lead Systems Architect</p>
-                <p className="text-[11px] text-white/60 font-mono">25+ Years Caribbean Telecoms &amp; Enterprise IT</p>
+                <p className="text-[11px] text-white/60 font-mono">20+ Years Caribbean Telecoms &amp; Enterprise IT</p>
               </div>
             </div>
 
             <p className="relative z-10 text-xs sm:text-[13px] text-white/85 leading-relaxed pt-2 border-t border-white/10">
-              V79 Digital is a new business founded by Neil Verdant. It brings together the experience he gained working with AT&amp;T, Cingular and Digicel St. Lucia, Dominica, and St. Vincent to help small and medium businesses make better use of technology.
+              V79 Digital brings together the experience Neil Verdant gained across Caribbean telecommunications and enterprise ICT to help small and medium businesses make better use of technology.
             </p>
 
             <div className="relative z-10 space-y-2.5 pt-2 border-t border-white/10 text-xs">
@@ -170,7 +170,7 @@ export default function AboutPage() {
               </div>
               <div className="flex items-start gap-2.5 text-white/90">
                 <Award className="w-4 h-4 text-v79-teal mt-0.5 shrink-0" />
-                <span>Direct client oversight: 4-hour on-site SLA with bilingual (English &amp; Kwéyòl) technical communications.</span>
+                <span>Direct client oversight with response targets and escalation expectations defined for each managed-services engagement.</span>
               </div>
             </div>
 

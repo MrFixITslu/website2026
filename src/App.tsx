@@ -345,13 +345,7 @@ export default function App() {
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden bg-app-bg text-app-text antialiased selection:bg-v79-teal/20 selection:text-v79-teal">
       {/* Skip to Content for Accessibility / Screen Readers */}
       <a
-        href="#home"
-        onClick={(e) => {
-          e.preventDefault();
-          scrollTo("home");
-          const homeEl = document.getElementById("home");
-          homeEl?.focus();
-        }}
+        href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2.5 focus:bg-v79-coral focus:text-white focus:rounded-xl focus:font-bold focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-white"
       >
         Skip to main content
@@ -581,7 +575,7 @@ export default function App() {
       </AnimatePresence>
 
       {selectedArticleSlug ? (
-        <main className="flex-1 min-h-[75vh]">
+        <main id="main-content" tabIndex={-1} className="flex-1 min-h-[75vh] focus:outline-none">
           <Suspense fallback={<SectionLoadingFallback />}>
             <ArticleDetailPage
               slug={selectedArticleSlug}
@@ -611,7 +605,7 @@ export default function App() {
         </main>
       ) : (
         /* Continuous One-Page Apple-Inspired Flow */
-        <main className="flex-1 space-y-32 pb-24 pt-28">
+        <main id="main-content" tabIndex={-1} className="flex-1 space-y-32 pb-24 pt-28 focus:outline-none">
         <section id="home" className="scroll-mt-32">
           <HomePage onNavigate={(v) => scrollTo(SECTIONS.some(s => s.id === v) ? v : "services")} />
         </section>

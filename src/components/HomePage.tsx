@@ -22,13 +22,13 @@ const SERVICES = [
     icon: Cloud,
     title: "Cloud Infrastructure & Backup",
     desc: "Redundant cloud backup, hot-site disaster recovery, and cloud migration.",
-    badge: "Air-Gapped RPO < 1hr",
+    badge: "Recovery Objectives by Plan",
   },
   {
     icon: Monitor,
     title: "Managed IT Support",
     desc: "24/7 monitoring, remote helpdesk, and on-site diagnostics with SLA response.",
-    badge: "Guaranteed 4-Hour SLA",
+    badge: "SLA-Based Response Options",
     highlight: true,
   },
   {
@@ -53,9 +53,9 @@ const SERVICES = [
 
 const WHY_CHOOSE_VISION79 = [
   { title: "Hurricane Recovery Ready", desc: "Business continuity plans built for storm season, not just server downtime.", icon: Shield },
-  { title: "Proactive, Not Break-Fix", desc: "24/7 monitoring catches problems before they become outages.", icon: Clock },
-  { title: "Telecommunications Heritage", desc: "25+ years of Caribbean telecoms expertise behind every engagement.", icon: Network },
-  { title: "Bilingual Support", desc: "Full support in English and Kwéyòl for every client, every time.", icon: Users },
+  { title: "Proactive, Not Break-Fix", desc: "Proactive monitoring helps catch problems before they become outages.", icon: Clock },
+  { title: "Telecommunications Heritage", desc: "20+ years of Caribbean telecoms and ICT experience behind every engagement.", icon: Network },
+  { title: "Local Saint Lucia Support", desc: "Practical support shaped around local business operations and Caribbean conditions.", icon: Users },
   { title: "Data Sovereignty", desc: "Your data stays governed by the standards your business answers to.", icon: Lock },
   { title: "Local Compliance", desc: "Built to meet Caribbean regulatory and data protection requirements.", icon: ShieldCheck },
 ];
@@ -76,11 +76,11 @@ const ASSESSMENT_STEPS = [
 const FAQS = [
   {
     q: "Who provides 24/7 managed IT support and network maintenance in Saint Lucia?",
-    a: "Vision79 Digital, founded by telecommunications architect Neil Verdant (25+ years Caribbean telecom heritage), provides 24/7 proactive network monitoring, automated daily cloud backups, cybersecurity defense, and a guaranteed 4-hour on-site emergency response SLA across Castries, Gros Islet, Rodney Bay, Vieux Fort, and island-wide."
+    a: "Vision79 Digital provides managed IT support, proactive monitoring, backup planning, cybersecurity services, and on-site support across Saint Lucia. Response targets and service coverage are defined in each managed-services agreement so businesses know what to expect."
   },
   {
-    q: "What does the Vision79 4-hour on-site response SLA guarantee?",
-    a: "Our financially backed 99.9% uptime SLA guarantees that for critical outages (such as complete network failure, server crashes, or severe ransomware events), an enterprise systems specialist will be physically on-site at your premises in Saint Lucia within 4 hours to begin immediate disaster recovery."
+    q: "How are support response times handled?",
+    a: "Response targets are agreed as part of the selected support plan. Critical incidents are prioritised, remote triage begins as quickly as practical, and on-site dispatch is scheduled according to the contracted service level, location, and incident severity."
   },
   {
     q: "How do you protect Saint Lucia businesses against hurricane and power-surge data loss?",
@@ -88,7 +88,7 @@ const FAQS = [
   },
   {
     q: "What is included in the Free 30-Minute ICT Health Assessment?",
-    a: "The initial 30-minute discovery consultation is 100% free with no obligation. V79 Digital reviews your primary technology pain points, inspects firewall exposure, verifies your backup integrity, and identifies immediate vulnerabilities. For organizations needing a formal corporate audit, we offer a comprehensive 40-point diagnostic and written 90-day remediation plan for EC$1,500."
+    a: "The initial 30-minute discovery consultation is free and focuses on your business priorities, current pain points, and immediate risks. If a formal technical assessment is appropriate, V79 Digital scopes it around your sites, users, systems, and required depth, then provides a clear quote before work begins."
   },
   {
     q: "Do you support Microsoft 365, Google Workspace, and POS systems for local resorts and clinics?",
@@ -174,7 +174,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </span>
             </h1>
             <p className="max-w-3xl mx-auto text-lg sm:text-xl text-app-text-sec font-light leading-relaxed">
-              Protect your business with 24/7 proactive network monitoring, automated daily cloud backups, and a guaranteed 4-hour on-site emergency SLA across Castries, Rodney Bay, and island-wide.
+              Protect your business with proactive monitoring, managed backups, cybersecurity support, and clearly defined response targets for businesses across Saint Lucia.
             </p>
           </motion.div>
 
@@ -456,8 +456,8 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 
 
       {/* ── ICT Business Health Assessment ───────────────────────────
-           Standalone, visually distinct pricing/CTA block. Free
-           consultation vs. paid full audit kept unambiguous. */}
+           Discovery is free; formal assessment scope and pricing are quoted
+           after the environment and business requirements are understood. */}
       <section id="free-assessment" className="px-6 lg:px-8 scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -479,17 +479,17 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">100% Free</span>
                 </div>
                 <p className="text-xs text-app-text-sec leading-relaxed">
-                  A 30-minute risk review with V79 Digital. We inspect your firewall, backups, and internet failovers at zero cost.
+                  A 30-minute discovery call to understand your priorities, current technology pain points, and the areas that may need deeper review.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl sm:text-4xl font-extrabold font-mono text-app-text dark:text-white">EC$1,500</span>
-                  <span className="text-xs text-app-text-muted font-mono">Step 2: Full 40-Point Audit &amp; Remediation Plan</span>
+                  <span className="text-2xl sm:text-3xl font-extrabold font-mono text-app-text dark:text-white">Scoped Quote</span>
+                  <span className="text-xs text-app-text-muted font-mono">Step 2: Formal Assessment &amp; Remediation Plan</span>
                 </div>
                 <p className="text-xs text-app-text-sec font-light leading-relaxed">
-                  Includes in-depth on-site hardware testing, credential leak scans, and a written 90-day stabilization roadmap for your leadership team.
+                  Scope and pricing depend on your number of users, sites, systems, and review depth. The engagement can include on-site testing, security review, backup validation, and a prioritised remediation roadmap.
                 </p>
               </div>
 
@@ -541,7 +541,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             Enterprise IT Support in Saint Lucia: What You Need to Know
           </h2>
           <p className="text-sm text-app-text-sec font-light max-w-xl mx-auto">
-            Direct answers regarding our 4-hour on-site response SLA, Caribbean disaster recovery, and managed technology contracts.
+            Direct answers about response targets, Caribbean disaster recovery, and managed technology contracts.
           </p>
         </div>
 

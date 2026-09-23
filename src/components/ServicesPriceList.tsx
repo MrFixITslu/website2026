@@ -484,7 +484,7 @@ V79 ICT Solutions`;
                   <div className="p-4 rounded-xl bg-app-btn-sec/30 border border-emerald-500/15 text-center space-y-1">
                     <span className="text-emerald-500 font-bold block text-lg">✓</span>
                     <p className="text-xs font-bold text-app-text">Clear Expectations</p>
-                    <p className="text-[10px] text-app-text-muted leading-tight font-mono">Guaranteed responsibilities.</p>
+                    <p className="text-[10px] text-app-text-muted leading-tight font-mono">Defined responsibilities.</p>
                   </div>
                   <div className="p-4 rounded-xl bg-app-btn-sec/30 border border-emerald-500/15 text-center space-y-1">
                     <span className="text-emerald-500 font-bold block text-lg">✓</span>
@@ -744,15 +744,15 @@ V79 ICT Solutions`;
                     
                     <div className="flex justify-between items-start gap-4">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono text-indigo-400 font-extrabold uppercase tracking-wider block">Special Introductory Package</span>
+<span className="text-[10px] font-mono text-indigo-400 font-extrabold uppercase tracking-wider block">Scoped Business Assessment</span>
                         <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
                           Know Your Technology Risks Before They Become Costly Business Blockades
                         </h3>
                       </div>
                       <div className="text-right shrink-0 bg-indigo-600 border border-indigo-400 rounded-xl px-4 py-2 text-white">
-                        <span className="text-[10px] font-mono block text-indigo-200">Investment</span>
-                        <span className="text-xl font-black font-display tracking-tighter block">{getDisplayPrice(1500)}</span>
-                        <span className="text-[9px] font-mono block text-indigo-200">One-Time Fee</span>
+<span className="text-[10px] font-mono block text-indigo-200">Engagement</span>
+                        <span className="text-lg font-black font-display tracking-tighter block">Custom Quote</span>
+                        <span className="text-[9px] font-mono block text-indigo-200">After discovery</span>
                       </div>
                     </div>
 
@@ -906,7 +906,7 @@ V79 ICT Solutions`;
                         </button>
                       </div>
                       <p className="text-[9px] text-app-text-muted leading-normal font-mono text-center">
-                        Total Mock Quote: <strong className="text-indigo-400">{getDisplayPrice(1500)} XCD</strong> (No real-world invoice will be generated)
+                        Assessment scope and pricing are confirmed after discovery. This demo does not generate an invoice.
                       </p>
                     </form>
                   )}

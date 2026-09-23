@@ -1,6 +1,8 @@
 {
-  "name": "Vision79 Digital | ICT Solutions",
-  "description": "Enterprise managed IT support, 24/7 network monitoring, and cybersecurity in Saint Lucia. 4-hour on-site response SLA.",
+  "name": "V79 Digital | ICT, Cloud, Software & Training",
+  "description": "Managed IT, cloud services, cybersecurity, business software, automation, and practical technology training for organisations in Saint Lucia.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
