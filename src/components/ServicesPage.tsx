@@ -36,7 +36,7 @@ const SERVICES = [
       "Network Monitoring",
       "Help Desk",
     ],
-    sla: "4-Hour On-Site Response",
+    sla: "Response Targets by Service Plan",
   },
   {
     id: "cloud",
@@ -55,7 +55,7 @@ const SERVICES = [
       "Cloud Migration",
       "Disaster Recovery",
     ],
-    sla: "RPO < 24h / RTO < 4h",
+    sla: "Recovery Targets by Service Plan",
   },
   {
     id: "software",
@@ -238,10 +238,8 @@ export default function ServicesPage({
       </section>
 
       {/* ── ICT Business Health Assessment ───────────────────────────
-           Merged from the internal Launch Pack "Business Assessment (Lead Offer)" tab.
-           NOTE: this is a paid entry-point diagnostic ($1,500 XCD one-time), distinct
-           from the "free assessment" wording used elsewhere on this page —
-           worth reconciling the messaging site-wide. */}
+           The discovery conversation is free. Formal assessment scope and
+           pricing are quoted after the environment is understood. */}
       <section id="assessment" className="px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-24">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -252,7 +250,7 @@ export default function ServicesPage({
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1.5">
-              <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Entry Offer</span>
+              <span className="text-[10px] font-mono uppercase font-extrabold tracking-[0.25em] text-indigo-400">Business Assessment</span>
               <h2 className="text-2xl sm:text-3xl font-extrabold font-display text-app-text dark:text-white tracking-tight max-w-xl">
                 Know Your Technology Risks Before They Become Costly Business Blockades
               </h2>
@@ -262,8 +260,8 @@ export default function ServicesPage({
             </div>
             <div className="shrink-0 bg-indigo-600 border border-indigo-400 rounded-xl px-5 py-3 text-white text-center">
               <span className="text-[10px] font-mono block text-indigo-200">ICT Business Health Assessment</span>
-              <span className="text-2xl font-black font-display tracking-tighter block">EC$1,500</span>
-              <span className="text-[9px] font-mono block text-indigo-200">One-Time Fee</span>
+              <span className="text-xl font-black font-display tracking-tighter block">Custom Scope</span>
+              <span className="text-[9px] font-mono block text-indigo-200">Quoted after discovery</span>
             </div>
           </div>
 
