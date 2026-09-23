@@ -27,7 +27,12 @@ await test('production regression suite',{timeout:30000},async t=>{
  await t.test('private artifacts, security headers and routes',async()=>{
   for(const url of ['/server.cjs','/server.cjs.map','/server/server.cjs','/unknown-page','/api/unknown'])assert.equal((await anon.call(url)).status,404,url);
   assert.equal((await anon.call('/api/admin/leads')).status,401);
+  const adminPage=await anon.call('/admin');
+  assert.equal(adminPage.status,200);
+  assert.equal(adminPage.headers.get('x-robots-tag'),'noindex, nofollow, noarchive');
+  assert.ok(adminPage.text.includes('name="robots" content="noindex, nofollow, noarchive, noimageindex"'));
   const health=await anon.call('/api/health');
+  assert.equal(health.headers.get('x-robots-tag'),'noindex, nofollow');
   assert.equal(health.headers.get('cross-origin-opener-policy'),'same-origin');
   assert.equal(health.headers.get('x-permitted-cross-domain-policies'),'none');
   const services=await anon.call('/services');

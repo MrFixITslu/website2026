@@ -1,24 +1,51 @@
-# Robots.txt for Vision79 Digital (https://v79sl.com)
+# Robots.txt for V79 Digital (https://v79sl.com)
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /admin.html
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
 Disallow: /crm/
 
-# AI Crawlers & Agents
+# AI crawlers may use public marketing and resource content, but not private/admin surfaces.
 User-agent: GPTBot
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
+Disallow: /crm/
 
 User-agent: ClaudeBot
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
+Disallow: /crm/
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
+Disallow: /crm/
 
 User-agent: Google-Extended
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
+Disallow: /crm/
 
 User-agent: Applebot-Extended
 Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /adimin
+Disallow: /adimn
+Disallow: /crm/
 
 Sitemap: https://v79sl.com/sitemap.xml

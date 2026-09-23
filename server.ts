@@ -881,7 +881,13 @@ async function startServer() {
 
   app.use((req, res, next) => {
     if (isProduction) res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' https: data: blob:; media-src 'self' https: blob:; connect-src 'self' https://www.google.com/recaptcha/; frame-src 'self' blob: https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/ https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'");
-    if (req.path.startsWith('/api/')) res.setHeader('Cache-Control', 'no-store');
+    if (req.path.startsWith('/api/')) {
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    }
+    if (/^\/(?:admin|adimin|adimn)(?:\/|$)/i.test(req.path)) {
+      res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    }
     if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
       const origin = req.headers.origin;
       const allowed = process.env.CANONICAL_DOMAIN || "http://localhost:3000";
@@ -897,7 +903,7 @@ async function startServer() {
   app.get('/api/ready', (_req,res)=>{try {storageReady();res.json({status:'ready'});}catch {res.status(503).json({status:'storage unavailable'});}});
   mountLearners(app, db, requireAdmin, isCourseComplete);
   app.use((req,res,next)=>{if(!['GET','HEAD','OPTIONS'].includes(req.method) && !req.body && !req.is('multipart/form-data')) req.body={};next();});
-  const BUILD_VERSION = "2026.09.12-v2";
+  const BUILD_VERSION = "2026.09.23-v1";
   const SERVER_START_TIME = new Date().toISOString();
 
   // Lightweight healthcheck endpoint - the Dockerfile's HEALTHCHECK curls
