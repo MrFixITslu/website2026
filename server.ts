@@ -404,14 +404,9 @@ function decryptPII(value: string): string { return typeof value === "string" ? 
 // and fake launch counts were previously seeded here and have been removed.
 const SEED_APPS: any[] = [];
 
-const SEED_ADS: any[] = [
-  {
-    title: "Fire Lion ICT Managed Support & Price List",
-    subtitle: "Secure, enterprise-grade IT operations for Caribbean SMEs. Explore AST SLAs, daily cloud backup verification, on-site diagnostics, and interactive price builders.",
-    imageUrl: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&auto=format&fit=crop",
-    linkUrl: "/services-pricing"
-  }
-];
+// Advertising is managed explicitly through the admin interface. Do not seed
+// promotional claims or links that may become stale on a fresh deployment.
+const SEED_ADS: any[] = [];
 
 const DATA_DIR = path.join(process.cwd(), "data");
 if (!fs.existsSync(DATA_DIR)) {
@@ -875,6 +870,8 @@ async function startServer() {
     res.setHeader("X-XSS-Protection", "1; mode=block");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+    res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
     // Only apply Strict-Transport-Security in production-like environments to avoid SSL blocks during local testing
     if (isProduction) {
       res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
@@ -2175,7 +2172,7 @@ async function startServer() {
         leadSource: leadSource || "Website Contact Form",
         pageOrigin: pageOrigin || "/contact",
         stage: "New",
-        location: location || "Castries"
+        location: location || "Saint Lucia"
       }, "Website Contact Form");
 
       const eventId = crypto.randomUUID();
@@ -2592,71 +2589,96 @@ async function startServer() {
 
   function injectDynamicMeta(html: string, req: express.Request): string {
     try {
-      const articleSlug = (req.query.article as string) || (req.path.startsWith("/resources/") ? req.path.replace("/resources/", "") : "");
-      if (!articleSlug) return html;
+      const canonicalBase = (cleanEnvValue(process.env.CANONICAL_DOMAIN) || "https://v79sl.com").replace(/\/+$/, "");
+      const escapeAttr = (str: string) => String(str || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-      const article = getArticleData(articleSlug);
-      if (!article) return html;
+      const applyMeta = (source: string, page: { title: string; description: string; url: string; image?: string; type?: string }) => {
+        let result = source;
+        const image = page.image || `${canonicalBase}/og-image.png`;
+        const type = page.type || "website";
 
-      const host = req.get("host") || "v79sl.com";
-      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
-      const canonicalUrl = `${protocol}://${host}/?article=${encodeURIComponent(article.slug)}`;
-      
-      let imageUrl = article.coverImage;
-      if (imageUrl && !imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
-        imageUrl = `${protocol}://${host}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+        result = result.replace(/<title>.*?<\/title>/is, `<title>${escapeAttr(page.title)}</title>`);
+        result = result.replace(/<meta\s+name="description"\s+content="[^"]*"\s*\/?>/i, `<meta name="description" content="${escapeAttr(page.description)}" />`);
+        result = result.replace(/<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i, `<link rel="canonical" href="${escapeAttr(page.url)}" />`);
+
+        const ogTags = [
+          ["og:title", page.title],
+          ["og:description", page.description],
+          ["og:image", image],
+          ["og:image:alt", page.title],
+          ["og:url", page.url],
+          ["og:type", type],
+        ];
+        for (const [prop, value] of ogTags) {
+          const rx = new RegExp(`<meta\\s+(?:property|name)="${prop}"\\s+content="[^"]*"\\s*\\/?>`, "i");
+          if (rx.test(result)) result = result.replace(rx, `<meta property="${prop}" content="${escapeAttr(value)}" />`);
+          else result = result.replace("</head>", `  <meta property="${prop}" content="${escapeAttr(value)}" />\n</head>`);
+        }
+
+        const twitterTags = [
+          ["twitter:card", "summary_large_image"],
+          ["twitter:title", page.title],
+          ["twitter:description", page.description],
+          ["twitter:image", image],
+          ["twitter:image:alt", page.title],
+        ];
+        for (const [name, value] of twitterTags) {
+          const rx = new RegExp(`<meta\\s+name="${name}"\\s+content="[^"]*"\\s*\\/?>`, "i");
+          if (rx.test(result)) result = result.replace(rx, `<meta name="${name}" content="${escapeAttr(value)}" />`);
+          else result = result.replace("</head>", `  <meta name="${name}" content="${escapeAttr(value)}" />\n</head>`);
+        }
+        return result;
+      };
+
+      const normalizedPath = (req.path || "/").replace(/\/+$/, "") || "/";
+      const staticPages: Record<string, { title: string; description: string }> = {
+        "/": {
+          title: "Managed IT, Cloud & Business Software Saint Lucia | V79 Digital",
+          description: "V79 Digital helps Saint Lucia businesses with managed IT, cloud services, cybersecurity, business software, automation, and practical technology training.",
+        },
+        "/about": {
+          title: "About V79 Digital | Caribbean ICT Experience",
+          description: "Learn about V79 Digital's practical Caribbean ICT and telecommunications experience and its approach to helping Saint Lucia businesses use technology effectively.",
+        },
+        "/services": {
+          title: "IT, Cloud, Cybersecurity & Automation Services | V79 Digital",
+          description: "Explore managed IT, cloud, cybersecurity, networking, software development, automation, and scoped ICT assessment services for Saint Lucia businesses.",
+        },
+        "/solutions": {
+          title: "Business Software, SaaS & V79 Academy | V79 Digital",
+          description: "Explore V79 Digital software, SaaS applications, business tools, and practical training from V79 Academy.",
+        },
+        "/resources": {
+          title: "ICT Resources & Business Technology Guides | V79 Digital",
+          description: "Practical technology guidance for Saint Lucia and Caribbean businesses covering IT support, networks, cloud, cybersecurity, software, and digital operations.",
+        },
+        "/contact": {
+          title: "Contact V79 Digital | Business Technology Support Saint Lucia",
+          description: "Contact V79 Digital to discuss managed IT, cloud, cybersecurity, networking, business software, automation, training, or a scoped technology assessment.",
+        },
+      };
+
+      const articleSlug = (req.query.article as string) || (normalizedPath.startsWith("/resources/") ? normalizedPath.slice("/resources/".length) : "");
+      if (articleSlug) {
+        const article = getArticleData(articleSlug);
+        if (!article) return html;
+        let imageUrl = article.coverImage || `${canonicalBase}/og-image.png`;
+        if (!/^https?:\/\//i.test(imageUrl)) imageUrl = `${canonicalBase}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+        return applyMeta(html, {
+          title: `${article.title} | V79 Digital`,
+          description: article.description,
+          image: imageUrl,
+          type: "article",
+          url: `${canonicalBase}/?article=${encodeURIComponent(article.slug)}`,
+        });
       }
 
-      const titleText = `${article.title} | Vision79 Digital`;
-      const descText = article.description;
-      const escapeAttr = (str: string) => str.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-      let result = html;
-
-      result = result.replace(/<title>.*?<\/title>/gi, `<title>${escapeAttr(titleText)}</title>`);
-
-      if (result.includes('name="description"')) {
-        result = result.replace(/<meta\s+name="description"\s+content="[^"]*"/gi, `<meta name="description" content="${escapeAttr(descText)}"`);
-      } else {
-        result = result.replace("</head>", `  <meta name="description" content="${escapeAttr(descText)}" />\n</head>`);
-      }
-
-      const ogTags = [
-        { prop: "og:title", content: titleText },
-        { prop: "og:description", content: descText },
-        { prop: "og:image", content: imageUrl },
-        { prop: "og:image:alt", content: titleText },
-        { prop: "og:url", content: canonicalUrl },
-        { prop: "og:type", content: "article" },
-      ];
-
-      ogTags.forEach(({ prop, content }) => {
-        const regex = new RegExp(`<meta\\s+(?:property|name)="${prop}"\\s+content="[^"]*"\\s*\\/?>`, "gi");
-        if (regex.test(result)) {
-          result = result.replace(regex, `<meta property="${prop}" content="${escapeAttr(content)}" />`);
-        } else {
-          result = result.replace("</head>", `  <meta property="${prop}" content="${escapeAttr(content)}" />\n</head>`);
-        }
+      const page = staticPages[normalizedPath];
+      if (!page) return html;
+      return applyMeta(html, {
+        ...page,
+        url: normalizedPath === "/" ? `${canonicalBase}/` : `${canonicalBase}${normalizedPath}`,
       });
-
-      const twitterTags = [
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: titleText },
-        { name: "twitter:description", content: descText },
-        { name: "twitter:image", content: imageUrl },
-        { name: "twitter:image:alt", content: titleText },
-      ];
-
-      twitterTags.forEach(({ name, content }) => {
-        const regex = new RegExp(`<meta\\s+name="${name}"\\s+content="[^"]*"\\s*\\/?>`, "gi");
-        if (regex.test(result)) {
-          result = result.replace(regex, `<meta name="${name}" content="${escapeAttr(content)}" />`);
-        } else {
-          result = result.replace("</head>", `  <meta name="${name}" content="${escapeAttr(content)}" />\n</head>`);
-        }
-      });
-
-      return result;
     } catch (err) {
       console.error("[SEO Meta] Error injecting dynamic metadata:", err);
       return html;
