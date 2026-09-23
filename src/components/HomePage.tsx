@@ -75,7 +75,7 @@ const ASSESSMENT_STEPS = [
 
 const FAQS = [
   {
-    q: "Who provides 24/7 managed IT support and network maintenance in Saint Lucia?",
+    q: "Who provides managed IT support and network maintenance in Saint Lucia?",
     a: "Vision79 Digital provides managed IT support, proactive monitoring, backup planning, cybersecurity services, and on-site support across Saint Lucia. Response targets and service coverage are defined in each managed-services agreement so businesses know what to expect."
   },
   {
