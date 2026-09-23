@@ -2644,6 +2644,10 @@ async function startServer() {
           title: "IT, Cloud, Cybersecurity & Automation Services | V79 Digital",
           description: "Explore managed IT, cloud, cybersecurity, networking, software development, automation, and scoped ICT assessment services for Saint Lucia businesses.",
         },
+        "/industries": {
+          title: "Technology Services for Saint Lucia Businesses | V79 Digital",
+          description: "See how V79 Digital supports hospitality, retail, professional services, education, and other organisations with practical ICT, cloud, network, security, and software solutions.",
+        },
         "/solutions": {
           title: "Business Software, SaaS & V79 Academy | V79 Digital",
           description: "Explore V79 Digital software, SaaS applications, business tools, and practical training from V79 Academy.",
@@ -2966,6 +2970,12 @@ ${fields.content || ""}`;
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>${domain}/privacy.html</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
 ${articlesXml}</urlset>`;
     
     res.send(sitemap);
@@ -2973,6 +2983,7 @@ ${articlesXml}</urlset>`;
 
   // Vite development vs production serving logic
   app.use('/api', (_req,res)=>res.status(404).json({error:'API route not found'}));
+  app.get('/privacy', (_req,res)=>res.redirect(308, '/privacy.html'));
   app.use((req,res,next)=>{
     const courseMatch=req.path.match(/^\/course\/(\d+)$/);
     if(courseMatch && !db.getApps().some((c:any)=>c.id===Number(courseMatch[1]) && isCourseComplete(c)))return res.status(404).type('html').send('<h1>Course not found</h1><a href="/">Return to Vision79 Digital</a>');
