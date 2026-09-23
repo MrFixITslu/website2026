@@ -11,6 +11,7 @@ import rateLimit from "express-rate-limit";
 import compression from "compression";
 import { crmStorage } from "./server/crm_storage";
 import { pingOllama, analyzeBusinessWithAI } from "./server/crm_engine";
+import { deliverPlatformEvent, hubEventsConfigured, hubOrganizationRef } from "./server/platformEvents";
 
 // Configure environment variable definitions
 dotenv.config();
@@ -643,6 +644,9 @@ class DocumentDatabase {
       employees: lead.employees || "",
       biggestChallenge: lead.biggestChallenge || "",
       message: lead.message || "",
+      serviceRequested: lead.serviceRequested || "",
+      leadSource: lead.leadSource || "",
+      pageOrigin: lead.pageOrigin || "",
       status: "New",
       adminNotes: "",
       createdAt: new Date().toISOString()
@@ -692,6 +696,27 @@ class DocumentDatabase {
     const list = this.readLeads();
     return list
       .filter(l => ["pending", "disabled"].includes(l.tiquetSyncStatus))
+      .map(l => ({
+        ...l,
+        name: decryptPII(l.name),
+        company: decryptPII(l.company),
+        email: decryptPII(l.email),
+        phone: decryptPII(l.phone)
+      }));
+  }
+
+  updateLeadHubSync(id: number, hubEventId: string, hubEventStatus: string): void {
+    const list = this.readLeads();
+    const index = list.findIndex(l => l.id === Number(id));
+    if (index === -1) return;
+    list[index].hubEventId = hubEventId;
+    list[index].hubEventStatus = hubEventStatus;
+    this.writeLeads(list);
+  }
+
+  getPendingHubLeadEvents(): any[] {
+    return this.readLeads()
+      .filter(l => ["pending", "disabled"].includes(l.hubEventStatus) && l.hubEventId)
       .map(l => ({
         ...l,
         name: decryptPII(l.name),
@@ -2079,6 +2104,39 @@ async function startServer() {
     }
   }, 5 * 60 * 1000);
 
+  async function sendLeadEventToHub(lead:any,eventId:string,correlationId?:string) {
+    const event = {
+      id: eventId,
+      type: "lead.created",
+      version: 1 as const,
+      occurredAt: lead.createdAt || new Date().toISOString(),
+      organizationRef: hubOrganizationRef(),
+      subjectId: String(lead.id),
+      correlationId: correlationId || undefined,
+      payload: {
+        leadId: lead.id,
+        interest: lead.serviceRequested || lead.biggestChallenge || "Website Inquiry",
+        leadSource: lead.leadSource || "Website Contact Form",
+        pageOrigin: lead.pageOrigin || "/contact",
+        employeesBand: lead.employees || undefined
+      }
+    };
+    return deliverPlatformEvent(event);
+  }
+
+  setInterval(async () => {
+    if (!hubEventsConfigured()) return;
+    let pending:any[]=[];
+    try { pending=db.getPendingHubLeadEvents(); }
+    catch(err:any){ console.error("[V79 Hub Events] Sweep query failed:",err.message); return; }
+    for(const lead of pending){
+      try{
+        const state=await sendLeadEventToHub(lead,lead.hubEventId,lead.tiquetEventId);
+        db.updateLeadHubSync(lead.id,lead.hubEventId,state);
+      }catch(err:any){ console.error(`[V79 Hub Events] Sweep failed for lead ${lead.id}:`,err.message); }
+    }
+  },5*60*1000);
+
   // Basic Google reCAPTCHA v3 server-side verification. The frontend
   // already generates a token (ContactPage.tsx) but nothing previously
   // checked it — meaning the CAPTCHA was decorative. This matters more now
@@ -2154,14 +2212,17 @@ async function startServer() {
         phone: phone.trim(),
         employees: employees || "",
         biggestChallenge: biggestChallenge || "",
-        message: message || ""
+        message: message || "",
+        serviceRequested: serviceRequested || biggestChallenge || "Website Inquiry",
+        leadSource: leadSource || "Website Contact Form",
+        pageOrigin: pageOrigin || "/contact"
       };
       const requestId = req.headers['idempotency-key'];
       if (requestId !== undefined && (typeof requestId !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(requestId))) return res.status(400).json({error:'Invalid request identifier'});
       const requestHash=crypto.createHash('sha256').update(JSON.stringify(leadData)).digest('hex');
       const previous = readJSON<any[]>('lead-requests.json', []).find(r=>r.id===requestId && r.expires>Date.now());
       if(previous) return previous.hash===requestHash ? res.status(200).json({id:previous.leadId,success:true}) : res.status(409).json({error:'Request identifier already used'});
-      const { newLead, crmCaptureResult, eventId } = transaction(() => {
+      const { newLead, crmCaptureResult, eventId, hubEventId } = transaction(() => {
       const newLead = db.addLead(leadData);
 
       // Durable CRM capture with duplicate detection & AI scoring
@@ -2182,9 +2243,11 @@ async function startServer() {
       }, "Website Contact Form");
 
       const eventId = crypto.randomUUID();
+      const hubEventId = crypto.randomUUID();
       db.updateLeadTiquetSync(newLead.id, eventId, "pending");
+      db.updateLeadHubSync(newLead.id, hubEventId, "pending");
       if(requestId){const recent=readJSON<any[]>('lead-requests.json',[]).filter(r=>r.expires>Date.now());recent.push({id:requestId,hash:requestHash,leadId:newLead.id,expires:Date.now()+86400000});writeJSON('lead-requests.json',recent);}
-      return {newLead, crmCaptureResult, eventId};
+      return {newLead, crmCaptureResult, eventId, hubEventId};
       });
       
       res.status(201).json({
@@ -2201,6 +2264,10 @@ async function startServer() {
         .catch((err) => {
           console.error(`[V79Tiquet Gateway] Unexpected error delivering lead ${newLead.id}:`, err.message);
         });
+
+      sendLeadEventToHub({ ...newLead, ...leadData }, hubEventId, eventId)
+        .then((state) => db.updateLeadHubSync(newLead.id, hubEventId, state))
+        .catch((err) => console.error(`[V79 Hub Events] Unexpected error delivering lead ${newLead.id}:`, err.message));
     } catch (e) {
       console.error("[API] Error adding lead:", e);
       res.status(500).json({ error: "Failed to submit request. Please try again or call us." });
