@@ -24,6 +24,9 @@ services:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:3b}
       V79TIQUET_INTAKE_URL: ${V79TIQUET_INTAKE_URL:-http://v79-tiquet-manager:3050/api/public/intake}
       V79TIQUET_INTAKE_SECRET: ${V79TIQUET_INTAKE_SECRET:-}
+      V79_HUB_EVENT_URL: ${V79_HUB_EVENT_URL:-http://v79-hub:3040/api/platform/events}
+      V79_HUB_EVENT_SECRET: ${V79_HUB_EVENT_SECRET:-}
+      V79_HUB_ORGANIZATION_REF: ${V79_HUB_ORGANIZATION_REF:-}
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
