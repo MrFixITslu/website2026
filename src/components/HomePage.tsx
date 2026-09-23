@@ -54,7 +54,7 @@ const SERVICES = [
 const WHY_CHOOSE_VISION79 = [
   { title: "Hurricane Recovery Ready", desc: "Business continuity plans built for storm season, not just server downtime.", icon: Shield },
   { title: "Proactive, Not Break-Fix", desc: "Proactive monitoring helps catch problems before they become outages.", icon: Clock },
-  { title: "Telecommunications Heritage", desc: "25+ years of Caribbean telecoms expertise behind every engagement.", icon: Network },
+  { title: "Telecommunications Heritage", desc: "20+ years of Caribbean telecoms and ICT experience behind every engagement.", icon: Network },
   { title: "Local Saint Lucia Support", desc: "Practical support shaped around local business operations and Caribbean conditions.", icon: Users },
   { title: "Data Sovereignty", desc: "Your data stays governed by the standards your business answers to.", icon: Lock },
   { title: "Local Compliance", desc: "Built to meet Caribbean regulatory and data protection requirements.", icon: ShieldCheck },
@@ -541,7 +541,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             Enterprise IT Support in Saint Lucia: What You Need to Know
           </h2>
           <p className="text-sm text-app-text-sec font-light max-w-xl mx-auto">
-            Direct answers regarding our 4-hour on-site response SLA, Caribbean disaster recovery, and managed technology contracts.
+            Direct answers about response targets, Caribbean disaster recovery, and managed technology contracts.
           </p>
         </div>
 
