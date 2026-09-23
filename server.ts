@@ -803,7 +803,7 @@ For any modern enterprise, data is the most valuable asset. A sudden power outag
 Keep 3 copies of your data, store them on 2 different media types, and keep 1 copy off-site (in the cloud).
 
 ## 2. Automated Daily Verification
-A backup is only as good as its restore capability. At V79SL, we monitor daily backups, run restoration tests, and guarantee hot-site backup redundancy.
+A backup is only as good as its restore capability. V79 Digital can design monitored backup routines, restoration testing, and recovery options around the agreed business-continuity requirements.
 
 ## 3. Rapid Disaster Recovery
 With hot-site standby servers, we can restore client operations in hours rather than weeks, ensuring business continuity.
